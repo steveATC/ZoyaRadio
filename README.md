@@ -1,6 +1,6 @@
 # Zoya Radio
 
-Milestones 0, 1, and 2 have passed Steve's manual tests. Milestone 3's local mechanisms worked in manual review, but its first AI comments failed factual-grounding review. A tightened grounding correction is implemented and awaiting Steve's retest.
+Milestones 0, 1, 2, and 3 have passed Steve's manual tests. Milestone 4 host-persona work is the current milestone.
 
 The original media probe is **read only**. It lists and watches Windows media sessions, but it cannot pause, play, skip, change volume, or otherwise control playback. It does not inspect Firefox, webpage content, URLs, cookies, history, or Google account information.
 

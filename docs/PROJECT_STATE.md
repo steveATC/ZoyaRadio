@@ -2,18 +2,9 @@
 
 ## Current milestone
 
-**Milestone 3 - local AI comment generation with Ollama**
+**Milestone 4 - host persona**
 
-Milestone 3 has **NOT PASSED**. Its engineering mechanisms passed manual review, but several generated comments used unsupported pretrained knowledge or sound/cultural associations. A grounding correction is implemented and **AWAITING MANUAL RETEST**.
-
-- Ollama `0.32.6` is installed locally and its loopback API is available.
-- The selected model is `qwen3:4b-instruct`: 4.0B parameters, Q4_K_M quantization, 2,497,293,803 bytes on disk (about 2.50 GB decimal). It was downloaded only after Steve approved it.
-- It was selected as the only installed model and as a small instruction-tuned option appropriate for one 15-40 word comment.
-- Normal generation uses `http://localhost:11434/api/`, a 20-second timeout, non-streaming output, thinking disabled, and `keep_alive: 0`.
-- The deterministic validator and fixed fallback are implemented. Generate-only, no-AI, simulated-AI-failure, and performance-measurement modes are separate explicit options.
-- Manual review verified local generation, generate-before-pause ordering, targeted speech/playback recovery, timeout fallback, no-AI mode, simulated failure, performance measurement, and model unload.
-- Manual grounding review rejected comments that inferred genre/origin, artist tendencies, sound/vocals, geography, or dance-floor associations. Those failures correctly demonstrate that mechanical validation cannot establish factual grounding.
-- The corrected prompt now treats all remembered knowledge as unavailable and permits an exact `FALLBACK` response. The application replaces that sentinel with the existing fixed template and treats it as safe successful behavior.
+Implementation has not started at this checkpoint.
 
 ## Completed milestones
 
@@ -39,6 +30,16 @@ Milestone 3 has **NOT PASSED**. Its engineering mechanisms passed manual review,
 - Simulated TTS-failure recovery and Ctrl+C-during-speech recovery both passed.
 - Unicode metadata remained correct through the application and UTF-8 logs.
 
+**Milestone 3 - PASSED manual acceptance on Steve's Windows PC.**
+
+- Ollama `0.32.6` is installed locally and its loopback API is available.
+- The selected model is `qwen3:4b-instruct`: 4.0B parameters, Q4_K_M quantization, 2,497,293,803 bytes on disk (about 2.50 GB decimal). It was downloaded only after Steve approved it.
+- It was selected as the only installed model and as a small instruction-tuned option appropriate for one 15-40 word comment.
+- Normal generation uses `http://localhost:11434/api/`, a 20-second timeout, non-streaming output, thinking disabled, and `keep_alive: 0`.
+- The deterministic validator and fixed fallback are implemented. Generate-only, no-AI, simulated-AI-failure, and performance-measurement modes are separate explicit options.
+- Manual review verified local generation, generate-before-pause ordering, targeted speech/playback recovery, timeout fallback, no-AI mode, simulated failure, performance measurement, and model unload.
+- The first grounding review found unsupported claims; the tightened literal-metadata prompt, exact safe `FALLBACK` contract, and follow-up manual retest passed.
+
 ## Known issues and limits
 
 - Windows or Firefox may omit album information. The probe displays `<not provided>` and does not treat that as an error.
@@ -46,8 +47,8 @@ Milestone 3 has **NOT PASSED**. Its engineering mechanisms passed manual review,
 - The automated `--once` run under the non-interactive Codex sandbox account was denied access to the Windows media-session manager. Steve's manual test confirmed the normal signed-in desktop account works correctly.
 - Real playback-control calls remain excluded from automated test runs. Steve's Milestone 1 manual acceptance supplied that evidence.
 - PowerShell may cosmetically display Cyrillic metadata as question marks. The UTF-8 logs preserve the original Unicode, and the announcement sentence is built directly from the in-memory Unicode title and artist.
-- The current en-US Microsoft David voice speaks the English parts of an announcement but may skip Cyrillic title and artist text. Multilingual TTS remains outside Milestone 3.
-- Mechanical validation cannot prove factual grounding. Steve must repeat generate-only review on the previously problematic titles before Milestone 3 can pass.
+- The current en-US Microsoft David voice speaks the English parts of an announcement but may skip Cyrillic title and artist text. Multilingual TTS remains outside Milestone 4.
+- Mechanical validation cannot prove factual grounding or personality quality; those remain manual review concerns for AI-generated prose.
 - Steve's performance run measured 4.262 seconds wall-clock, 2.191 seconds Ollama total duration, 1.999 seconds model load, 2.68 GiB loaded size/VRAM, and context length 2048. The selected-model unload verification passed. These are measurements from that run, not estimates.
 
 ## Important decisions and evidence
@@ -68,5 +69,5 @@ Milestone 3 has **NOT PASSED**. Its engineering mechanisms passed manual review,
 - AI output must be one paragraph and 15-40 words, with no obvious model commentary, malformed control output, or banned commercial-radio cliches. The separate exact token `FALLBACK` requests the fixed announcement and is successful safe behavior; it is never sent to speech. Rejected/error/timeout output also uses the fixed announcement without retrying.
 - `--no-ai` bypasses Ollama entirely. `--generate-only` performs no playback or speech operations. Normal spoken mode generates and unloads before confirmation or pause, rechecks the same session and track, then reuses Milestone 2's protected same-session pause/speech/resume sequence.
 - The performance mode temporarily uses `keep_alive: 30s`, queries `/api/ps`, labels measured and unavailable fields, sends `keep_alive: 0` for the selected model only, and verifies that model is no longer loaded. It never unloads unrelated models.
-- No global media keys, fallback session, browser automation, browser data access, cloud AI, API keys, online speech, volume control, GUI, persona prompting, or automatic radio behavior is included.
+- The Milestone 3 checkpoint includes no global media keys, fallback session, browser automation, browser data access, cloud AI, API keys, online speech, volume control, GUI, persona prompting, or automatic radio behavior.
 - Build tooling is project-local: Microsoft .NET SDK 8.0.423 and Microsoft's `Microsoft.Windows.SDK.NET.Ref` targeting pack. Neither requires administrator privileges.
