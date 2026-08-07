@@ -1,6 +1,6 @@
 # Zoya Radio
 
-Milestones 0, 1, 2, and 3 have passed Steve's manual tests. Milestone 4's Zoya host persona is implemented and awaiting Steve's manual personality review.
+Milestones 0 through 4 have passed Steve's manual tests. Milestone 5 radio behavior is the current milestone.
 
 The original media probe is **read only**. It lists and watches Windows media sessions, but it cannot pause, play, skip, change volume, or otherwise control playback. It does not inspect Firefox, webpage content, URLs, cookies, history, or Google account information.
 

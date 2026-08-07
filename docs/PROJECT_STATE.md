@@ -2,17 +2,9 @@
 
 ## Current milestone
 
-**Milestone 4 - host persona**
+**Milestone 5 - radio behavior and minimal listening state**
 
-Implementation is ready for manual personality review but is **AWAITING MANUAL ACCEPTANCE**.
-
-- The host is `Zoya` and the listener is `Steve`, configured in `HostPersonaConfiguration.cs`.
-- The editable persona lives in `Prompts/Milestone4HostPersonaPrompt.txt`.
-- Zoya is prompted as warm, dry, clever, feminine, self-possessed, conversational, occasionally sarcastic/deadpan/absurd, capable of affectionate teasing, and allowed infrequent mild swearing.
-- The prompt rejects commercial-radio behavior, constant name use, constant swearing, sycophancy, clinical analysis, music criticism, and unsupported factual claims.
-- Milestone 3's title/artist-only grounding and exact safe `FALLBACK` contract remain intact. Imaginary material must be clearly framed as Zoya's invention rather than as a claim about the music.
-- Ollama sampling is unchanged: temperature remains `0.7`. Persona quality is being tested through the prompt without mixing in a sampling change.
-- No dependency, model, voice, playback-control, scheduling, history, GUI, or retrieval change was made.
+Implementation has not started at this checkpoint.
 
 ## Completed milestones
 
@@ -47,6 +39,14 @@ Implementation is ready for manual personality review but is **AWAITING MANUAL A
 - The deterministic validator and fixed fallback are implemented. Generate-only, no-AI, simulated-AI-failure, and performance-measurement modes are separate explicit options.
 - Manual review verified local generation, generate-before-pause ordering, targeted speech/playback recovery, timeout fallback, no-AI mode, simulated failure, performance measurement, and model unload.
 - The first grounding review found unsupported claims; the tightened literal-metadata prompt, exact safe `FALLBACK` contract, and follow-up manual retest passed.
+
+**Milestone 4 - PASSED manual acceptance on Steve's Windows PC.**
+
+- The host is `Zoya` and the listener is `Steve`, configured in `HostPersonaConfiguration.cs`.
+- The editable persona lives in `Prompts/Milestone4HostPersonaPrompt.txt`.
+- Manual personality review accepted Zoya's warm, dry, clever, conversational style and the preserved title/artist-only grounding contract.
+- The known repeated `Borrowed Umbrella` invention on unrelated Cyrillic metadata is a model/prompt grounding defect, not Unicode corruption. Steve accepted the current persona and deferred that tuning.
+- Ollama sampling remained at temperature `0.7`; no model, voice, playback-control, GUI, scheduling, history, or retrieval change was part of Milestone 4.
 
 ## Known issues and limits
 
