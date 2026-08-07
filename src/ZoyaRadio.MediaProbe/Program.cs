@@ -10,6 +10,11 @@ internal static class Program
         bool controlTest = false;
         bool announcementTest = false;
         bool simulateSpeechFailure = false;
+        bool aiCommentTest = false;
+        bool generateOnly = false;
+        bool measureAi = false;
+        bool noAi = false;
+        bool simulateAiFailure = false;
 
         foreach (string argument in args)
         {
@@ -37,15 +42,48 @@ internal static class Program
                 continue;
             }
 
+            if (string.Equals(argument, "--ai-comment-test", StringComparison.OrdinalIgnoreCase))
+            {
+                aiCommentTest = true;
+                continue;
+            }
+
+            if (string.Equals(argument, "--generate-only", StringComparison.OrdinalIgnoreCase))
+            {
+                generateOnly = true;
+                continue;
+            }
+
+            if (string.Equals(argument, "--measure-ai", StringComparison.OrdinalIgnoreCase))
+            {
+                measureAi = true;
+                continue;
+            }
+
+            if (string.Equals(argument, "--no-ai", StringComparison.OrdinalIgnoreCase))
+            {
+                noAi = true;
+                continue;
+            }
+
+            if (string.Equals(argument, "--simulate-ai-failure", StringComparison.OrdinalIgnoreCase))
+            {
+                simulateAiFailure = true;
+                continue;
+            }
+
             Console.Error.WriteLine($"Unknown option: {argument}");
             WriteUsage();
             return 2;
         }
 
-        int selectedModes = (once ? 1 : 0) + (controlTest ? 1 : 0) + (announcementTest ? 1 : 0);
+        int selectedModes = (once ? 1 : 0)
+            + (controlTest ? 1 : 0)
+            + (announcementTest ? 1 : 0)
+            + (aiCommentTest ? 1 : 0);
         if (selectedModes > 1)
         {
-            Console.Error.WriteLine("Snapshot, playback-control, and announcement modes cannot be combined.");
+            Console.Error.WriteLine("Snapshot, playback-control, announcement, and AI-comment modes cannot be combined.");
             WriteUsage();
             return 2;
         }
@@ -57,11 +95,41 @@ internal static class Program
             return 2;
         }
 
+        if ((generateOnly || measureAi || noAi || simulateAiFailure) && !aiCommentTest)
+        {
+            Console.Error.WriteLine("Milestone 3 options require --ai-comment-test (normally supplied by its launcher).");
+            WriteUsage();
+            return 2;
+        }
+
+        if (generateOnly && measureAi)
+        {
+            Console.Error.WriteLine("--generate-only and --measure-ai cannot be combined.");
+            WriteUsage();
+            return 2;
+        }
+
+        if (noAi && (generateOnly || measureAi || simulateAiFailure))
+        {
+            Console.Error.WriteLine("--no-ai cannot be combined with AI generation, measurement, or simulated AI failure.");
+            WriteUsage();
+            return 2;
+        }
+
+        if (simulateAiFailure && (generateOnly || measureAi))
+        {
+            Console.Error.WriteLine("--simulate-ai-failure is only for the spoken fallback test.");
+            WriteUsage();
+            return 2;
+        }
+
         LocalLog log;
 
         try
         {
-            string logPrefix = announcementTest
+            string logPrefix = aiCommentTest
+                ? "ai-comment-test"
+                : announcementTest
                 ? "spoken-announcement-test"
                 : controlTest
                     ? "playback-control-test"
@@ -76,7 +144,22 @@ internal static class Program
 
         using (log)
         {
-            if (announcementTest)
+            if (aiCommentTest)
+            {
+                string aiMode = measureAi
+                    ? "performance measurement (no playback or speech)"
+                    : generateOnly
+                        ? "generate only (no playback or speech)"
+                        : noAi
+                            ? "AI disabled; fixed fallback spoken test"
+                            : simulateAiFailure
+                                ? "simulated AI failure; fixed fallback spoken test"
+                                : "one local-AI spoken comment";
+                log.Write("ZOYA RADIO - MILESTONE 3 LOCAL AI COMMENT TEST");
+                log.Write("Ollama requests are restricted to this computer. No cloud AI service or API key is used.");
+                log.Write($"Mode: {aiMode}");
+            }
+            else if (announcementTest)
             {
                 log.Write("ZOYA RADIO - MILESTONE 2 EXPLICIT SPOKEN-ANNOUNCEMENT TEST");
                 log.Write(
@@ -99,13 +182,14 @@ internal static class Program
 
             log.Write($"Local log: {log.FilePath}");
 
-            using WindowsSpeechService? speechService = announcementTest
+            bool spokenMode = announcementTest || (aiCommentTest && !generateOnly && !measureAi);
+            using WindowsSpeechService? speechService = spokenMode
                 ? WindowsSpeechService.TryCreate(log)
                 : null;
 
-            if (announcementTest && speechService is null)
+            if (spokenMode && speechService is null)
             {
-                log.Write("ANNOUNCEMENT TEST RESULT: NOT RUN - no usable local Windows voice was available.");
+                log.Write("SPOKEN TEST RESULT: NOT RUN - no usable local Windows voice was available.");
                 return 1;
             }
 
@@ -133,7 +217,57 @@ internal static class Program
                     log.Write("ANNOUNCEMENT TEST RESULT: NOT RUN - no playback or speech commands were issued.");
                 }
 
+                if (aiCommentTest)
+                {
+                    log.Write("AI COMMENT TEST RESULT: NOT RUN - no AI, playback, or speech commands were issued.");
+                }
+
                 return 1;
+            }
+
+            if (aiCommentTest)
+            {
+                AiCommentConfiguration configuration = AiCommentConfiguration.Default;
+
+                try
+                {
+                    configuration.Validate();
+                }
+                catch (Exception exception)
+                {
+                    log.Warning("Milestone 3 local Ollama configuration is invalid", exception);
+                    log.Write("AI COMMENT TEST RESULT: NOT RUN");
+                    return 1;
+                }
+
+                using var aiCancellation = new CancellationTokenSource();
+                ConsoleCancelEventHandler aiCancelHandler = (_, eventArgs) =>
+                {
+                    eventArgs.Cancel = true;
+                    aiCancellation.Cancel();
+                };
+
+                Console.CancelKeyPress += aiCancelHandler;
+
+                try
+                {
+                    using var ollama = new OllamaClient(configuration);
+                    var test = new AiCommentTest(manager, log, speechService, ollama, configuration);
+                    AiCommentRunMode mode = measureAi
+                        ? AiCommentRunMode.Measure
+                        : generateOnly
+                            ? AiCommentRunMode.GenerateOnly
+                            : AiCommentRunMode.Spoken;
+                    return await test.RunAsync(
+                        mode,
+                        aiEnabled: !noAi,
+                        simulateAiFailure,
+                        aiCancellation.Token);
+                }
+                finally
+                {
+                    Console.CancelKeyPress -= aiCancelHandler;
+                }
             }
 
             if (announcementTest)
@@ -228,5 +362,6 @@ internal static class Program
         Console.Error.WriteLine("   or: run-playback-control-test.cmd");
         Console.Error.WriteLine("   or: run-spoken-announcement-test.cmd");
         Console.Error.WriteLine("   or: run-simulated-speech-failure-test.cmd");
+        Console.Error.WriteLine("   or: run-ai-comment-test.cmd [--generate-only|--measure-ai|--no-ai|--simulate-ai-failure]");
     }
 }

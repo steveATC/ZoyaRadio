@@ -1,0 +1,262 @@
+using System.Diagnostics;
+using System.Globalization;
+using System.Text;
+
+namespace ZoyaRadio.MediaProbe;
+
+internal enum CommentTextSource
+{
+    Ai,
+    FixedFallback,
+}
+
+internal sealed record CommentSelection(
+    string Text,
+    CommentTextSource Source,
+    int WordCount,
+    string Reason,
+    OllamaGenerationResult? Generation);
+
+internal sealed class AiCommentService
+{
+    private readonly ILocalCommentGenerator _generator;
+    private readonly AiCommentConfiguration _configuration;
+    private readonly IAnnouncementLog _log;
+
+    public AiCommentService(
+        ILocalCommentGenerator generator,
+        AiCommentConfiguration configuration,
+        IAnnouncementLog log)
+    {
+        _generator = generator;
+        _configuration = configuration;
+        _log = log;
+    }
+
+    public async Task<CommentSelection> SelectCommentAsync(
+        MediaSnapshot media,
+        bool aiEnabled,
+        bool simulateAiFailure,
+        CancellationToken cancellationToken)
+    {
+        if (!AnnouncementText.TryBuild(media, out string? fallback))
+        {
+            throw new ArgumentException("Title and artist are required for a comment.", nameof(media));
+        }
+
+        if (!aiEnabled)
+        {
+            _log.Write("AI DISABLED: no Ollama request was made.");
+            return WriteFinalSelection(
+                fallback,
+                CommentTextSource.FixedFallback,
+                "AI was explicitly disabled with --no-ai.",
+                generation: null);
+        }
+
+        if (simulateAiFailure)
+        {
+            _log.Write("SIMULATED AI FAILURE: intentionally skipping the local Ollama request.");
+            _log.Write("No model was loaded; no unload request was necessary.");
+            return WriteFinalSelection(
+                fallback,
+                CommentTextSource.FixedFallback,
+                "AI failure was intentionally simulated.",
+                generation: null);
+        }
+
+        CommentPrompt prompt = CommentPromptFactory.Create(media);
+        OllamaGenerationResult generation;
+        var wallClock = Stopwatch.StartNew();
+
+        _log.Write("AI GENERATION STARTED");
+        _log.Write($"Local Ollama endpoint: {_generator.Endpoint}");
+        _log.Write($"Selected model: {_generator.ModelName}");
+        _log.Write($"Generation timeout: {_configuration.GenerationTimeout.TotalSeconds:0} seconds");
+        _log.Write($"keep_alive policy: {_configuration.NormalKeepAlive} (immediate unload)");
+
+        try
+        {
+            generation = await _generator.GenerateAsync(
+                prompt,
+                _configuration.NormalKeepAlive,
+                _configuration.GenerationTimeout,
+                cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            generation = new OllamaGenerationResult(
+                OllamaGenerationStatus.Cancelled,
+                null,
+                "Comment generation was cancelled.",
+                null);
+        }
+        catch (Exception exception)
+        {
+            generation = new OllamaGenerationResult(
+                OllamaGenerationStatus.ConnectionFailure,
+                null,
+                $"Local Ollama request failed unexpectedly: {exception.Message}",
+                null);
+        }
+        finally
+        {
+            wallClock.Stop();
+        }
+
+        WriteGenerationDiagnostics(generation, wallClock.Elapsed);
+
+        try
+        {
+            if (generation.Status == OllamaGenerationStatus.Cancelled
+                && cancellationToken.IsCancellationRequested)
+            {
+                throw new OperationCanceledException(cancellationToken);
+            }
+
+            if (generation.Status != OllamaGenerationStatus.Success)
+            {
+                _log.Write($"AI GENERATION FAILED: {generation.ErrorMessage ?? generation.Status.ToString()}");
+                return WriteFinalSelection(
+                    fallback,
+                    CommentTextSource.FixedFallback,
+                    generation.ErrorMessage ?? $"Ollama result: {generation.Status}.",
+                    generation);
+            }
+
+            CommentValidationResult validation = CommentValidator.Validate(generation.Response);
+            _log.Write($"AI output word count: {validation.WordCount}");
+            _log.Write($"AI output validation: {(validation.IsValid ? "PASS" : "FAIL")} - {validation.Reason}");
+
+            if (!validation.IsValid)
+            {
+                _log.Write($"Rejected AI output: {SafeForLog(generation.Response)}");
+                return WriteFinalSelection(
+                    fallback,
+                    CommentTextSource.FixedFallback,
+                    validation.Reason,
+                    generation);
+            }
+
+            _log.Write($"AI comment: {validation.NormalizedText}");
+            return WriteFinalSelection(
+                validation.NormalizedText,
+                CommentTextSource.Ai,
+                validation.Reason,
+                generation);
+        }
+        finally
+        {
+            await RequestAndVerifyUnloadAsync();
+        }
+    }
+
+    public void WriteGenerationDiagnostics(OllamaGenerationResult generation, TimeSpan wallClock)
+    {
+        _log.Write($"AI generation status: {generation.Status}");
+        _log.Write($"Observed wall-clock generation time: {FormatDuration(wallClock)}");
+
+        if (generation.Metrics is not null)
+        {
+            _log.Write(
+                $"Ollama total_duration: {FormatNanoseconds(generation.Metrics.TotalDurationNanoseconds)}");
+            _log.Write(
+                $"Ollama load_duration: {FormatNanoseconds(generation.Metrics.LoadDurationNanoseconds)}");
+            _log.Write(
+                $"Ollama prompt evaluation: {DisplayCount(generation.Metrics.PromptEvaluationCount)} tokens in " +
+                $"{FormatNanoseconds(generation.Metrics.PromptEvaluationDurationNanoseconds)}");
+            _log.Write(
+                $"Ollama generation: {DisplayCount(generation.Metrics.EvaluationCount)} tokens in " +
+                $"{FormatNanoseconds(generation.Metrics.EvaluationDurationNanoseconds)}");
+        }
+        else
+        {
+            _log.Write("Ollama timing metrics: <not available>");
+        }
+    }
+
+    private async Task RequestAndVerifyUnloadAsync()
+    {
+        _log.Write($"MODEL UNLOAD REQUESTED: {_generator.ModelName} with keep_alive: 0");
+        OllamaOperationResult unload = await _generator.UnloadAsync(
+            _configuration.LocalOperationTimeout,
+            CancellationToken.None);
+        _log.Write($"Model unload request result: {(unload.Success ? "ACCEPTED" : "FAILED")} - {unload.Message}");
+
+        OllamaRunningModelsResult running = await _generator.GetRunningModelsAsync(
+            _configuration.LocalOperationTimeout,
+            CancellationToken.None);
+
+        if (!running.Success)
+        {
+            _log.Write($"Selected-model unload verification: UNAVAILABLE - {running.Message}");
+            return;
+        }
+
+        bool selectedStillLoaded = running.Models.Any(IsSelectedModel);
+        _log.Write($"Selected-model unload verification: {(selectedStillLoaded ? "FAILED - STILL LOADED" : "PASS - NOT LOADED")}");
+
+        int unrelatedLoaded = running.Models.Count(model => !IsSelectedModel(model));
+        _log.Write($"Unrelated loaded models observed and left untouched: {unrelatedLoaded}");
+    }
+
+    private CommentSelection WriteFinalSelection(
+        string text,
+        CommentTextSource source,
+        string reason,
+        OllamaGenerationResult? generation)
+    {
+        int wordCount = CommentValidator.CountWords(CommentValidator.NormalizeWhitespace(text));
+        _log.Write($"FINAL TEXT SOURCE: {(source == CommentTextSource.Ai ? "AI" : "FIXED FALLBACK")}");
+        _log.Write($"FINAL TEXT: {text}");
+        return new CommentSelection(text, source, wordCount, reason, generation);
+    }
+
+    private bool IsSelectedModel(OllamaRunningModel model)
+    {
+        return string.Equals(model.Name, _generator.ModelName, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(model.Model, _generator.ModelName, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string SafeForLog(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return "<empty>";
+        }
+
+        var builder = new StringBuilder(Math.Min(text.Length, 500));
+
+        foreach (char character in text)
+        {
+            if (builder.Length >= 500)
+            {
+                builder.Append("...");
+                break;
+            }
+
+            builder.Append(char.IsControl(character) ? ' ' : character);
+        }
+
+        return CommentValidator.NormalizeWhitespace(builder.ToString());
+    }
+
+    internal static string FormatNanoseconds(long? nanoseconds)
+    {
+        return nanoseconds is null
+            ? "<not available>"
+            : FormatDuration(TimeSpan.FromTicks(nanoseconds.Value / 100));
+    }
+
+    private static string FormatDuration(TimeSpan duration)
+    {
+        return duration.TotalSeconds >= 1
+            ? $"{duration.TotalSeconds.ToString("0.000", CultureInfo.InvariantCulture)} s"
+            : $"{duration.TotalMilliseconds.ToString("0.0", CultureInfo.InvariantCulture)} ms";
+    }
+
+    private static string DisplayCount(int? count)
+    {
+        return count?.ToString(CultureInfo.InvariantCulture) ?? "<not available>";
+    }
+}

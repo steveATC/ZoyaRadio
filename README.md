@@ -1,6 +1,6 @@
 # Zoya Radio
 
-Milestones 0, 1, and 2 have passed Steve's manual tests. Milestone 3 local-AI work has not started at this checkpoint.
+Milestones 0, 1, and 2 have passed Steve's manual tests. Milestone 3 local-AI comment generation is implemented and awaiting Steve's manual acceptance.
 
 The original media probe is **read only**. It lists and watches Windows media sessions, but it cannot pause, play, skip, change volume, or otherwise control playback. It does not inspect Firefox, webpage content, URLs, cookies, history, or Google account information.
 
@@ -29,7 +29,7 @@ Use this shorter check when you only want to list the sessions that exist right 
 
 ## Logs
 
-Each run creates a timestamped text file in the repository's `logs` folder. Read-only runs use `media-probe-*.txt`, control-test runs use `playback-control-test-*.txt`, and spoken tests use `spoken-announcement-test-*.txt`. The console and log contain the same useful diagnostics. These files remain on this computer, are excluded from Git, and may be deleted whenever they are no longer needed.
+Each run creates a timestamped text file in the repository's `logs` folder. Read-only runs use `media-probe-*.txt`, control-test runs use `playback-control-test-*.txt`, spoken tests use `spoken-announcement-test-*.txt`, and AI-comment tests use `ai-comment-test-*.txt`. The console and log contain the same useful diagnostics. These files remain on this computer, are excluded from Git, and may be deleted whenever they are no longer needed.
 
 The completed Milestone 0 procedure is preserved in [docs/MILESTONE_0_TEST.md](docs/MILESTONE_0_TEST.md).
 
@@ -61,6 +61,27 @@ The deliberate recovery check has its own launcher and never speaks:
 
 Follow [docs/MILESTONE_2_TEST.md](docs/MILESTONE_2_TEST.md) for the complete manual acceptance test.
 
+## Run the local-AI comment test
+
+Milestone 3 uses the local Ollama service at `http://localhost:11434/api/` and the installed `qwen3:4b-instruct` model. It sends only the current Firefox title and artist. The model generates while music keeps playing, and it is asked to unload immediately afterward. Invalid, unavailable, or timed-out AI output is replaced by the fixed `That was [title] by [artist].` fallback.
+
+Start the normal one-comment test with:
+
+```powershell
+.\run-ai-comment-test.cmd
+```
+
+The test shows the final text before asking permission. Only `y` or `yes` allows speech and targeted pause/resume; Enter defaults to no. Other explicit modes are:
+
+```powershell
+.\run-ai-comment-test.cmd --generate-only
+.\run-ai-comment-test.cmd --no-ai
+.\run-ai-comment-test.cmd --simulate-ai-failure
+.\run-ai-comment-test.cmd --measure-ai
+```
+
+Generate-only and measurement modes never speak or control playback. No-AI mode makes no Ollama request. Follow [docs/MILESTONE_3_TEST.md](docs/MILESTONE_3_TEST.md) for the complete manual test.
+
 ## Developer build
 
 The approved Microsoft .NET 8 SDK is installed locally in `.dotnet`, and the approved Microsoft Windows SDK reference pack is restored locally in `.packages`. Both folders are excluded from Git and require no administrator privileges.
@@ -72,4 +93,4 @@ From the repository root:
 .\.dotnet\dotnet.exe run --project .\tests\ZoyaRadio.MediaProbe.Tests\ZoyaRadio.MediaProbe.Tests.csproj --configuration Release
 ```
 
-The project uses Microsoft's supported `Windows.Media.Control`, `Windows.Media.SpeechSynthesis`, and `Windows.Media.Playback` APIs. It has no third-party runtime dependencies.
+The project uses Microsoft's supported `Windows.Media.Control`, `Windows.Media.SpeechSynthesis`, and `Windows.Media.Playback` APIs plus Ollama's loopback-only local HTTP API. No third-party .NET package, cloud AI service, or API key is used.

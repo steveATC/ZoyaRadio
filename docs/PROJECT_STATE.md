@@ -4,7 +4,14 @@
 
 **Milestone 3 - local AI comment generation with Ollama**
 
-Implementation has not started at this checkpoint.
+Implementation is ready for manual testing but is **AWAITING MANUAL ACCEPTANCE**.
+
+- Ollama `0.32.6` is installed locally and its loopback API is available.
+- The selected model is `qwen3:4b-instruct`: 4.0B parameters, Q4_K_M quantization, 2,497,293,803 bytes on disk (about 2.50 GB decimal). It was downloaded only after Steve approved it.
+- It was selected as the only installed model and as a small instruction-tuned option appropriate for one 15-40 word comment.
+- Normal generation uses `http://localhost:11434/api/`, a 20-second timeout, non-streaming output, thinking disabled, and `keep_alive: 0`.
+- The deterministic validator and fixed fallback are implemented. Generate-only, no-AI, simulated-AI-failure, and performance-measurement modes are separate explicit options.
+- Actual comment quality, latency, VRAM use, audible speech, Firefox control, and selected-model unload after inference still require Steve's manual tests.
 
 ## Completed milestones
 
@@ -38,6 +45,8 @@ Implementation has not started at this checkpoint.
 - Real playback-control calls remain excluded from automated test runs. Steve's Milestone 1 manual acceptance supplied that evidence.
 - PowerShell may cosmetically display Cyrillic metadata as question marks. The UTF-8 logs preserve the original Unicode, and the announcement sentence is built directly from the in-memory Unicode title and artist.
 - The current en-US Microsoft David voice speaks the English parts of an announcement but may skip Cyrillic title and artist text. Multilingual TTS remains outside Milestone 3.
+- Mechanical validation cannot prove factual grounding. Steve must review generate-only comments for unsupported facts, especially on well-known songs.
+- No generation or VRAM measurement has been run automatically. The explicit `--measure-ai` test will report measured `/api/ps` values when Ollama exposes them, then unload only the selected model.
 
 ## Important decisions and evidence
 
@@ -52,5 +61,10 @@ Implementation has not started at this checkpoint.
 - Milestone 2 validates speech and metadata before control, rechecks the same session after confirmation, uses a 20-second speech timeout, and owns same-session resume in protected `finally` cleanup after a pause request begins.
 - The explicit simulated-failure mode skips audible speech after Paused is verified and exercises the same real resume/retry path used by genuine speech failures and cancellation.
 - No new package or dependency was added for speech; the APIs are already in the existing Microsoft Windows SDK reference pack and Windows itself.
-- No global media keys, fallback session, browser automation, browser data access, AI, online speech, volume control, GUI, or runtime networking is included.
+- Milestone 3 calls Ollama directly through .NET `HttpClient`; no Ollama SDK or other NuGet dependency was added. The endpoint policy permits only HTTP loopback hosts (`localhost`, `127.0.0.1`, or `::1`) at `/api`.
+- The model prompt contains only title and artist JSON as song ground truth, treats those values as untrusted data, forbids lyrics and unsupported facts, and is stored in `Prompts/Milestone3CommentPrompt.txt`.
+- AI output must be one paragraph and 15-40 words, with no obvious model commentary, malformed control output, or banned commercial-radio cliches. Rejected/error/timeout output uses the fixed announcement instead without retrying.
+- `--no-ai` bypasses Ollama entirely. `--generate-only` performs no playback or speech operations. Normal spoken mode generates and unloads before confirmation or pause, rechecks the same session and track, then reuses Milestone 2's protected same-session pause/speech/resume sequence.
+- The performance mode temporarily uses `keep_alive: 30s`, queries `/api/ps`, labels measured and unavailable fields, sends `keep_alive: 0` for the selected model only, and verifies that model is no longer loaded. It never unloads unrelated models.
+- No global media keys, fallback session, browser automation, browser data access, cloud AI, API keys, online speech, volume control, GUI, persona prompting, or automatic radio behavior is included.
 - Build tooling is project-local: Microsoft .NET SDK 8.0.423 and Microsoft's `Microsoft.Windows.SDK.NET.Ref` targeting pack. Neither requires administrator privileges.
