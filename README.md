@@ -1,6 +1,6 @@
 # Zoya Radio
 
-Milestones 0, 1, and 2 have passed Steve's manual tests. Milestone 3 local-AI comment generation is implemented and awaiting Steve's manual acceptance.
+Milestones 0, 1, and 2 have passed Steve's manual tests. Milestone 3's local mechanisms worked in manual review, but its first AI comments failed factual-grounding review. A tightened grounding correction is implemented and awaiting Steve's retest.
 
 The original media probe is **read only**. It lists and watches Windows media sessions, but it cannot pause, play, skip, change volume, or otherwise control playback. It does not inspect Firefox, webpage content, URLs, cookies, history, or Google account information.
 
@@ -63,7 +63,7 @@ Follow [docs/MILESTONE_2_TEST.md](docs/MILESTONE_2_TEST.md) for the complete man
 
 ## Run the local-AI comment test
 
-Milestone 3 uses the local Ollama service at `http://localhost:11434/api/` and the installed `qwen3:4b-instruct` model. It sends only the current Firefox title and artist. The model generates while music keeps playing, and it is asked to unload immediately afterward. Invalid, unavailable, or timed-out AI output is replaced by the fixed `That was [title] by [artist].` fallback.
+Milestone 3 uses the local Ollama service at `http://localhost:11434/api/` and the installed `qwen3:4b-instruct` model. It sends only the current Firefox title and artist. The model must ignore remembered song knowledge and comment only on the literal supplied wording. It may return exactly `FALLBACK` when it cannot do that safely; the sentinel is then replaced by `That was [title] by [artist].` and is never spoken literally. Invalid, unavailable, or timed-out output uses the same fixed fallback.
 
 Start the normal one-comment test with:
 

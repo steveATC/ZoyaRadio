@@ -10,6 +10,7 @@ internal sealed record CommentValidationResult(
 
 internal static partial class CommentValidator
 {
+    public const string FallbackSignal = "FALLBACK";
     public const int MinimumWords = 15;
     public const int MaximumWords = 40;
 
@@ -87,6 +88,11 @@ internal static partial class CommentValidator
         }
 
         return new CommentValidationResult(true, normalized, wordCount, "Accepted by mechanical validation.");
+    }
+
+    public static bool IsFallbackSignal(string? output)
+    {
+        return string.Equals(output?.Trim(), FallbackSignal, StringComparison.Ordinal);
     }
 
     public static string NormalizeWhitespace(string value)

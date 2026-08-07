@@ -22,6 +22,7 @@ var tests = new (string Name, Func<Task> Run)[]
     ("speech cancellation uses protected playback recovery", SpeechCancellationRestoresPlayback),
     ("Ollama endpoint permits loopback only", () => RunSynchronous(OllamaEndpointIsLoopbackOnly)),
     ("comment prompt sends only title and artist metadata", () => RunSynchronous(CommentPromptUsesAllowedMetadataOnly)),
+    ("comment prompt covers manual grounding failures", () => RunSynchronous(CommentPromptCoversManualGroundingFailures)),
     ("Ollama request is local, non-streaming, non-thinking, and unload-on-return", OllamaRequestUsesSafeOptions),
     ("comment validator normalizes harmless whitespace", () => RunSynchronous(CommentValidatorNormalizesWhitespace)),
     ("comment validator rejects empty output", () => RunSynchronous(CommentValidatorRejectsEmpty)),
@@ -30,10 +31,14 @@ var tests = new (string Name, Func<Task> Run)[]
     ("comment validator rejects multiple paragraphs", () => RunSynchronous(CommentValidatorRejectsParagraphs)),
     ("comment validator rejects commercial radio cliches", () => RunSynchronous(CommentValidatorRejectsCliches)),
     ("comment validator rejects model commentary", () => RunSynchronous(CommentValidatorRejectsModelCommentary)),
+    ("exact FALLBACK selects fixed template", ExactFallbackSelectsFixedTemplate),
+    ("FALLBACK sentinel is never final spoken text", FallbackSentinelIsNeverFinalText),
+    ("safe FALLBACK is a successful generate-only result", SafeFallbackIsSuccessfulGenerateOnlyResult),
     ("HTTP failure selects fixed fallback", HttpFailureUsesFallback),
     ("timeout selects fixed fallback", TimeoutUsesFallback),
     ("malformed response selects fixed fallback", MalformedResponseUsesFallback),
     ("unexpected generator exception still unloads and falls back", GeneratorExceptionStillUnloads),
+    ("valid AI comment still unloads selected model", ValidAiCommentStillUnloads),
     ("no-AI mode bypasses Ollama", NoAiBypassesOllama),
     ("simulated AI failure bypasses Ollama", SimulatedAiFailureBypassesOllama),
     ("stale track blocks prepared comment", () => RunSynchronous(StaleTrackBlocksPreparedComment)),
@@ -265,6 +270,24 @@ static void CommentPromptUsesAllowedMetadataOnly()
     AssertContains(prompt.SystemInstruction, "Do not quote or reproduce song lyrics");
 }
 
+static void CommentPromptCoversManualGroundingFailures()
+{
+    // These assertions pin the prompt rules added after manual review. They do not
+    // pretend that a unit test can semantically prove future model prose is grounded.
+    string prompt = CommentPromptFactory.Create(TestMedia()).SystemInstruction;
+
+    AssertContains(
+        prompt,
+        "Do not ask yourself what you know about this song or artist. Treat any remembered knowledge as unavailable.");
+    AssertContains(prompt, "genre, musical style, sound, vocals, voice quality, instruments, rhythm");
+    AssertContains(prompt, "usual artist tendencies, nationality, origin, geography, cultural associations");
+    AssertContains(prompt, "the artist's usual work");
+    AssertContains(prompt, "dance floor");
+    AssertContains(
+        prompt,
+        "If you cannot produce a safe comment using only the literal supplied metadata, do not improvise. Return exactly: FALLBACK");
+}
+
 static void CommentValidatorNormalizesWhitespace()
 {
     const string output = "With   a title like Cochise, subtlety has clearly taken the evening off, and honestly that sounds wonderfully committed.";
@@ -335,6 +358,77 @@ static void CommentValidatorRejectsModelCommentary()
     AssertFalse(CommentValidator.Validate(output).IsValid);
 }
 
+static async Task ExactFallbackSelectsFixedTemplate()
+{
+    var generator = new FakeCommentGenerator
+    {
+        GenerationResult = new OllamaGenerationResult(
+            OllamaGenerationStatus.Success,
+            CommentValidator.FallbackSignal,
+            null,
+            null),
+    };
+    var log = new FakeLog();
+    var service = new AiCommentService(generator, AiCommentConfiguration.Default, log);
+
+    CommentSelection result = await service.SelectCommentAsync(
+        TestMedia(),
+        aiEnabled: true,
+        simulateAiFailure: false,
+        CancellationToken.None);
+
+    AssertEqual(CommentTextSource.FixedFallback, result.Source);
+    AssertTrue(result.ModelRequestedFallback);
+    AssertEqual("That was Cochise by Audioslave.", result.Text);
+    AssertTrue(log.Contains("AI SAFE FALLBACK REQUESTED"));
+    AssertEqual(1, generator.GenerateCalls);
+    AssertEqual(1, generator.UnloadCalls);
+    AssertEqual(1, generator.PsCalls);
+}
+
+static async Task FallbackSentinelIsNeverFinalText()
+{
+    var generator = new FakeCommentGenerator
+    {
+        GenerationResult = new OllamaGenerationResult(
+            OllamaGenerationStatus.Success,
+            "  FALLBACK\r\n",
+            null,
+            null),
+    };
+    var service = new AiCommentService(generator, AiCommentConfiguration.Default, new FakeLog());
+
+    CommentSelection result = await service.SelectCommentAsync(
+        TestMedia(),
+        aiEnabled: true,
+        simulateAiFailure: false,
+        CancellationToken.None);
+
+    AssertTrue(result.ModelRequestedFallback);
+    AssertFalse(string.Equals(result.Text, CommentValidator.FallbackSignal, StringComparison.Ordinal));
+    AssertEqual("That was Cochise by Audioslave.", result.Text);
+}
+
+static async Task SafeFallbackIsSuccessfulGenerateOnlyResult()
+{
+    var generator = new FakeCommentGenerator
+    {
+        GenerationResult = new OllamaGenerationResult(
+            OllamaGenerationStatus.Success,
+            CommentValidator.FallbackSignal,
+            null,
+            null),
+    };
+    var service = new AiCommentService(generator, AiCommentConfiguration.Default, new FakeLog());
+    CommentSelection result = await service.SelectCommentAsync(
+        TestMedia(),
+        aiEnabled: true,
+        simulateAiFailure: false,
+        CancellationToken.None);
+
+    AssertTrue(AiCommentTest.IsSafeGenerateOnlyResult(result));
+}
+
 static async Task HttpFailureUsesFallback()
 {
     await AssertGenerationFailureUsesFallback(
@@ -362,6 +456,19 @@ static async Task GeneratorExceptionStillUnloads()
     AssertEqual(CommentTextSource.FixedFallback, result.Source);
     AssertEqual(1, generator.GenerateCalls);
     AssertEqual(1, generator.UnloadCalls);
+}
+
+static async Task ValidAiCommentStillUnloads()
+{
+    var generator = new FakeCommentGenerator();
+    var service = new AiCommentService(generator, AiCommentConfiguration.Default, new FakeLog());
+    CommentSelection result = await service.SelectCommentAsync(TestMedia(), true, false, CancellationToken.None);
+
+    AssertEqual(CommentTextSource.Ai, result.Source);
+    AssertFalse(result.ModelRequestedFallback);
+    AssertEqual(1, generator.GenerateCalls);
+    AssertEqual(1, generator.UnloadCalls);
+    AssertEqual(1, generator.PsCalls);
 }
 
 static async Task NoAiBypassesOllama()

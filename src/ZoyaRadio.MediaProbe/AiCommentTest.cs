@@ -134,9 +134,14 @@ internal sealed class AiCommentTest
             if (mode == AiCommentRunMode.GenerateOnly)
             {
                 _log.Write("GENERATE-ONLY: no playback or speech commands were issued.");
-                bool generated = selection.Source == CommentTextSource.Ai;
-                _log.Write($"GENERATE-ONLY RESULT: {(generated ? "PASS" : "FALLBACK USED")}");
-                return generated ? 0 : 1;
+                bool safeGeneration = IsSafeGenerateOnlyResult(selection);
+                string result = selection.ModelRequestedFallback
+                    ? "PASS - SAFE FALLBACK USED"
+                    : safeGeneration
+                        ? "PASS"
+                        : "AI FAILURE FALLBACK USED";
+                _log.Write($"GENERATE-ONLY RESULT: {result}");
+                return safeGeneration ? 0 : 1;
             }
 
             if (_speechService is null)
@@ -222,6 +227,11 @@ internal sealed class AiCommentTest
             _log.Write("AI COMMENT TEST RESULT: FAIL - no playback or speech commands were issued.");
             return 1;
         }
+    }
+
+    internal static bool IsSafeGenerateOnlyResult(CommentSelection selection)
+    {
+        return selection.Source == CommentTextSource.Ai || selection.ModelRequestedFallback;
     }
 
     private async Task<AiTargetDetails> ReadDetailsAsync(

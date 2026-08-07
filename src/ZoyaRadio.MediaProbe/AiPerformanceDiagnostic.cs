@@ -55,11 +55,19 @@ internal sealed class AiPerformanceDiagnostic
 
             if (generationSucceeded)
             {
-                CommentValidationResult validation = CommentValidator.Validate(generation.Response);
-                _log.Write($"Diagnostic AI output: {validation.NormalizedText}");
-                _log.Write($"Diagnostic output word count: {validation.WordCount}");
-                _log.Write(
-                    $"Diagnostic output validation: {(validation.IsValid ? "PASS" : "FAIL")} - {validation.Reason}");
+                if (CommentValidator.IsFallbackSignal(generation.Response))
+                {
+                    _log.Write("Diagnostic AI output: FALLBACK");
+                    _log.Write("Diagnostic output validation: PASS - safe fixed fallback requested.");
+                }
+                else
+                {
+                    CommentValidationResult validation = CommentValidator.Validate(generation.Response);
+                    _log.Write($"Diagnostic AI output: {validation.NormalizedText}");
+                    _log.Write($"Diagnostic output word count: {validation.WordCount}");
+                    _log.Write(
+                        $"Diagnostic output validation: {(validation.IsValid ? "PASS" : "FAIL")} - {validation.Reason}");
+                }
             }
             else
             {

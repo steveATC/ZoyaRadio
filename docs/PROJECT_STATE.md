@@ -4,14 +4,16 @@
 
 **Milestone 3 - local AI comment generation with Ollama**
 
-Implementation is ready for manual testing but is **AWAITING MANUAL ACCEPTANCE**.
+Milestone 3 has **NOT PASSED**. Its engineering mechanisms passed manual review, but several generated comments used unsupported pretrained knowledge or sound/cultural associations. A grounding correction is implemented and **AWAITING MANUAL RETEST**.
 
 - Ollama `0.32.6` is installed locally and its loopback API is available.
 - The selected model is `qwen3:4b-instruct`: 4.0B parameters, Q4_K_M quantization, 2,497,293,803 bytes on disk (about 2.50 GB decimal). It was downloaded only after Steve approved it.
 - It was selected as the only installed model and as a small instruction-tuned option appropriate for one 15-40 word comment.
 - Normal generation uses `http://localhost:11434/api/`, a 20-second timeout, non-streaming output, thinking disabled, and `keep_alive: 0`.
 - The deterministic validator and fixed fallback are implemented. Generate-only, no-AI, simulated-AI-failure, and performance-measurement modes are separate explicit options.
-- Actual comment quality, latency, VRAM use, audible speech, Firefox control, and selected-model unload after inference still require Steve's manual tests.
+- Manual review verified local generation, generate-before-pause ordering, targeted speech/playback recovery, timeout fallback, no-AI mode, simulated failure, performance measurement, and model unload.
+- Manual grounding review rejected comments that inferred genre/origin, artist tendencies, sound/vocals, geography, or dance-floor associations. Those failures correctly demonstrate that mechanical validation cannot establish factual grounding.
+- The corrected prompt now treats all remembered knowledge as unavailable and permits an exact `FALLBACK` response. The application replaces that sentinel with the existing fixed template and treats it as safe successful behavior.
 
 ## Completed milestones
 
@@ -45,8 +47,8 @@ Implementation is ready for manual testing but is **AWAITING MANUAL ACCEPTANCE**
 - Real playback-control calls remain excluded from automated test runs. Steve's Milestone 1 manual acceptance supplied that evidence.
 - PowerShell may cosmetically display Cyrillic metadata as question marks. The UTF-8 logs preserve the original Unicode, and the announcement sentence is built directly from the in-memory Unicode title and artist.
 - The current en-US Microsoft David voice speaks the English parts of an announcement but may skip Cyrillic title and artist text. Multilingual TTS remains outside Milestone 3.
-- Mechanical validation cannot prove factual grounding. Steve must review generate-only comments for unsupported facts, especially on well-known songs.
-- No generation or VRAM measurement has been run automatically. The explicit `--measure-ai` test will report measured `/api/ps` values when Ollama exposes them, then unload only the selected model.
+- Mechanical validation cannot prove factual grounding. Steve must repeat generate-only review on the previously problematic titles before Milestone 3 can pass.
+- Steve's performance run measured 4.262 seconds wall-clock, 2.191 seconds Ollama total duration, 1.999 seconds model load, 2.68 GiB loaded size/VRAM, and context length 2048. The selected-model unload verification passed. These are measurements from that run, not estimates.
 
 ## Important decisions and evidence
 
@@ -62,8 +64,8 @@ Implementation is ready for manual testing but is **AWAITING MANUAL ACCEPTANCE**
 - The explicit simulated-failure mode skips audible speech after Paused is verified and exercises the same real resume/retry path used by genuine speech failures and cancellation.
 - No new package or dependency was added for speech; the APIs are already in the existing Microsoft Windows SDK reference pack and Windows itself.
 - Milestone 3 calls Ollama directly through .NET `HttpClient`; no Ollama SDK or other NuGet dependency was added. The endpoint policy permits only HTTP loopback hosts (`localhost`, `127.0.0.1`, or `::1`) at `/api`.
-- The model prompt contains only title and artist JSON as song ground truth, treats those values as untrusted data, forbids lyrics and unsupported facts, and is stored in `Prompts/Milestone3CommentPrompt.txt`.
-- AI output must be one paragraph and 15-40 words, with no obvious model commentary, malformed control output, or banned commercial-radio cliches. Rejected/error/timeout output uses the fixed announcement instead without retrying.
+- The model prompt contains only title and artist JSON as song ground truth, treats those values as opaque untrusted labels, explicitly discards remembered knowledge, forbids lyrics and unsupported facts, and is stored in `Prompts/Milestone3CommentPrompt.txt`.
+- AI output must be one paragraph and 15-40 words, with no obvious model commentary, malformed control output, or banned commercial-radio cliches. The separate exact token `FALLBACK` requests the fixed announcement and is successful safe behavior; it is never sent to speech. Rejected/error/timeout output also uses the fixed announcement without retrying.
 - `--no-ai` bypasses Ollama entirely. `--generate-only` performs no playback or speech operations. Normal spoken mode generates and unloads before confirmation or pause, rechecks the same session and track, then reuses Milestone 2's protected same-session pause/speech/resume sequence.
 - The performance mode temporarily uses `keep_alive: 30s`, queries `/api/ps`, labels measured and unavailable fields, sends `keep_alive: 0` for the selected model only, and verifies that model is no longer loaded. It never unloads unrelated models.
 - No global media keys, fallback session, browser automation, browser data access, cloud AI, API keys, online speech, volume control, GUI, persona prompting, or automatic radio behavior is included.

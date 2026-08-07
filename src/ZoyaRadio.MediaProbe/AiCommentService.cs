@@ -15,7 +15,8 @@ internal sealed record CommentSelection(
     CommentTextSource Source,
     int WordCount,
     string Reason,
-    OllamaGenerationResult? Generation);
+    OllamaGenerationResult? Generation,
+    bool ModelRequestedFallback);
 
 internal sealed class AiCommentService
 {
@@ -124,6 +125,18 @@ internal sealed class AiCommentService
                     generation);
             }
 
+            if (CommentValidator.IsFallbackSignal(generation.Response))
+            {
+                _log.Write("AI SAFE FALLBACK REQUESTED: the model returned exactly FALLBACK.");
+                _log.Write("FALLBACK is safe successful behavior; the sentinel itself will not be spoken.");
+                return WriteFinalSelection(
+                    fallback,
+                    CommentTextSource.FixedFallback,
+                    "The model explicitly requested the safe fixed fallback.",
+                    generation,
+                    modelRequestedFallback: true);
+            }
+
             CommentValidationResult validation = CommentValidator.Validate(generation.Response);
             _log.Write($"AI output word count: {validation.WordCount}");
             _log.Write($"AI output validation: {(validation.IsValid ? "PASS" : "FAIL")} - {validation.Reason}");
@@ -204,12 +217,13 @@ internal sealed class AiCommentService
         string text,
         CommentTextSource source,
         string reason,
-        OllamaGenerationResult? generation)
+        OllamaGenerationResult? generation,
+        bool modelRequestedFallback = false)
     {
         int wordCount = CommentValidator.CountWords(CommentValidator.NormalizeWhitespace(text));
         _log.Write($"FINAL TEXT SOURCE: {(source == CommentTextSource.Ai ? "AI" : "FIXED FALLBACK")}");
         _log.Write($"FINAL TEXT: {text}");
-        return new CommentSelection(text, source, wordCount, reason, generation);
+        return new CommentSelection(text, source, wordCount, reason, generation, modelRequestedFallback);
     }
 
     private bool IsSelectedModel(OllamaRunningModel model)
