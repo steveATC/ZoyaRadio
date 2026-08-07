@@ -4,7 +4,9 @@
 
 **Milestone 2 - basic Windows spoken announcement**
 
-Implementation has not started at this checkpoint.
+Implementation status: ready for Steve's manual acceptance test.
+
+**Milestone 2 is NOT PASSED.** Audible Windows speech and real Firefox recovery require Steve's normal interactive desktop test.
 
 ## Completed milestones
 
@@ -29,6 +31,8 @@ Implementation has not started at this checkpoint.
 - Windows may expose zero sessions when no compatible media is active. The probe reports that without crashing.
 - The automated `--once` run under the non-interactive Codex sandbox account was denied access to the Windows media-session manager. Steve's manual test confirmed the normal signed-in desktop account works correctly.
 - Real playback-control calls remain excluded from automated test runs. Steve's Milestone 1 manual acceptance supplied that evidence.
+- The silent Windows speech check in Codex's non-interactive execution context returned `Internal Speech Error` before WinRT voice enumeration. System registration shows Microsoft David, Mark, and Zira OneCore voices, plus David Desktop and Zira Desktop. The Milestone 2 test safely refuses control unless the speech API works and selects a usable default voice in Steve's normal desktop session.
+- PowerShell may cosmetically display Cyrillic metadata as question marks. The UTF-8 logs preserve the original Unicode, and the announcement sentence is built directly from the in-memory Unicode title and artist.
 
 ## Important decisions and evidence
 
@@ -39,5 +43,9 @@ Implementation has not started at this checkpoint.
 - The original `run-media-probe.cmd` path remains read only. Playback control is reachable only through the explicit `--control-test` mode used by `run-playback-control-test.cmd`.
 - Milestone 1 matches exactly one `firefox.exe` session case-insensitively, requires an explicit confirmation and a Playing starting state, then calls `TryPauseAsync()` and `TryPlayAsync()` on that same stored session object.
 - Resume cleanup is protected by `finally`, ignores cancellation long enough to make at most three same-session resume attempts, and prints a prominent manual-resume warning if Playing cannot be confirmed.
-- No global media keys, fallback session, browser automation, browser data access, AI, speech, volume control, GUI, or runtime networking is included.
+- Milestone 2 uses Microsoft's local `Windows.Media.SpeechSynthesis.SpeechSynthesizer` with its default usable voice. `Windows.Media.Playback.MediaPlayer` sends the synthesized stream to the normal/default Windows audio device and has its media-command integration disabled.
+- Milestone 2 validates speech and metadata before control, rechecks the same session after confirmation, uses a 20-second speech timeout, and owns same-session resume in protected `finally` cleanup after a pause request begins.
+- The explicit simulated-failure mode skips audible speech after Paused is verified and exercises the same real resume/retry path used by genuine speech failures and cancellation.
+- No new package or dependency was added for speech; the APIs are already in the existing Microsoft Windows SDK reference pack and Windows itself.
+- No global media keys, fallback session, browser automation, browser data access, AI, online speech, volume control, GUI, or runtime networking is included.
 - Build tooling is project-local: Microsoft .NET SDK 8.0.423 and Microsoft's `Microsoft.Windows.SDK.NET.Ref` targeting pack. Neither requires administrator privileges.

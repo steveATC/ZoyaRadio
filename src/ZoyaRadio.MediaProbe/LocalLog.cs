@@ -3,7 +3,7 @@ using System.Text;
 
 namespace ZoyaRadio.MediaProbe;
 
-internal sealed class LocalLog : IDisposable
+internal sealed class LocalLog : IDisposable, IAnnouncementLog
 {
     private readonly object _writeLock = new();
     private readonly StreamWriter _writer;

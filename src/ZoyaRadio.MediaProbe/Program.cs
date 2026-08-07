@@ -8,6 +8,8 @@ internal static class Program
     {
         bool once = false;
         bool controlTest = false;
+        bool announcementTest = false;
+        bool simulateSpeechFailure = false;
 
         foreach (string argument in args)
         {
@@ -23,14 +25,34 @@ internal static class Program
                 continue;
             }
 
+            if (string.Equals(argument, "--announcement-test", StringComparison.OrdinalIgnoreCase))
+            {
+                announcementTest = true;
+                continue;
+            }
+
+            if (string.Equals(argument, "--simulate-speech-failure", StringComparison.OrdinalIgnoreCase))
+            {
+                simulateSpeechFailure = true;
+                continue;
+            }
+
             Console.Error.WriteLine($"Unknown option: {argument}");
             WriteUsage();
             return 2;
         }
 
-        if (once && controlTest)
+        int selectedModes = (once ? 1 : 0) + (controlTest ? 1 : 0) + (announcementTest ? 1 : 0);
+        if (selectedModes > 1)
         {
-            Console.Error.WriteLine("The --once and --control-test options cannot be combined.");
+            Console.Error.WriteLine("Snapshot, playback-control, and announcement modes cannot be combined.");
+            WriteUsage();
+            return 2;
+        }
+
+        if (simulateSpeechFailure && !announcementTest)
+        {
+            Console.Error.WriteLine("--simulate-speech-failure requires --announcement-test.");
             WriteUsage();
             return 2;
         }
@@ -39,7 +61,12 @@ internal static class Program
 
         try
         {
-            log = LocalLog.Create(controlTest ? "playback-control-test" : "media-probe");
+            string logPrefix = announcementTest
+                ? "spoken-announcement-test"
+                : controlTest
+                    ? "playback-control-test"
+                    : "media-probe";
+            log = LocalLog.Create(logPrefix);
         }
         catch (Exception exception)
         {
@@ -49,7 +76,16 @@ internal static class Program
 
         using (log)
         {
-            if (controlTest)
+            if (announcementTest)
+            {
+                log.Write("ZOYA RADIO - MILESTONE 2 EXPLICIT SPOKEN-ANNOUNCEMENT TEST");
+                log.Write(
+                    "This test can pause and resume exactly one firefox.exe session and play local Windows speech, " +
+                    "but only after confirmation.");
+                log.Write(
+                    $"Mode: {(simulateSpeechFailure ? "simulated speech failure and real playback recovery" : "one spoken announcement")}");
+            }
+            else if (controlTest)
             {
                 log.Write("ZOYA RADIO - MILESTONE 1 EXPLICIT PLAYBACK-CONTROL TEST");
                 log.Write("This test can pause and resume exactly one firefox.exe session, but only after confirmation.");
@@ -62,6 +98,16 @@ internal static class Program
             }
 
             log.Write($"Local log: {log.FilePath}");
+
+            using WindowsSpeechService? speechService = announcementTest
+                ? WindowsSpeechService.TryCreate(log)
+                : null;
+
+            if (announcementTest && speechService is null)
+            {
+                log.Write("ANNOUNCEMENT TEST RESULT: NOT RUN - no usable local Windows voice was available.");
+                return 1;
+            }
 
             GlobalSystemMediaTransportControlsSessionManager manager;
 
@@ -82,7 +128,34 @@ internal static class Program
                         "Run the probe from Steve's normal signed-in desktop account; administrator rights should not be needed.");
                 }
 
+                if (announcementTest)
+                {
+                    log.Write("ANNOUNCEMENT TEST RESULT: NOT RUN - no playback or speech commands were issued.");
+                }
+
                 return 1;
+            }
+
+            if (announcementTest)
+            {
+                using var announcementCancellation = new CancellationTokenSource();
+                ConsoleCancelEventHandler announcementCancelHandler = (_, eventArgs) =>
+                {
+                    eventArgs.Cancel = true;
+                    announcementCancellation.Cancel();
+                };
+
+                Console.CancelKeyPress += announcementCancelHandler;
+
+                try
+                {
+                    var test = new SpokenAnnouncementTest(manager, log, speechService!);
+                    return await test.RunAsync(simulateSpeechFailure, announcementCancellation.Token);
+                }
+                finally
+                {
+                    Console.CancelKeyPress -= announcementCancelHandler;
+                }
             }
 
             if (controlTest)
@@ -153,5 +226,7 @@ internal static class Program
     {
         Console.Error.WriteLine("Usage: run-media-probe.cmd [--once]");
         Console.Error.WriteLine("   or: run-playback-control-test.cmd");
+        Console.Error.WriteLine("   or: run-spoken-announcement-test.cmd");
+        Console.Error.WriteLine("   or: run-simulated-speech-failure-test.cmd");
     }
 }
