@@ -1,0 +1,22 @@
+# Project-local .NET tooling
+.dotnet/
+.tools/
+.dotnet-cli-home/
+.packages/
+
+# Build output
+**/bin/
+**/obj/
+artifacts/
+
+# Local runtime logs
+logs/
+
+# Editor and operating-system clutter
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+.DS_Store
+Thumbs.db
