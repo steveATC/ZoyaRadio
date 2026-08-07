@@ -21,8 +21,12 @@ var tests = new (string Name, Func<Task> Run)[]
     ("simulated speech failure uses real recovery path", SimulatedFailureRestoresPlayback),
     ("speech cancellation uses protected playback recovery", SpeechCancellationRestoresPlayback),
     ("Ollama endpoint permits loopback only", () => RunSynchronous(OllamaEndpointIsLoopbackOnly)),
+    ("host persona defaults to Zoya and Steve", () => RunSynchronous(HostPersonaUsesExpectedDefaults)),
+    ("host and listener names render from configuration", () => RunSynchronous(HostPersonaRendersConfiguredNames)),
     ("comment prompt sends only title and artist metadata", () => RunSynchronous(CommentPromptUsesAllowedMetadataOnly)),
     ("comment prompt covers manual grounding failures", () => RunSynchronous(CommentPromptCoversManualGroundingFailures)),
+    ("persona prompt distinguishes safe imagination from unsupported facts", () => RunSynchronous(PersonaPromptDocumentsCreativeBoundary)),
+    ("persona configuration reaches comment generation", PersonaConfigurationReachesGenerator),
     ("Ollama request is local, non-streaming, non-thinking, and unload-on-return", OllamaRequestUsesSafeOptions),
     ("comment validator normalizes harmless whitespace", () => RunSynchronous(CommentValidatorNormalizesWhitespace)),
     ("comment validator rejects empty output", () => RunSynchronous(CommentValidatorRejectsEmpty)),
@@ -30,6 +34,7 @@ var tests = new (string Name, Func<Task> Run)[]
     ("comment validator rejects long output", () => RunSynchronous(CommentValidatorRejectsLong)),
     ("comment validator rejects multiple paragraphs", () => RunSynchronous(CommentValidatorRejectsParagraphs)),
     ("comment validator rejects commercial radio cliches", () => RunSynchronous(CommentValidatorRejectsCliches)),
+    ("comment validator rejects Milestone 4 radio stock phrases", () => RunSynchronous(CommentValidatorRejectsPersonaCliches)),
     ("comment validator rejects model commentary", () => RunSynchronous(CommentValidatorRejectsModelCommentary)),
     ("exact FALLBACK selects fixed template", ExactFallbackSelectsFixedTemplate),
     ("FALLBACK sentinel is never final spoken text", FallbackSentinelIsNeverFinalText),
@@ -253,6 +258,27 @@ static void OllamaEndpointIsLoopbackOnly()
     AssertFalse(OllamaEndpointPolicy.IsAllowed(new Uri("http://localhost:11434/not-api/")));
 }
 
+static void HostPersonaUsesExpectedDefaults()
+{
+    AssertEqual("Zoya", HostPersonaConfiguration.Default.HostName);
+    AssertEqual("Steve", HostPersonaConfiguration.Default.ListenerName);
+
+    CommentPrompt prompt = CommentPromptFactory.Create(TestMedia());
+    AssertContains(prompt.SystemInstruction, "You are Zoya");
+    AssertContains(prompt.SystemInstruction, "sitting beside Steve");
+}
+
+static void HostPersonaRendersConfiguredNames()
+{
+    var persona = new HostPersonaConfiguration("Test Host", "Test Listener");
+    CommentPrompt prompt = CommentPromptFactory.Create(TestMedia(), persona);
+
+    AssertContains(prompt.SystemInstruction, "You are Test Host");
+    AssertContains(prompt.SystemInstruction, "sitting beside Test Listener");
+    AssertFalse(prompt.SystemInstruction.Contains("{{HOST_NAME}}", StringComparison.Ordinal));
+    AssertFalse(prompt.SystemInstruction.Contains("{{LISTENER_NAME}}", StringComparison.Ordinal));
+}
+
 static void CommentPromptUsesAllowedMetadataOnly()
 {
     var media = new MediaSnapshot("\u041A\u0443\u043A\u0443\u0448\u043A\u0430", "\u041A\u0438\u043D\u043E", "Forbidden Album");
@@ -280,12 +306,44 @@ static void CommentPromptCoversManualGroundingFailures()
         prompt,
         "Do not ask yourself what you know about this song or artist. Treat any remembered knowledge as unavailable.");
     AssertContains(prompt, "genre, musical style, sound, vocals, voice quality, instruments, rhythm");
-    AssertContains(prompt, "usual artist tendencies, nationality, origin, geography, cultural associations");
+    AssertContains(
+        prompt,
+        "usual artist tendencies, nationality, origin, geography, historical context, cultural associations");
     AssertContains(prompt, "the artist's usual work");
     AssertContains(prompt, "dance floor");
     AssertContains(
         prompt,
         "If you cannot produce a safe comment using only the literal supplied metadata, do not improvise. Return exactly: FALLBACK");
+}
+
+static void PersonaPromptDocumentsCreativeBoundary()
+{
+    // These are prompt-contract checks, not claims that code can measure humor or factual grounding.
+    string prompt = CommentPromptFactory.Create(TestMedia()).SystemInstruction;
+
+    AssertContains(prompt, "witty, warm, self-possessed feminine companion");
+    AssertContains(prompt, "deadpan, mildly sarcastic, affectionately tease");
+    AssertContains(prompt, "Use Steve's name only occasionally and naturally");
+    AssertContains(prompt, "I'm picturing...");
+    AssertContains(prompt, "This invents an obvious scene about the wording, not a fact about a real song");
+    AssertContains(prompt, "Those assert unavailable facts");
+}
+
+static async Task PersonaConfigurationReachesGenerator()
+{
+    var generator = new FakeCommentGenerator();
+    var persona = new HostPersonaConfiguration("Zoya", "Steve");
+    var service = new AiCommentService(
+        generator,
+        AiCommentConfiguration.Default,
+        new FakeLog(),
+        persona);
+
+    await service.SelectCommentAsync(TestMedia(), true, false, CancellationToken.None);
+
+    AssertContains(generator.LastPrompt!.SystemInstruction, "You are Zoya");
+    AssertContains(generator.LastPrompt.SystemInstruction, "sitting beside Steve");
+    AssertContains(generator.LastPrompt.SystemInstruction, "Do not ask yourself what you know about this song or artist");
 }
 
 static void CommentValidatorNormalizesWhitespace()
@@ -319,6 +377,9 @@ static async Task OllamaRequestUsesSafeOptions()
     AssertFalse(body.RootElement.GetProperty("stream").GetBoolean());
     AssertFalse(body.RootElement.GetProperty("think").GetBoolean());
     AssertEqual("0", body.RootElement.GetProperty("keep_alive").GetString()!);
+    AssertEqual(0.7, body.RootElement.GetProperty("options").GetProperty("temperature").GetDouble());
+    AssertContains(body.RootElement.GetProperty("system").GetString()!, "You are Zoya");
+    AssertContains(body.RootElement.GetProperty("system").GetString()!, "sitting beside Steve");
     AssertFalse(body.RootElement.GetProperty("prompt").GetString()!.Contains("Must not be sent", StringComparison.Ordinal));
 }
 
@@ -349,6 +410,12 @@ static void CommentValidatorRejectsParagraphs()
 static void CommentValidatorRejectsCliches()
 {
     const string output = "What a track, with a title that strolls into the room, borrows the best chair, and refuses to explain itself to anybody.";
+    AssertFalse(CommentValidator.Validate(output).IsValid);
+}
+
+static void CommentValidatorRejectsPersonaCliches()
+{
+    const string output = "Keep those vibes going, because this great song is another classic on the air, ready for every listener who wandered into the room.";
     AssertFalse(CommentValidator.Validate(output).IsValid);
 }
 
@@ -705,6 +772,8 @@ internal sealed class FakeCommentGenerator : ILocalCommentGenerator
 
     public Exception? ExceptionToThrow { get; init; }
 
+    public CommentPrompt? LastPrompt { get; private set; }
+
     public OllamaGenerationResult GenerationResult { get; init; } = new(
         OllamaGenerationStatus.Success,
         "With a title like Cochise, subtlety has clearly taken the evening off, and honestly that sounds wonderfully committed.",
@@ -718,6 +787,7 @@ internal sealed class FakeCommentGenerator : ILocalCommentGenerator
         CancellationToken cancellationToken)
     {
         GenerateCalls++;
+        LastPrompt = prompt;
 
         if (ExceptionToThrow is not null)
         {

@@ -22,7 +22,7 @@ internal sealed record AiCommentConfiguration(
         {
             throw new InvalidOperationException(
                 "The Ollama endpoint must be an HTTP loopback URL ending in /api/. " +
-                "Remote Ollama endpoints are forbidden in Milestone 3.");
+                "Remote Ollama endpoints are forbidden.");
         }
 
         if (string.IsNullOrWhiteSpace(Model))

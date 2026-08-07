@@ -16,19 +16,23 @@ internal sealed class AiCommentTest
     private readonly WindowsSpeechService? _speechService;
     private readonly ILocalCommentGenerator _generator;
     private readonly AiCommentConfiguration _configuration;
+    private readonly HostPersonaConfiguration _persona;
 
     public AiCommentTest(
         GlobalSystemMediaTransportControlsSessionManager manager,
         LocalLog log,
         WindowsSpeechService? speechService,
         ILocalCommentGenerator generator,
-        AiCommentConfiguration configuration)
+        AiCommentConfiguration configuration,
+        HostPersonaConfiguration? persona = null)
     {
         _manager = manager;
         _log = log;
         _speechService = speechService;
         _generator = generator;
         _configuration = configuration;
+        _persona = persona ?? HostPersonaConfiguration.Default;
+        _persona.Validate();
     }
 
     public async Task<int> RunAsync(
@@ -40,6 +44,9 @@ internal sealed class AiCommentTest
         try
         {
             cancellationToken.ThrowIfCancellationRequested();
+            _log.Write($"Host identity: {_persona.HostName}");
+            _log.Write($"Listener identity: {_persona.ListenerName}");
+            _log.Write("Persona prompt: Prompts/Milestone4HostPersonaPrompt.txt");
             GlobalSystemMediaTransportControlsSession[] sessions;
 
             try
@@ -104,7 +111,11 @@ internal sealed class AiCommentTest
 
             if (mode == AiCommentRunMode.Measure)
             {
-                var diagnostic = new AiPerformanceDiagnostic(_generator, _configuration, _log);
+                var diagnostic = new AiPerformanceDiagnostic(
+                    _generator,
+                    _configuration,
+                    _log,
+                    _persona);
                 AiPerformanceResult result = await diagnostic.RunAsync(target.Media, cancellationToken);
                 return result.GenerationSucceeded && result.ModelObservedLoaded && result.ModelUnloadVerified ? 0 : 1;
             }
@@ -118,7 +129,11 @@ internal sealed class AiCommentTest
                 return 1;
             }
 
-            var commentService = new AiCommentService(_generator, _configuration, _log);
+            var commentService = new AiCommentService(
+                _generator,
+                _configuration,
+                _log,
+                _persona);
             CommentSelection selection = await commentService.SelectCommentAsync(
                 target.Media,
                 aiEnabled,

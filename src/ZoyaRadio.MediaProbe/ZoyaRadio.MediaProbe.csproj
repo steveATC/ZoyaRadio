@@ -13,6 +13,6 @@
     <InternalsVisibleTo Include="ZoyaRadio.MediaProbe.Tests" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Prompts\Milestone3CommentPrompt.txt" />
+    <EmbeddedResource Include="Prompts\Milestone4HostPersonaPrompt.txt" />
   </ItemGroup>
 </Project>

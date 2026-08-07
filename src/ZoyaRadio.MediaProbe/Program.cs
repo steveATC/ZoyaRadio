@@ -155,7 +155,7 @@ internal static class Program
                             : simulateAiFailure
                                 ? "simulated AI failure; fixed fallback spoken test"
                                 : "one local-AI spoken comment";
-                log.Write("ZOYA RADIO - MILESTONE 3 LOCAL AI COMMENT TEST");
+                log.Write("ZOYA RADIO - MILESTONE 4 HOST-PERSONA TEST");
                 log.Write("Ollama requests are restricted to this computer. No cloud AI service or API key is used.");
                 log.Write($"Mode: {aiMode}");
             }
@@ -228,14 +228,16 @@ internal static class Program
             if (aiCommentTest)
             {
                 AiCommentConfiguration configuration = AiCommentConfiguration.Default;
+                HostPersonaConfiguration persona = HostPersonaConfiguration.Default;
 
                 try
                 {
                     configuration.Validate();
+                    persona.Validate();
                 }
                 catch (Exception exception)
                 {
-                    log.Warning("Milestone 3 local Ollama configuration is invalid", exception);
+                    log.Warning("Milestone 4 local AI configuration is invalid", exception);
                     log.Write("AI COMMENT TEST RESULT: NOT RUN");
                     return 1;
                 }
@@ -252,7 +254,13 @@ internal static class Program
                 try
                 {
                     using var ollama = new OllamaClient(configuration);
-                    var test = new AiCommentTest(manager, log, speechService, ollama, configuration);
+                    var test = new AiCommentTest(
+                        manager,
+                        log,
+                        speechService,
+                        ollama,
+                        configuration,
+                        persona);
                     AiCommentRunMode mode = measureAi
                         ? AiCommentRunMode.Measure
                         : generateOnly

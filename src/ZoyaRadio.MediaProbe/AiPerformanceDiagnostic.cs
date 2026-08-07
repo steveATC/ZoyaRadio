@@ -13,22 +13,26 @@ internal sealed class AiPerformanceDiagnostic
     private readonly ILocalCommentGenerator _generator;
     private readonly AiCommentConfiguration _configuration;
     private readonly IAnnouncementLog _log;
+    private readonly HostPersonaConfiguration _persona;
 
     public AiPerformanceDiagnostic(
         ILocalCommentGenerator generator,
         AiCommentConfiguration configuration,
-        IAnnouncementLog log)
+        IAnnouncementLog log,
+        HostPersonaConfiguration? persona = null)
     {
         _generator = generator;
         _configuration = configuration;
         _log = log;
+        _persona = persona ?? HostPersonaConfiguration.Default;
+        _persona.Validate();
     }
 
     public async Task<AiPerformanceResult> RunAsync(
         MediaSnapshot media,
         CancellationToken cancellationToken)
     {
-        CommentPrompt prompt = CommentPromptFactory.Create(media);
+        CommentPrompt prompt = CommentPromptFactory.Create(media, _persona);
         bool generationSucceeded = false;
         bool modelObservedLoaded = false;
         bool unloadVerified = false;
@@ -49,7 +53,7 @@ internal sealed class AiPerformanceDiagnostic
                 cancellationToken);
             wallClock.Stop();
 
-            var diagnostics = new AiCommentService(_generator, _configuration, _log);
+            var diagnostics = new AiCommentService(_generator, _configuration, _log, _persona);
             diagnostics.WriteGenerationDiagnostics(generation, wallClock.Elapsed);
             generationSucceeded = generation.Status == OllamaGenerationStatus.Success;
 

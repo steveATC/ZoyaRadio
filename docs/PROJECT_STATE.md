@@ -4,7 +4,15 @@
 
 **Milestone 4 - host persona**
 
-Implementation has not started at this checkpoint.
+Implementation is ready for manual personality review but is **AWAITING MANUAL ACCEPTANCE**.
+
+- The host is `Zoya` and the listener is `Steve`, configured in `HostPersonaConfiguration.cs`.
+- The editable persona lives in `Prompts/Milestone4HostPersonaPrompt.txt`.
+- Zoya is prompted as warm, dry, clever, feminine, self-possessed, conversational, occasionally sarcastic/deadpan/absurd, capable of affectionate teasing, and allowed infrequent mild swearing.
+- The prompt rejects commercial-radio behavior, constant name use, constant swearing, sycophancy, clinical analysis, music criticism, and unsupported factual claims.
+- Milestone 3's title/artist-only grounding and exact safe `FALLBACK` contract remain intact. Imaginary material must be clearly framed as Zoya's invention rather than as a claim about the music.
+- Ollama sampling is unchanged: temperature remains `0.7`. Persona quality is being tested through the prompt without mixing in a sampling change.
+- No dependency, model, voice, playback-control, scheduling, history, GUI, or retrieval change was made.
 
 ## Completed milestones
 
@@ -49,6 +57,7 @@ Implementation has not started at this checkpoint.
 - PowerShell may cosmetically display Cyrillic metadata as question marks. The UTF-8 logs preserve the original Unicode, and the announcement sentence is built directly from the in-memory Unicode title and artist.
 - The current en-US Microsoft David voice speaks the English parts of an announcement but may skip Cyrillic title and artist text. Multilingual TTS remains outside Milestone 4.
 - Mechanical validation cannot prove factual grounding or personality quality; those remain manual review concerns for AI-generated prose.
+- Each generation is currently independent and has no comment history, so phrasing variety and occasional use of Steve's name require multi-sample manual review. History belongs to a later milestone.
 - Steve's performance run measured 4.262 seconds wall-clock, 2.191 seconds Ollama total duration, 1.999 seconds model load, 2.68 GiB loaded size/VRAM, and context length 2048. The selected-model unload verification passed. These are measurements from that run, not estimates.
 
 ## Important decisions and evidence
@@ -65,9 +74,12 @@ Implementation has not started at this checkpoint.
 - The explicit simulated-failure mode skips audible speech after Paused is verified and exercises the same real resume/retry path used by genuine speech failures and cancellation.
 - No new package or dependency was added for speech; the APIs are already in the existing Microsoft Windows SDK reference pack and Windows itself.
 - Milestone 3 calls Ollama directly through .NET `HttpClient`; no Ollama SDK or other NuGet dependency was added. The endpoint policy permits only HTTP loopback hosts (`localhost`, `127.0.0.1`, or `::1`) at `/api`.
-- The model prompt contains only title and artist JSON as song ground truth, treats those values as opaque untrusted labels, explicitly discards remembered knowledge, forbids lyrics and unsupported facts, and is stored in `Prompts/Milestone3CommentPrompt.txt`.
+- The model prompt contains only title and artist JSON as song ground truth, treats those values as opaque untrusted labels, explicitly discards remembered knowledge, and forbids lyrics and unsupported facts.
 - AI output must be one paragraph and 15-40 words, with no obvious model commentary, malformed control output, or banned commercial-radio cliches. The separate exact token `FALLBACK` requests the fixed announcement and is successful safe behavior; it is never sent to speech. Rejected/error/timeout output also uses the fixed announcement without retrying.
 - `--no-ai` bypasses Ollama entirely. `--generate-only` performs no playback or speech operations. Normal spoken mode generates and unloads before confirmation or pause, rechecks the same session and track, then reuses Milestone 2's protected same-session pause/speech/resume sequence.
 - The performance mode temporarily uses `keep_alive: 30s`, queries `/api/ps`, labels measured and unavailable fields, sends `keep_alive: 0` for the selected model only, and verifies that model is no longer loaded. It never unloads unrelated models.
-- The Milestone 3 checkpoint includes no global media keys, fallback session, browser automation, browser data access, cloud AI, API keys, online speech, volume control, GUI, persona prompting, or automatic radio behavior.
+- Milestone 4 renders the host and listener names from `HostPersonaConfiguration.cs` into the embedded `Prompts/Milestone4HostPersonaPrompt.txt` template. This is deliberately small and source-editable.
+- The persona prompt permits title/name wordplay, subjective reactions, clearly framed imaginary scenes, affectionate teasing, dry humor, and occasional mild swearing while preserving the Milestone 3 factual boundary.
+- Temperature remains the existing `0.7`; `stream: false`, `think: false`, the 20-second timeout, and normal `keep_alive: 0` are unchanged.
+- No global media keys, fallback session, browser automation, browser data access, cloud AI, API keys, online speech, volume control, GUI, Five Queens content, scheduling, history, retrieval, or automatic radio behavior is included.
 - Build tooling is project-local: Microsoft .NET SDK 8.0.423 and Microsoft's `Microsoft.Windows.SDK.NET.Ref` targeting pack. Neither requires administrator privileges.

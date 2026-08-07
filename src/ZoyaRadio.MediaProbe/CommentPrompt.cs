@@ -7,15 +7,26 @@ internal sealed record CommentPrompt(string SystemInstruction, string MetadataPr
 
 internal static class CommentPromptFactory
 {
-    private const string ResourceSuffix = "Prompts.Milestone3CommentPrompt.txt";
-    private static readonly Lazy<string> SystemInstruction = new(LoadSystemInstruction);
+    private const string HostNameToken = "{{HOST_NAME}}";
+    private const string ListenerNameToken = "{{LISTENER_NAME}}";
+    private const string ResourceSuffix = "Prompts.Milestone4HostPersonaPrompt.txt";
+    private static readonly Lazy<string> SystemInstructionTemplate = new(LoadSystemInstructionTemplate);
 
     public static CommentPrompt Create(MediaSnapshot media)
+    {
+        return Create(media, HostPersonaConfiguration.Default);
+    }
+
+    public static CommentPrompt Create(
+        MediaSnapshot media,
+        HostPersonaConfiguration persona)
     {
         if (media.Title is null || media.Artist is null)
         {
             throw new ArgumentException("A title and artist are required for comment generation.", nameof(media));
         }
+
+        persona.Validate();
 
         string metadataJson = JsonSerializer.Serialize(new
         {
@@ -24,11 +35,26 @@ internal static class CommentPromptFactory
         });
 
         return new CommentPrompt(
-            SystemInstruction.Value,
+            RenderSystemInstruction(persona),
             $"Song metadata JSON: {metadataJson}\nWrite the comment now.");
     }
 
-    private static string LoadSystemInstruction()
+    private static string RenderSystemInstruction(HostPersonaConfiguration persona)
+    {
+        string rendered = SystemInstructionTemplate.Value
+            .Replace(HostNameToken, persona.HostName.Trim(), StringComparison.Ordinal)
+            .Replace(ListenerNameToken, persona.ListenerName.Trim(), StringComparison.Ordinal);
+
+        if (rendered.Contains(HostNameToken, StringComparison.Ordinal)
+            || rendered.Contains(ListenerNameToken, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("The Milestone 4 host-persona prompt has unresolved identity tokens.");
+        }
+
+        return rendered;
+    }
+
+    private static string LoadSystemInstructionTemplate()
     {
         Assembly assembly = typeof(CommentPromptFactory).Assembly;
         string? resourceName = assembly
@@ -37,11 +63,11 @@ internal static class CommentPromptFactory
 
         if (resourceName is null)
         {
-            throw new InvalidOperationException("The Milestone 3 comment prompt resource is missing.");
+            throw new InvalidOperationException("The Milestone 4 host-persona prompt resource is missing.");
         }
 
         using Stream stream = assembly.GetManifestResourceStream(resourceName)
-            ?? throw new InvalidOperationException("The Milestone 3 comment prompt could not be opened.");
+            ?? throw new InvalidOperationException("The Milestone 4 host-persona prompt could not be opened.");
         using var reader = new StreamReader(stream);
         return reader.ReadToEnd().Trim();
     }

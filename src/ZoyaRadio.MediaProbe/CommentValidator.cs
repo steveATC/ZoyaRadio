@@ -19,12 +19,16 @@ internal static partial class CommentValidator
         "what a track",
         "absolute banger",
         "timeless classic",
+        "another classic",
         "ladies and gentlemen",
         "stay tuned",
         "you're listening to",
         "you’re listening to",
         "turn it up",
         "up next",
+        "keep those vibes going",
+        "on the air",
+        "great song",
     ];
 
     private static readonly string[] ModelCommentaryPhrases =

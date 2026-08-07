@@ -1,6 +1,6 @@
 # Zoya Radio
 
-Milestones 0, 1, 2, and 3 have passed Steve's manual tests. Milestone 4 host-persona work is the current milestone.
+Milestones 0, 1, 2, and 3 have passed Steve's manual tests. Milestone 4's Zoya host persona is implemented and awaiting Steve's manual personality review.
 
 The original media probe is **read only**. It lists and watches Windows media sessions, but it cannot pause, play, skip, change volume, or otherwise control playback. It does not inspect Firefox, webpage content, URLs, cookies, history, or Google account information.
 
@@ -61,9 +61,9 @@ The deliberate recovery check has its own launcher and never speaks:
 
 Follow [docs/MILESTONE_2_TEST.md](docs/MILESTONE_2_TEST.md) for the complete manual acceptance test.
 
-## Run the local-AI comment test
+## Run the local Zoya-persona test
 
-Milestone 3 uses the local Ollama service at `http://localhost:11434/api/` and the installed `qwen3:4b-instruct` model. It sends only the current Firefox title and artist. The model must ignore remembered song knowledge and comment only on the literal supplied wording. It may return exactly `FALLBACK` when it cannot do that safely; the sentinel is then replaced by `That was [title] by [artist].` and is never spoken literally. Invalid, unavailable, or timed-out output uses the same fixed fallback.
+Milestone 4 keeps Milestone 3's local Ollama and grounding protections, then asks `qwen3:4b-instruct` to respond as Zoya: Steve's warm, dry, witty companion rather than a radio announcer. It still sends only the current Firefox title and artist as music facts. Exact `FALLBACK`, validation, timeout, unloading, and fixed-announcement behavior remain unchanged.
 
 Start the normal one-comment test with:
 
@@ -80,7 +80,7 @@ The test shows the final text before asking permission. Only `y` or `yes` allows
 .\run-ai-comment-test.cmd --measure-ai
 ```
 
-Generate-only and measurement modes never speak or control playback. No-AI mode makes no Ollama request. Follow [docs/MILESTONE_3_TEST.md](docs/MILESTONE_3_TEST.md) for the complete manual test.
+Generate-only and measurement modes never speak or control playback. No-AI mode makes no Ollama request. Zoya's and Steve's names are defined in `HostPersonaConfiguration.cs`; her editable text persona is in `Prompts/Milestone4HostPersonaPrompt.txt`. Follow [docs/MILESTONE_4_TEST.md](docs/MILESTONE_4_TEST.md) for the personality review. The completed Milestone 3 procedure remains in [docs/MILESTONE_3_TEST.md](docs/MILESTONE_3_TEST.md).
 
 ## Developer build
 
