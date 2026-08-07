@@ -166,7 +166,7 @@ internal sealed class AnnouncementControlSequence
                     case SpeechPlaybackStatus.TimedOut:
                         recoveryNeeded = true;
                         failureReason = speech.ErrorMessage ?? "Speech exceeded its time limit.";
-                        _log.Write("SPEECH TIMEOUT");
+                        _log.Write("SPEECH TIMEOUT: speech time limit reached; protected playback recovery will run.");
                         break;
                     case SpeechPlaybackStatus.Cancelled:
                         recoveryNeeded = true;

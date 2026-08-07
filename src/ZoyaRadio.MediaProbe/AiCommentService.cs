@@ -44,9 +44,40 @@ internal sealed class AiCommentService
         bool simulateAiFailure,
         CancellationToken cancellationToken)
     {
-        if (!AnnouncementText.TryBuild(media, out string? fallback))
+        return await SelectCommentCoreAsync(
+            media,
+            () => CommentPromptFactory.Create(media, _persona),
+            [],
+            aiEnabled,
+            simulateAiFailure,
+            cancellationToken);
+    }
+
+    public async Task<CommentSelection> SelectRadioCommentAsync(
+        RadioCommentContext context,
+        bool aiEnabled,
+        CancellationToken cancellationToken)
+    {
+        return await SelectCommentCoreAsync(
+            context.PreviousTrack,
+            () => CommentPromptFactory.CreateForRadio(context, _persona),
+            context.RecentAcceptedAiComments,
+            aiEnabled,
+            simulateAiFailure: false,
+            cancellationToken);
+    }
+
+    private async Task<CommentSelection> SelectCommentCoreAsync(
+        MediaSnapshot fallbackMedia,
+        Func<CommentPrompt> promptFactory,
+        IReadOnlyList<string> recentAcceptedAiComments,
+        bool aiEnabled,
+        bool simulateAiFailure,
+        CancellationToken cancellationToken)
+    {
+        if (!AnnouncementText.TryBuild(fallbackMedia, out string? fallback))
         {
-            throw new ArgumentException("Title and artist are required for a comment.", nameof(media));
+            throw new ArgumentException("Title and artist are required for a comment.", nameof(fallbackMedia));
         }
 
         if (!aiEnabled)
@@ -70,7 +101,7 @@ internal sealed class AiCommentService
                 generation: null);
         }
 
-        CommentPrompt prompt = CommentPromptFactory.Create(media, _persona);
+        CommentPrompt prompt = promptFactory();
         OllamaGenerationResult generation;
         var wallClock = Stopwatch.StartNew();
 
@@ -155,6 +186,17 @@ internal sealed class AiCommentService
                     generation);
             }
 
+            if (IsExactRecentComment(validation.NormalizedText, recentAcceptedAiComments))
+            {
+                _log.Write("AI output repetition check: FAIL - exact duplicate of a recent accepted AI comment.");
+                _log.Write("No regeneration loop is used; selecting the fixed fallback to conserve local GPU work.");
+                return WriteFinalSelection(
+                    fallback,
+                    CommentTextSource.FixedFallback,
+                    "The AI output exactly duplicated a recent accepted AI comment.",
+                    generation);
+            }
+
             _log.Write($"AI comment: {validation.NormalizedText}");
             return WriteFinalSelection(
                 validation.NormalizedText,
@@ -166,6 +208,18 @@ internal sealed class AiCommentService
         {
             await RequestAndVerifyUnloadAsync();
         }
+    }
+
+    internal static bool IsExactRecentComment(
+        string candidate,
+        IReadOnlyList<string> recentAcceptedAiComments)
+    {
+        string normalizedCandidate = RadioHistory.NormalizeForComparison(candidate);
+        return recentAcceptedAiComments.Any(
+            recent => string.Equals(
+                RadioHistory.NormalizeForComparison(recent),
+                normalizedCandidate,
+                StringComparison.OrdinalIgnoreCase));
     }
 
     public void WriteGenerationDiagnostics(OllamaGenerationResult generation, TimeSpan wallClock)

@@ -15,6 +15,7 @@ internal static class Program
         bool measureAi = false;
         bool noAi = false;
         bool simulateAiFailure = false;
+        bool radioBehaviorTest = false;
 
         foreach (string argument in args)
         {
@@ -72,6 +73,12 @@ internal static class Program
                 continue;
             }
 
+            if (string.Equals(argument, "--radio-behavior-test", StringComparison.OrdinalIgnoreCase))
+            {
+                radioBehaviorTest = true;
+                continue;
+            }
+
             Console.Error.WriteLine($"Unknown option: {argument}");
             WriteUsage();
             return 2;
@@ -80,10 +87,12 @@ internal static class Program
         int selectedModes = (once ? 1 : 0)
             + (controlTest ? 1 : 0)
             + (announcementTest ? 1 : 0)
-            + (aiCommentTest ? 1 : 0);
+            + (aiCommentTest ? 1 : 0)
+            + (radioBehaviorTest ? 1 : 0);
         if (selectedModes > 1)
         {
-            Console.Error.WriteLine("Snapshot, playback-control, announcement, and AI-comment modes cannot be combined.");
+            Console.Error.WriteLine(
+                "Snapshot, playback-control, announcement, AI-comment, and radio-behavior modes cannot be combined.");
             WriteUsage();
             return 2;
         }
@@ -95,9 +104,16 @@ internal static class Program
             return 2;
         }
 
-        if ((generateOnly || measureAi || noAi || simulateAiFailure) && !aiCommentTest)
+        if ((generateOnly || measureAi || simulateAiFailure) && !aiCommentTest)
         {
-            Console.Error.WriteLine("Milestone 3 options require --ai-comment-test (normally supplied by its launcher).");
+            Console.Error.WriteLine("These AI diagnostic options require --ai-comment-test (normally supplied by its launcher).");
+            WriteUsage();
+            return 2;
+        }
+
+        if (noAi && !aiCommentTest && !radioBehaviorTest)
+        {
+            Console.Error.WriteLine("--no-ai requires the AI-comment or radio-behavior launcher.");
             WriteUsage();
             return 2;
         }
@@ -127,7 +143,9 @@ internal static class Program
 
         try
         {
-            string logPrefix = aiCommentTest
+            string logPrefix = radioBehaviorTest
+                ? "radio-behavior-test"
+                : aiCommentTest
                 ? "ai-comment-test"
                 : announcementTest
                 ? "spoken-announcement-test"
@@ -144,7 +162,14 @@ internal static class Program
 
         using (log)
         {
-            if (aiCommentTest)
+            if (radioBehaviorTest)
+            {
+                log.Write("ZOYA RADIO - MILESTONE 5 AUTOMATIC RADIO-BEHAVIOR TEST");
+                log.Write("This mode can automatically pause and resume exactly one firefox.exe session only after arming.");
+                log.Write("Ollama requests remain loopback-only; recent behavioral history remains bounded and in memory.");
+                log.Write($"Mode: {(noAi ? "automatic fixed fallback; AI disabled" : "automatic local-AI comments")}");
+            }
+            else if (aiCommentTest)
             {
                 string aiMode = measureAi
                     ? "performance measurement (no playback or speech)"
@@ -182,14 +207,19 @@ internal static class Program
 
             log.Write($"Local log: {log.FilePath}");
 
-            bool spokenMode = announcementTest || (aiCommentTest && !generateOnly && !measureAi);
+            bool spokenMode = radioBehaviorTest
+                || announcementTest
+                || (aiCommentTest && !generateOnly && !measureAi);
             using WindowsSpeechService? speechService = spokenMode
                 ? WindowsSpeechService.TryCreate(log)
                 : null;
 
             if (spokenMode && speechService is null)
             {
-                log.Write("SPOKEN TEST RESULT: NOT RUN - no usable local Windows voice was available.");
+                log.Write(
+                    radioBehaviorTest
+                        ? "RADIO BEHAVIOR RESULT: NOT ARMED - no usable local Windows voice was available."
+                        : "SPOKEN TEST RESULT: NOT RUN - no usable local Windows voice was available.");
                 return 1;
             }
 
@@ -222,7 +252,59 @@ internal static class Program
                     log.Write("AI COMMENT TEST RESULT: NOT RUN - no AI, playback, or speech commands were issued.");
                 }
 
+                if (radioBehaviorTest)
+                {
+                    log.Write("RADIO BEHAVIOR RESULT: NOT ARMED - no AI, playback, or speech commands were issued.");
+                }
+
                 return 1;
+            }
+
+            if (radioBehaviorTest)
+            {
+                AiCommentConfiguration aiConfiguration = AiCommentConfiguration.Default;
+                HostPersonaConfiguration persona = HostPersonaConfiguration.Default;
+                RadioBehaviorConfiguration radioConfiguration = RadioBehaviorConfiguration.Default;
+
+                try
+                {
+                    aiConfiguration.Validate();
+                    persona.Validate();
+                    radioConfiguration.Validate();
+                }
+                catch (Exception exception)
+                {
+                    log.Warning("Milestone 5 configuration is invalid", exception);
+                    log.Write("RADIO BEHAVIOR RESULT: NOT ARMED");
+                    return 1;
+                }
+
+                using var radioCancellation = new CancellationTokenSource();
+                ConsoleCancelEventHandler radioCancelHandler = (_, eventArgs) =>
+                {
+                    eventArgs.Cancel = true;
+                    radioCancellation.Cancel();
+                };
+
+                Console.CancelKeyPress += radioCancelHandler;
+
+                try
+                {
+                    using var ollama = new OllamaClient(aiConfiguration);
+                    var test = new RadioBehaviorTest(
+                        manager,
+                        log,
+                        speechService!,
+                        ollama,
+                        aiConfiguration,
+                        persona,
+                        radioConfiguration);
+                    return await test.RunAsync(aiEnabled: !noAi, radioCancellation.Token);
+                }
+                finally
+                {
+                    Console.CancelKeyPress -= radioCancelHandler;
+                }
             }
 
             if (aiCommentTest)
@@ -371,5 +453,6 @@ internal static class Program
         Console.Error.WriteLine("   or: run-spoken-announcement-test.cmd");
         Console.Error.WriteLine("   or: run-simulated-speech-failure-test.cmd");
         Console.Error.WriteLine("   or: run-ai-comment-test.cmd [--generate-only|--measure-ai|--no-ai|--simulate-ai-failure]");
+        Console.Error.WriteLine("   or: run-radio-behavior-test.cmd [--no-ai]");
     }
 }

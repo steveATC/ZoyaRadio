@@ -47,6 +47,31 @@ var tests = new (string Name, Func<Task> Run)[]
     ("no-AI mode bypasses Ollama", NoAiBypassesOllama),
     ("simulated AI failure bypasses Ollama", SimulatedAiFailureBypassesOllama),
     ("stale track blocks prepared comment", () => RunSynchronous(StaleTrackBlocksPreparedComment)),
+    ("radio settings validate safe defaults and bounds", () => RunSynchronous(RadioConfigurationValidatesBounds)),
+    ("radio schedule requests inclusive 2-5 bounds", () => RunSynchronous(RadioScheduleUsesInclusiveBounds)),
+    ("one genuine track transition increments exactly once", () => RunSynchronous(RadioTransitionIncrementsOnce)),
+    ("duplicate media events do not increment radio schedule", () => RunSynchronous(RadioDuplicateDoesNotIncrement)),
+    ("completed announcement resets counter with fresh interval", () => RunSynchronous(RadioCompletionChoosesFreshInterval)),
+    ("Silent Mode prevents generation pause and speech", RadioSilentModePreventsPipelineWork),
+    ("leaving Silent Mode starts a fresh interval", () => RunSynchronous(RadioLeavingSilentChoosesFreshInterval)),
+    ("minimum track age delays automatic pause path", RadioMinimumAgeDelaysAnnouncement),
+    ("track change during generation abandons pending comment", RadioTrackChangeAbandonsPipeline),
+    ("track change during age wait abandons pending comment", RadioTrackChangeDuringWaitAbandonsPipeline),
+    ("pending track change creates no catch-up queue", () => RunSynchronous(RadioPendingChangeCreatesNoQueue)),
+    ("Paused playback prevents automatic generation and control", RadioPausedPlaybackBlocksPipeline),
+    ("wrong missing and ambiguous Firefox targets block control", () => RunSynchronous(RadioTargetSelectionMustBeExact)),
+    ("recent track history remains bounded", () => RunSynchronous(RadioTrackHistoryIsBounded)),
+    ("recent AI comment history remains bounded", () => RunSynchronous(RadioCommentHistoryIsBounded)),
+    ("clear history resets state without playback or speech", () => RunSynchronous(RadioClearHistoryIsHarmless)),
+    ("repeated artist uses normalized exact matching", () => RunSynchronous(RadioRepeatedArtistUsesExactNormalization)),
+    ("non-identical artist strings are not fuzzily merged", () => RunSynchronous(RadioArtistMatchingIsNotFuzzy)),
+    ("radio prompt includes compact recent comments and trusted context", () => RunSynchronous(RadioPromptIncludesBoundedContext)),
+    ("radio prompt preserves Unicode metadata", () => RunSynchronous(RadioPromptPreservesUnicode)),
+    ("exact duplicate AI comment selects fixed fallback", RadioDuplicateAiCommentUsesFallback),
+    ("radio no-AI mode bypasses Ollama", RadioNoAiBypassesOllama),
+    ("radio Ollama timeout unloads and selects fallback", RadioTimeoutUsesFallback),
+    ("radio maximum speech duration uses protected recovery", RadioSpeechLimitUsesProtectedRecovery),
+    ("radio pipeline passes configured speech limit", RadioPipelinePassesSpeechLimit),
 };
 
 int failures = 0;
@@ -591,6 +616,584 @@ static void StaleTrackBlocksPreparedComment()
         true));
 }
 
+static void RadioConfigurationValidatesBounds()
+{
+    RadioBehaviorConfiguration.Default.Validate();
+
+    bool minimumRejected = false;
+    bool reversedRejected = false;
+
+    try
+    {
+        (RadioBehaviorConfiguration.Default with { MinimumTransitionsBetweenComments = 0 }).Validate();
+    }
+    catch (InvalidOperationException)
+    {
+        minimumRejected = true;
+    }
+
+    try
+    {
+        (RadioBehaviorConfiguration.Default with
+        {
+            MinimumTransitionsBetweenComments = 5,
+            MaximumTransitionsBetweenComments = 2,
+        }).Validate();
+    }
+    catch (InvalidOperationException)
+    {
+        reversedRejected = true;
+    }
+
+    AssertTrue(minimumRejected);
+    AssertTrue(reversedRejected);
+}
+
+static void RadioScheduleUsesInclusiveBounds()
+{
+    var targets = new FakeTransitionTargetSource(2, 5);
+    var state = new RadioBehaviorState(RadioBehaviorConfiguration.Default, targets);
+    DateTimeOffset now = DateTimeOffset.Parse("2026-08-07T12:00:00Z");
+    state.Arm(Track("A", "Artist A"), now);
+
+    AssertEqual(2, state.ScheduledThreshold);
+    AssertEqual((2, 5), targets.Requests[0]);
+
+    state.ObserveTrack(Track("B", "Artist B"), now.AddSeconds(10));
+    RadioTrackObservation due = state.ObserveTrack(Track("C", "Artist C"), now.AddSeconds(20));
+    AssertTrue(due.Opportunity is not null);
+    AssertTrue(state.ResolveOpportunity(due.Opportunity!.Id, true, "A sufficiently long accepted comment for history."));
+    AssertEqual(5, state.ScheduledThreshold);
+    AssertEqual((2, 5), targets.Requests[1]);
+}
+
+static void RadioTransitionIncrementsOnce()
+{
+    var state = new RadioBehaviorState(
+        RadioBehaviorConfiguration.Default,
+        new FakeTransitionTargetSource(5));
+    DateTimeOffset now = DateTimeOffset.Parse("2026-08-07T12:00:00Z");
+    state.Arm(Track("A", "Artist A"), now);
+
+    RadioTrackObservation result = state.ObserveTrack(Track("B", "Artist B"), now.AddSeconds(10));
+
+    AssertEqual(RadioTrackObservationKind.Transition, result.Kind);
+    AssertEqual(1, state.TransitionCounter);
+    AssertEqual(1, state.TotalObservedTransitions);
+}
+
+static void RadioDuplicateDoesNotIncrement()
+{
+    var state = new RadioBehaviorState(
+        RadioBehaviorConfiguration.Default,
+        new FakeTransitionTargetSource(5));
+    DateTimeOffset now = DateTimeOffset.Parse("2026-08-07T12:00:00Z");
+    state.Arm(Track("A", "Artist A"), now);
+    state.ObserveTrack(Track("B", "Artist B"), now.AddSeconds(10));
+
+    RadioTrackObservation duplicate = state.ObserveTrack(
+        new MediaSnapshot("  b  ", "ARTIST   B", "Album arrived later"),
+        now.AddSeconds(11));
+
+    AssertEqual(RadioTrackObservationKind.Duplicate, duplicate.Kind);
+    AssertEqual(1, state.TransitionCounter);
+    AssertEqual(1, state.TotalObservedTransitions);
+}
+
+static void RadioCompletionChoosesFreshInterval()
+{
+    var state = new RadioBehaviorState(
+        RadioBehaviorConfiguration.Default,
+        new FakeTransitionTargetSource(2, 4));
+    DateTimeOffset now = DateTimeOffset.Parse("2026-08-07T12:00:00Z");
+    state.Arm(Track("A", "Artist A"), now);
+    state.ObserveTrack(Track("B", "Artist B"), now.AddSeconds(10));
+    RadioTrackObservation due = state.ObserveTrack(Track("C", "Artist C"), now.AddSeconds(20));
+
+    AssertTrue(state.ResolveOpportunity(
+        due.Opportunity!.Id,
+        announcementCompleted: true,
+        "This accepted AI comment is long enough to represent a completed automatic announcement."));
+    AssertEqual(0, state.TransitionCounter);
+    AssertEqual(4, state.ScheduledThreshold);
+    AssertEqual(1, state.RecentAcceptedAiComments.Count);
+}
+
+static async Task RadioSilentModePreventsPipelineWork()
+{
+    RadioBehaviorConfiguration configuration = RadioBehaviorConfiguration.Default;
+    DateTimeOffset now = DateTimeOffset.Parse("2026-08-07T12:00:20Z");
+    RadioCommentOpportunity opportunity = TestRadioOpportunity(now.AddSeconds(-20));
+    var provider = new FakeRadioCommentProvider();
+    var host = new FakeRadioOpportunityHost(ValidRadioSnapshot(opportunity) with { SilentMode = true });
+    var pipeline = new RadioOpportunityPipeline(
+        configuration,
+        provider,
+        host,
+        new FakeRadioClock(now),
+        new FakeLog());
+
+    RadioOpportunityResult result = await pipeline.RunAsync(opportunity, true, CancellationToken.None);
+
+    AssertEqual(RadioOpportunityResultStatus.Abandoned, result.Status);
+    AssertEqual(0, provider.Calls);
+    AssertEqual(0, host.PrepareCalls);
+    AssertEqual(0, host.AnnouncementCalls);
+}
+
+static void RadioLeavingSilentChoosesFreshInterval()
+{
+    var state = new RadioBehaviorState(
+        RadioBehaviorConfiguration.Default,
+        new FakeTransitionTargetSource(2, 5));
+    DateTimeOffset now = DateTimeOffset.Parse("2026-08-07T12:00:00Z");
+    state.Arm(Track("A", "Artist A"), now);
+    state.SetSilentMode(true);
+    state.ObserveTrack(Track("B", "Artist B"), now.AddSeconds(10));
+
+    RadioModeChange enabled = state.SetSilentMode(false);
+
+    AssertFalse(enabled.SilentMode);
+    AssertEqual(0, state.TransitionCounter);
+    AssertEqual(5, state.ScheduledThreshold);
+}
+
+static async Task RadioMinimumAgeDelaysAnnouncement()
+{
+    DateTimeOffset started = DateTimeOffset.Parse("2026-08-07T12:00:00Z");
+    var clock = new FakeRadioClock(started.AddSeconds(1));
+    RadioCommentOpportunity opportunity = TestRadioOpportunity(started);
+    var host = new FakeRadioOpportunityHost(ValidRadioSnapshot(opportunity))
+    {
+        Clock = clock,
+    };
+    var pipeline = new RadioOpportunityPipeline(
+        RadioBehaviorConfiguration.Default,
+        new FakeRadioCommentProvider(),
+        host,
+        clock,
+        new FakeLog());
+
+    RadioOpportunityResult result = await pipeline.RunAsync(opportunity, true, CancellationToken.None);
+
+    AssertEqual(RadioOpportunityResultStatus.Completed, result.Status);
+    AssertEqual(1, clock.Delays.Count);
+    AssertEqual(TimeSpan.FromSeconds(7), clock.Delays[0]);
+    AssertEqual(started.AddSeconds(8), host.AnnouncementObservedAt);
+}
+
+static async Task RadioTrackChangeAbandonsPipeline()
+{
+    DateTimeOffset now = DateTimeOffset.Parse("2026-08-07T12:00:20Z");
+    RadioCommentOpportunity opportunity = TestRadioOpportunity(now.AddSeconds(-20));
+    var host = new FakeRadioOpportunityHost(ValidRadioSnapshot(opportunity));
+    var provider = new FakeRadioCommentProvider
+    {
+        OnSelect = () => host.Snapshot = host.Snapshot with
+        {
+            CurrentMedia = Track("Unexpected New Track", "Different Artist"),
+        },
+    };
+    var pipeline = new RadioOpportunityPipeline(
+        RadioBehaviorConfiguration.Default,
+        provider,
+        host,
+        new FakeRadioClock(now),
+        new FakeLog());
+
+    RadioOpportunityResult result = await pipeline.RunAsync(opportunity, true, CancellationToken.None);
+
+    AssertEqual(RadioOpportunityResultStatus.Abandoned, result.Status);
+    AssertEqual(1, provider.Calls);
+    AssertEqual(0, host.PrepareCalls);
+    AssertEqual(0, host.AnnouncementCalls);
+}
+
+static async Task RadioTrackChangeDuringWaitAbandonsPipeline()
+{
+    DateTimeOffset started = DateTimeOffset.Parse("2026-08-07T12:00:00Z");
+    RadioCommentOpportunity opportunity = TestRadioOpportunity(started);
+    var host = new FakeRadioOpportunityHost(ValidRadioSnapshot(opportunity));
+    var clock = new FakeRadioClock(started.AddSeconds(1))
+    {
+        OnDelay = () => host.Snapshot = host.Snapshot with
+        {
+            CurrentMedia = Track("A New Track During The Wait", "Different Artist"),
+        },
+    };
+    var pipeline = new RadioOpportunityPipeline(
+        RadioBehaviorConfiguration.Default,
+        new FakeRadioCommentProvider(),
+        host,
+        clock,
+        new FakeLog());
+
+    RadioOpportunityResult result = await pipeline.RunAsync(opportunity, true, CancellationToken.None);
+
+    AssertEqual(RadioOpportunityResultStatus.Abandoned, result.Status);
+    AssertEqual(1, clock.Delays.Count);
+    AssertEqual(0, host.PrepareCalls);
+    AssertEqual(0, host.AnnouncementCalls);
+}
+
+static void RadioPendingChangeCreatesNoQueue()
+{
+    var state = new RadioBehaviorState(
+        RadioBehaviorConfiguration.Default,
+        new FakeTransitionTargetSource(2, 5));
+    DateTimeOffset now = DateTimeOffset.Parse("2026-08-07T12:00:00Z");
+    state.Arm(Track("A", "Artist A"), now);
+    state.ObserveTrack(Track("B", "Artist B"), now.AddSeconds(10));
+    RadioTrackObservation due = state.ObserveTrack(Track("C", "Artist C"), now.AddSeconds(20));
+    AssertTrue(due.Opportunity is not null);
+
+    RadioTrackObservation changedAgain = state.ObserveTrack(
+        Track("D", "Artist D"),
+        now.AddSeconds(30));
+
+    AssertTrue(changedAgain.PendingOpportunityInvalidated);
+    AssertTrue(changedAgain.Opportunity is null);
+    AssertTrue(state.GetRuntimeState().PendingOpportunityId is null);
+    AssertEqual(0, state.TransitionCounter);
+    AssertEqual(5, state.ScheduledThreshold);
+}
+
+static async Task RadioPausedPlaybackBlocksPipeline()
+{
+    DateTimeOffset now = DateTimeOffset.Parse("2026-08-07T12:00:20Z");
+    RadioCommentOpportunity opportunity = TestRadioOpportunity(now.AddSeconds(-20));
+    var provider = new FakeRadioCommentProvider();
+    var host = new FakeRadioOpportunityHost(ValidRadioSnapshot(opportunity) with
+    {
+        PlaybackStatus = GlobalSystemMediaTransportControlsSessionPlaybackStatus.Paused,
+    });
+    var pipeline = new RadioOpportunityPipeline(
+        RadioBehaviorConfiguration.Default,
+        provider,
+        host,
+        new FakeRadioClock(now),
+        new FakeLog());
+
+    RadioOpportunityResult result = await pipeline.RunAsync(opportunity, true, CancellationToken.None);
+
+    AssertEqual(RadioOpportunityResultStatus.Abandoned, result.Status);
+    AssertEqual(0, provider.Calls);
+    AssertEqual(0, host.AnnouncementCalls);
+}
+
+static void RadioTargetSelectionMustBeExact()
+{
+    DateTimeOffset now = DateTimeOffset.Parse("2026-08-07T12:00:20Z");
+    RadioCommentOpportunity opportunity = TestRadioOpportunity(now.AddSeconds(-20));
+    RadioOpportunitySnapshot valid = ValidRadioSnapshot(opportunity);
+
+    AssertFalse(RadioOpportunitySafety.Evaluate(
+        opportunity,
+        valid with { MatchingFirefoxSessionCount = 0 },
+        now,
+        TimeSpan.FromSeconds(8),
+        true).CanProceed);
+    AssertFalse(RadioOpportunitySafety.Evaluate(
+        opportunity,
+        valid with { MatchingFirefoxSessionCount = 2 },
+        now,
+        TimeSpan.FromSeconds(8),
+        true).CanProceed);
+    AssertFalse(RadioOpportunitySafety.Evaluate(
+        opportunity,
+        valid with { SameSelectedSession = false },
+        now,
+        TimeSpan.FromSeconds(8),
+        true).CanProceed);
+    AssertFalse(RadioOpportunitySafety.Evaluate(
+        opportunity,
+        valid with { SourceId = "chrome.exe" },
+        now,
+        TimeSpan.FromSeconds(8),
+        true).CanProceed);
+}
+
+static void RadioTrackHistoryIsBounded()
+{
+    RadioBehaviorConfiguration configuration = RadioBehaviorConfiguration.Default with
+    {
+        MinimumTransitionsBetweenComments = 10,
+        MaximumTransitionsBetweenComments = 10,
+        RecentTrackLimit = 3,
+    };
+    var state = new RadioBehaviorState(configuration, new FakeTransitionTargetSource(10));
+    DateTimeOffset now = DateTimeOffset.Parse("2026-08-07T12:00:00Z");
+    state.Arm(Track("A", "Artist A"), now);
+
+    for (int index = 1; index <= 5; index++)
+    {
+        state.ObserveTrack(Track($"Track {index}", $"Artist {index}"), now.AddSeconds(index));
+    }
+
+    AssertEqual(3, state.RecentTracks.Count);
+    AssertEqual("Track 3", state.RecentTracks[0].Title!);
+    AssertEqual("Track 5", state.RecentTracks[2].Title!);
+}
+
+static void RadioCommentHistoryIsBounded()
+{
+    RadioBehaviorConfiguration configuration = RadioBehaviorConfiguration.Default with
+    {
+        MinimumTransitionsBetweenComments = 1,
+        MaximumTransitionsBetweenComments = 1,
+        RecentCommentLimit = 2,
+    };
+    var state = new RadioBehaviorState(configuration, new FakeTransitionTargetSource(1, 1, 1, 1));
+    DateTimeOffset now = DateTimeOffset.Parse("2026-08-07T12:00:00Z");
+    state.Arm(Track("A", "Artist A"), now);
+
+    for (int index = 1; index <= 3; index++)
+    {
+        RadioTrackObservation due = state.ObserveTrack(
+            Track($"Track {index}", $"Artist {index}"),
+            now.AddSeconds(index));
+        state.ResolveOpportunity(due.Opportunity!.Id, true, $"Accepted AI comment number {index}");
+    }
+
+    AssertEqual(2, state.RecentAcceptedAiComments.Count);
+    AssertEqual("Accepted AI comment number 2", state.RecentAcceptedAiComments[0]);
+    AssertEqual("Accepted AI comment number 3", state.RecentAcceptedAiComments[1]);
+}
+
+static void RadioClearHistoryIsHarmless()
+{
+    RadioBehaviorConfiguration configuration = RadioBehaviorConfiguration.Default with
+    {
+        MinimumTransitionsBetweenComments = 1,
+        MaximumTransitionsBetweenComments = 1,
+    };
+    var state = new RadioBehaviorState(configuration, new FakeTransitionTargetSource(1, 1));
+    DateTimeOffset now = DateTimeOffset.Parse("2026-08-07T12:00:00Z");
+    state.Arm(Track("A", "Artist A"), now);
+    RadioTrackObservation due = state.ObserveTrack(Track("B", "Artist B"), now.AddSeconds(10));
+    AssertTrue(due.Opportunity is not null);
+
+    bool invalidated = state.ClearRecentHistory();
+
+    AssertTrue(invalidated);
+    AssertEqual(0, state.RecentTracks.Count);
+    AssertEqual(0, state.RecentAcceptedAiComments.Count);
+    AssertEqual(0, state.TransitionCounter);
+    AssertTrue(state.GetRuntimeState().PendingOpportunityId is null);
+}
+
+static void RadioRepeatedArtistUsesExactNormalization()
+{
+    var history = new RadioHistory(10, 6);
+    history.AddTrack(Track("One", "  Bee   Gees "));
+    history.AddTrack(Track("Two", "bee gees"));
+
+    IReadOnlyList<string> observations = history.BuildTrustedObservations(Track("Two", "BEE GEES"));
+
+    AssertEqual(1, observations.Count);
+    AssertContains(observations[0], "appeared 2 times");
+}
+
+static void RadioArtistMatchingIsNotFuzzy()
+{
+    var history = new RadioHistory(10, 6);
+    history.AddTrack(Track("One", "Artist"));
+    history.AddTrack(Track("Two", "Artist feat. X"));
+
+    IReadOnlyList<string> observations = history.BuildTrustedObservations(Track("Two", "Artist feat. X"));
+
+    AssertEqual(0, observations.Count);
+}
+
+static void RadioPromptIncludesBoundedContext()
+{
+    DateTimeOffset started = DateTimeOffset.Parse("2026-08-07T12:00:00Z");
+    var context = new RadioCommentContext(
+        Track("Previous Title", "Previous Artist"),
+        Track("Current Title", "Current Artist"),
+        started,
+        ["The exact artist string 'Current Artist' has appeared 2 times in the last 6 observed tracks."],
+        ["A recent opening that should not be copied exactly."]);
+
+    CommentPrompt prompt = CommentPromptFactory.CreateForRadio(context, HostPersonaConfiguration.Default);
+    const string prefix = "Automatic radio context JSON: ";
+    string json = prompt.MetadataPrompt[prefix.Length..];
+    json = json[..json.IndexOf('\n')];
+    using JsonDocument parsed = JsonDocument.Parse(json);
+
+    AssertEqual("Previous Title", parsed.RootElement.GetProperty("previousTitle").GetString()!);
+    AssertEqual("Current Artist", parsed.RootElement.GetProperty("currentArtist").GetString()!);
+    AssertEqual(1, parsed.RootElement.GetProperty("trustedListeningObservations").GetArrayLength());
+    AssertEqual(1, parsed.RootElement.GetProperty("recentAcceptedComments").GetArrayLength());
+    AssertEqual(6, parsed.RootElement.EnumerateObject().Count());
+    AssertContains(prompt.MetadataPrompt, "Comment primarily on the previous track");
+    AssertContains(prompt.SystemInstruction, "Recent accepted comments are style-avoidance examples");
+    AssertFalse(prompt.MetadataPrompt.Contains("album", StringComparison.OrdinalIgnoreCase));
+}
+
+static void RadioPromptPreservesUnicode()
+{
+    var context = new RadioCommentContext(
+        Track("Кукушка", "Кино"),
+        Track("Дай Дай", "Русский Оркестр"),
+        DateTimeOffset.Parse("2026-08-07T12:00:00Z"),
+        [],
+        []);
+    CommentPrompt prompt = CommentPromptFactory.CreateForRadio(context, HostPersonaConfiguration.Default);
+    const string prefix = "Automatic radio context JSON: ";
+    string json = prompt.MetadataPrompt[prefix.Length..];
+    json = json[..json.IndexOf('\n')];
+    using JsonDocument parsed = JsonDocument.Parse(json);
+
+    AssertEqual("Кукушка", parsed.RootElement.GetProperty("previousTitle").GetString()!);
+    AssertEqual("Кино", parsed.RootElement.GetProperty("previousArtist").GetString()!);
+    AssertEqual("Дай Дай", parsed.RootElement.GetProperty("currentTitle").GetString()!);
+}
+
+static async Task RadioDuplicateAiCommentUsesFallback()
+{
+    const string generated = "With a title like Cochise, subtlety has clearly taken the evening off, and honestly that sounds wonderfully committed.";
+    var generator = new FakeCommentGenerator();
+    var service = new AiCommentService(generator, AiCommentConfiguration.Default, new FakeLog());
+    var context = new RadioCommentContext(
+        TestMedia(),
+        Track("Next Track", "Next Artist"),
+        DateTimeOffset.Now,
+        [],
+        ["  with A TITLE like cochise, subtlety has clearly taken the evening off, and honestly that sounds wonderfully committed.  "]);
+
+    CommentSelection result = await service.SelectRadioCommentAsync(context, true, CancellationToken.None);
+
+    AssertEqual(CommentTextSource.FixedFallback, result.Source);
+    AssertEqual("That was Cochise by Audioslave.", result.Text);
+    AssertEqual(1, generator.GenerateCalls);
+    AssertEqual(1, generator.UnloadCalls);
+    AssertTrue(AiCommentService.IsExactRecentComment(generated, context.RecentAcceptedAiComments));
+}
+
+static async Task RadioNoAiBypassesOllama()
+{
+    var generator = new FakeCommentGenerator();
+    var service = new AiCommentService(generator, AiCommentConfiguration.Default, new FakeLog());
+    var context = new RadioCommentContext(
+        TestMedia(),
+        Track("Next Track", "Next Artist"),
+        DateTimeOffset.Now,
+        [],
+        []);
+
+    CommentSelection result = await service.SelectRadioCommentAsync(context, false, CancellationToken.None);
+
+    AssertEqual(CommentTextSource.FixedFallback, result.Source);
+    AssertEqual(0, generator.GenerateCalls);
+    AssertEqual(0, generator.UnloadCalls);
+    AssertEqual(0, generator.PsCalls);
+}
+
+static async Task RadioTimeoutUsesFallback()
+{
+    var generator = new FakeCommentGenerator
+    {
+        GenerationResult = new OllamaGenerationResult(
+            OllamaGenerationStatus.TimedOut,
+            null,
+            "Timed out",
+            null),
+    };
+    var service = new AiCommentService(generator, AiCommentConfiguration.Default, new FakeLog());
+    var context = new RadioCommentContext(
+        TestMedia(),
+        Track("Next Track", "Next Artist"),
+        DateTimeOffset.Now,
+        [],
+        []);
+
+    CommentSelection result = await service.SelectRadioCommentAsync(context, true, CancellationToken.None);
+
+    AssertEqual(CommentTextSource.FixedFallback, result.Source);
+    AssertEqual("That was Cochise by Audioslave.", result.Text);
+    AssertEqual(1, generator.GenerateCalls);
+    AssertEqual(1, generator.UnloadCalls);
+    AssertEqual(1, generator.PsCalls);
+}
+
+static async Task RadioSpeechLimitUsesProtectedRecovery()
+{
+    RadioBehaviorConfiguration configuration = RadioBehaviorConfiguration.Default;
+    var target = new FakePlaybackTarget();
+    var speech = new FakePreparedSpeech(new SpeechPlaybackResult(SpeechPlaybackStatus.TimedOut));
+    var log = new FakeLog();
+    AnnouncementSequenceTimings timings = FastTimings() with
+    {
+        SpeechTimeout = configuration.MaximumSpeechDuration,
+    };
+    var sequence = new AnnouncementControlSequence(log, timings);
+
+    AnnouncementSequenceResult result = await sequence.RunAsync(
+        target,
+        speech,
+        false,
+        CancellationToken.None);
+
+    AssertFalse(result.TestPassed);
+    AssertTrue(result.PlaybackRestored);
+    AssertEqual(1, target.PauseCalls);
+    AssertEqual(1, target.PlayCalls);
+    AssertEqual(configuration.MaximumSpeechDuration, speech.LastTimeout);
+    AssertTrue(log.Contains("speech time limit reached"));
+}
+
+static async Task RadioPipelinePassesSpeechLimit()
+{
+    DateTimeOffset now = DateTimeOffset.Parse("2026-08-07T12:00:20Z");
+    RadioCommentOpportunity opportunity = TestRadioOpportunity(now.AddSeconds(-20));
+    var host = new FakeRadioOpportunityHost(ValidRadioSnapshot(opportunity));
+    var pipeline = new RadioOpportunityPipeline(
+        RadioBehaviorConfiguration.Default,
+        new FakeRadioCommentProvider(),
+        host,
+        new FakeRadioClock(now),
+        new FakeLog());
+
+    RadioOpportunityResult result = await pipeline.RunAsync(opportunity, true, CancellationToken.None);
+
+    AssertEqual(RadioOpportunityResultStatus.Completed, result.Status);
+    AssertEqual(TimeSpan.FromSeconds(25), host.MaximumSpeechDuration);
+}
+
+static MediaSnapshot Track(string title, string artist)
+{
+    return new MediaSnapshot(title, artist, null);
+}
+
+static RadioCommentOpportunity TestRadioOpportunity(DateTimeOffset currentTrackStartedAt)
+{
+    var context = new RadioCommentContext(
+        Track("Previous Track", "Previous Artist"),
+        Track("Current Track", "Current Artist"),
+        currentTrackStartedAt,
+        [],
+        []);
+    return new RadioCommentOpportunity(1, context);
+}
+
+static RadioOpportunitySnapshot ValidRadioSnapshot(RadioCommentOpportunity opportunity)
+{
+    return new RadioOpportunitySnapshot(
+        Armed: true,
+        SilentMode: false,
+        OpportunityStillPending: true,
+        SessionListReadSucceeded: true,
+        MatchingFirefoxSessionCount: 1,
+        SameSelectedSession: true,
+        SourceId: "firefox.exe",
+        SourceReadSucceeded: true,
+        CurrentMedia: opportunity.Context.CurrentTrack,
+        MediaReadSucceeded: true,
+        PlaybackStatus: GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing,
+        PlaybackReadSucceeded: true);
+}
+
 static async Task AssertGenerationFailureUsesFallback(OllamaGenerationResult generation)
 {
     var generator = new FakeCommentGenerator { GenerationResult = generation };
@@ -721,9 +1324,12 @@ internal sealed class FakePreparedSpeech : IPreparedAnnouncementSpeech
 
     public int SpeakCalls { get; private set; }
 
+    public TimeSpan? LastTimeout { get; private set; }
+
     public Task<SpeechPlaybackResult> SpeakAsync(TimeSpan timeout, CancellationToken cancellationToken)
     {
         SpeakCalls++;
+        LastTimeout = timeout;
 
         if (_throwCancellation)
         {
@@ -735,6 +1341,145 @@ internal sealed class FakePreparedSpeech : IPreparedAnnouncementSpeech
 
     public void Dispose()
     {
+    }
+}
+
+internal sealed class FakeTransitionTargetSource : ITransitionTargetSource
+{
+    private readonly Queue<int> _values;
+    private int _lastValue;
+
+    public FakeTransitionTargetSource(params int[] values)
+    {
+        if (values.Length == 0)
+        {
+            throw new ArgumentException("At least one transition target is required.", nameof(values));
+        }
+
+        _values = new Queue<int>(values);
+        _lastValue = values[^1];
+    }
+
+    public List<(int Minimum, int Maximum)> Requests { get; } = [];
+
+    public int NextInclusive(int minimum, int maximum)
+    {
+        Requests.Add((minimum, maximum));
+        if (_values.Count > 0)
+        {
+            _lastValue = _values.Dequeue();
+        }
+
+        return _lastValue;
+    }
+}
+
+internal sealed class FakeRadioClock : IRadioClock
+{
+    public FakeRadioClock(DateTimeOffset now)
+    {
+        Now = now;
+    }
+
+    public DateTimeOffset Now { get; private set; }
+
+    public List<TimeSpan> Delays { get; } = [];
+
+    public Action? OnDelay { get; init; }
+
+    public Task DelayAsync(TimeSpan delay, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        Delays.Add(delay);
+        Now += delay;
+        OnDelay?.Invoke();
+        return Task.CompletedTask;
+    }
+}
+
+internal sealed class FakeRadioCommentProvider : IRadioCommentProvider
+{
+    public int Calls { get; private set; }
+
+    public Action? OnSelect { get; init; }
+
+    public CommentSelection Selection { get; init; } = new(
+        "That title has arrived with enough confidence to rearrange the furniture, Steve, and frankly I admire the paperwork-free commitment.",
+        CommentTextSource.Ai,
+        19,
+        "fake accepted AI comment",
+        null,
+        false);
+
+    public Task<CommentSelection> SelectAsync(
+        RadioCommentContext context,
+        bool aiEnabled,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        Calls++;
+        OnSelect?.Invoke();
+        return Task.FromResult(Selection);
+    }
+}
+
+internal sealed class FakeRadioOpportunityHost : IRadioOpportunityHost
+{
+    private readonly FakePreparedSpeech _speech = new(
+        new SpeechPlaybackResult(SpeechPlaybackStatus.Completed));
+
+    public FakeRadioOpportunityHost(RadioOpportunitySnapshot snapshot)
+    {
+        Snapshot = snapshot;
+    }
+
+    public RadioOpportunitySnapshot Snapshot { get; set; }
+
+    public int SnapshotReads { get; private set; }
+
+    public int PrepareCalls { get; private set; }
+
+    public int AnnouncementCalls { get; private set; }
+
+    public TimeSpan? MaximumSpeechDuration { get; private set; }
+
+    public DateTimeOffset? AnnouncementObservedAt { get; private set; }
+
+    public FakeRadioClock? Clock { get; set; }
+
+    public Task<RadioOpportunitySnapshot> ReadSnapshotAsync(
+        long opportunityId,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        SnapshotReads++;
+        return Task.FromResult(Snapshot);
+    }
+
+    public Task<IPreparedAnnouncementSpeech> PrepareSpeechAsync(
+        string text,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        PrepareCalls++;
+        return Task.FromResult<IPreparedAnnouncementSpeech>(_speech);
+    }
+
+    public Task<AnnouncementSequenceResult> RunAnnouncementAsync(
+        IPreparedAnnouncementSpeech preparedSpeech,
+        TimeSpan maximumSpeechDuration,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        AnnouncementCalls++;
+        MaximumSpeechDuration = maximumSpeechDuration;
+        AnnouncementObservedAt = Clock?.Now;
+        return Task.FromResult(new AnnouncementSequenceResult(
+            TestPassed: true,
+            PauseVerified: true,
+            PlaybackRestored: true,
+            RecoveryNeeded: false,
+            SimulatedFailure: false));
     }
 }
 

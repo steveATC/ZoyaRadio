@@ -39,6 +39,41 @@ internal static class CommentPromptFactory
             $"Song metadata JSON: {metadataJson}\nWrite the comment now.");
     }
 
+    public static CommentPrompt CreateForRadio(
+        RadioCommentContext context,
+        HostPersonaConfiguration persona)
+    {
+        if (context.PreviousTrack.Title is null
+            || context.PreviousTrack.Artist is null
+            || context.CurrentTrack.Title is null
+            || context.CurrentTrack.Artist is null)
+        {
+            throw new ArgumentException(
+                "Previous and current title/artist metadata are required for an automatic radio comment.",
+                nameof(context));
+        }
+
+        persona.Validate();
+
+        string contextJson = JsonSerializer.Serialize(new
+        {
+            previousTitle = context.PreviousTrack.Title,
+            previousArtist = context.PreviousTrack.Artist,
+            currentTitle = context.CurrentTrack.Title,
+            currentArtist = context.CurrentTrack.Artist,
+            trustedListeningObservations = context.TrustedListeningObservations,
+            recentAcceptedComments = context.RecentAcceptedAiComments,
+        });
+
+        return new CommentPrompt(
+            RenderSystemInstruction(persona),
+            "Automatic radio context JSON: " + contextJson + "\n" +
+            "Comment primarily on the previous track. The current track is transition context only. " +
+            "Use trustedListeningObservations only as explicitly supplied facts. " +
+            "Avoid repeating the opening, joke structure, distinctive metaphor, or unusually similar wording " +
+            "from recentAcceptedComments. Write the comment now.");
+    }
+
     private static string RenderSystemInstruction(HostPersonaConfiguration persona)
     {
         string rendered = SystemInstructionTemplate.Value

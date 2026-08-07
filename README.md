@@ -29,7 +29,7 @@ Use this shorter check when you only want to list the sessions that exist right 
 
 ## Logs
 
-Each run creates a timestamped text file in the repository's `logs` folder. Read-only runs use `media-probe-*.txt`, control-test runs use `playback-control-test-*.txt`, spoken tests use `spoken-announcement-test-*.txt`, and AI-comment tests use `ai-comment-test-*.txt`. The console and log contain the same useful diagnostics. These files remain on this computer, are excluded from Git, and may be deleted whenever they are no longer needed.
+Each run creates a timestamped text file in the repository's `logs` folder. Read-only runs use `media-probe-*.txt`, control-test runs use `playback-control-test-*.txt`, spoken tests use `spoken-announcement-test-*.txt`, AI-comment tests use `ai-comment-test-*.txt`, and automatic behavior runs use `radio-behavior-test-*.txt`. The console and log contain the same useful diagnostics. These files remain on this computer, are excluded from Git, and may be deleted whenever they are no longer needed.
 
 The completed Milestone 0 procedure is preserved in [docs/MILESTONE_0_TEST.md](docs/MILESTONE_0_TEST.md).
 
@@ -81,6 +81,32 @@ The test shows the final text before asking permission. Only `y` or `yes` allows
 ```
 
 Generate-only and measurement modes never speak or control playback. No-AI mode makes no Ollama request. Zoya's and Steve's names are defined in `HostPersonaConfiguration.cs`; her editable text persona is in `Prompts/Milestone4HostPersonaPrompt.txt`. Follow [docs/MILESTONE_4_TEST.md](docs/MILESTONE_4_TEST.md) for the personality review. The completed Milestone 3 procedure remains in [docs/MILESTONE_3_TEST.md](docs/MILESTONE_3_TEST.md).
+
+## Run the automatic radio-behavior test
+
+Milestone 5 watches genuine deduplicated Firefox track changes and schedules one automatic comment after a new random interval of 2-5 transitions. It asks once before arming and defaults to **NO**. It never treats launching the program as permission to control playback. The small validated defaults are collected in `RadioBehaviorConfiguration.cs`.
+
+```powershell
+.\run-radio-behavior-test.cmd
+```
+
+While armed:
+
+- press **S** to turn Silent Mode on or off;
+- press **C** to clear the small in-memory recent-track/comment history;
+- press **Ctrl+C** to stop safely.
+
+The current track must be at least eight seconds old before Zoya may pause it. AI generation happens while music remains Playing. Immediately before pause, the program rechecks that exactly the original `firefox.exe` session, expected track, Playing state, age guard, armed state, and Silent Mode are all safe. A changed track cancels the pending interruption instead of creating catch-up chatter.
+
+Recent behavioral history is deliberately temporary: at most 10 tracks and 6 accepted AI comments, discarded when the application closes. Diagnostic text logs are separate and are not deleted by **C**.
+
+The zero-GPU automatic mode keeps the same 2-5 scheduling and fixed announcement:
+
+```powershell
+.\run-radio-behavior-test.cmd --no-ai
+```
+
+Follow [docs/MILESTONE_5_TEST.md](docs/MILESTONE_5_TEST.md) for the required manual acceptance test. Milestone 5 remains unpassed until that real Firefox/TTS test succeeds.
 
 ## Developer build
 
