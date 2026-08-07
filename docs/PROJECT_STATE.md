@@ -2,11 +2,9 @@
 
 ## Current milestone
 
-**Milestone 2 - basic Windows spoken announcement**
+**Milestone 3 - local AI comment generation with Ollama**
 
-Implementation status: ready for Steve's manual acceptance test.
-
-**Milestone 2 is NOT PASSED.** Audible Windows speech and real Firefox recovery require Steve's normal interactive desktop test.
+Implementation has not started at this checkpoint.
 
 ## Completed milestones
 
@@ -25,14 +23,21 @@ Implementation status: ready for Steve's manual acceptance test.
 - Confirmation refusal and the already-Paused starting-state check issued no playback commands.
 - Ctrl+C after pausing used protected cleanup and restored the same Firefox session to Playing.
 
+**Milestone 2 - PASSED manual acceptance on Steve's Windows PC.**
+
+- Microsoft David, Zira, and Mark were discovered as enabled en-US Windows voices; the prototype selected Microsoft David.
+- Three normal spoken-announcement tests were fully audible and restored Firefox playback reliably.
+- Simulated TTS-failure recovery and Ctrl+C-during-speech recovery both passed.
+- Unicode metadata remained correct through the application and UTF-8 logs.
+
 ## Known issues and limits
 
 - Windows or Firefox may omit album information. The probe displays `<not provided>` and does not treat that as an error.
 - Windows may expose zero sessions when no compatible media is active. The probe reports that without crashing.
 - The automated `--once` run under the non-interactive Codex sandbox account was denied access to the Windows media-session manager. Steve's manual test confirmed the normal signed-in desktop account works correctly.
 - Real playback-control calls remain excluded from automated test runs. Steve's Milestone 1 manual acceptance supplied that evidence.
-- The silent Windows speech check in Codex's non-interactive execution context returned `Internal Speech Error` before WinRT voice enumeration. System registration shows Microsoft David, Mark, and Zira OneCore voices, plus David Desktop and Zira Desktop. The Milestone 2 test safely refuses control unless the speech API works and selects a usable default voice in Steve's normal desktop session.
 - PowerShell may cosmetically display Cyrillic metadata as question marks. The UTF-8 logs preserve the original Unicode, and the announcement sentence is built directly from the in-memory Unicode title and artist.
+- The current en-US Microsoft David voice speaks the English parts of an announcement but may skip Cyrillic title and artist text. Multilingual TTS remains outside Milestone 3.
 
 ## Important decisions and evidence
 

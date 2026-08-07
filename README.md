@@ -1,6 +1,6 @@
 # Zoya Radio
 
-Milestones 0 and 1 have passed Steve's manual tests. The repository now also contains the explicit Milestone 2 local Windows spoken-announcement test, which is awaiting Steve's manual acceptance.
+Milestones 0, 1, and 2 have passed Steve's manual tests. Milestone 3 local-AI work has not started at this checkpoint.
 
 The original media probe is **read only**. It lists and watches Windows media sessions, but it cannot pause, play, skip, change volume, or otherwise control playback. It does not inspect Firefox, webpage content, URLs, cookies, history, or Google account information.
 
