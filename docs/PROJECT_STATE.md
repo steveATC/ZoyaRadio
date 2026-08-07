@@ -2,22 +2,23 @@
 
 ## Current milestone
 
-**Milestone 0 - Windows media-session / Firefox track detection**
-
-Implementation status: built successfully and ready for Steve's manual acceptance test.
-
-**Milestone 0 is NOT MANUALLY VERIFIED.** Do not label it successful until Steve tests Firefox playing YouTube Music on this machine.
+Milestone 0 is complete. Milestone 1 has not started at this checkpoint.
 
 ## Completed milestones
 
-None. Milestone 0 remains open pending the manual Firefox and YouTube Music test.
+**Milestone 0 - PASSED manual acceptance on Steve's Windows PC.**
+
+- Firefox exposed the intended session as `firefox.exe`.
+- YouTube Music title, artist, Playing/Paused state, and live track changes were detected correctly.
+- Album was consistently unavailable and remains optional; it must never be guessed.
+- Repeated unchanged `MediaPropertiesChanged` events did not create duplicate `TRACK CHANGED` reports.
+- The read-only probe shut down cleanly and issued no playback controls.
 
 ## Known issues and limits
 
-- Automated tests cannot prove that Firefox and YouTube Music publish correct metadata on Steve's interactive Windows desktop.
 - Windows or Firefox may omit album information. The probe displays `<not provided>` and does not treat that as an error.
 - Windows may expose zero sessions when no compatible media is active. The probe reports that without crashing.
-- The automated `--once` run under the non-interactive Codex sandbox account was denied access to the Windows media-session manager. It exited cleanly with a readable warning and code 1. Steve's normal signed-in desktop test is required to determine whether this is only a sandbox restriction.
+- The automated `--once` run under the non-interactive Codex sandbox account was denied access to the Windows media-session manager. Steve's manual test confirmed the normal signed-in desktop account works correctly.
 
 ## Important decisions and evidence
 
