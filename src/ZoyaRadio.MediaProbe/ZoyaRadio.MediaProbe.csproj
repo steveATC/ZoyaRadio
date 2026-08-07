@@ -9,4 +9,7 @@
     <AssemblyName>ZoyaRadio.MediaProbe</AssemblyName>
     <RootNamespace>ZoyaRadio.MediaProbe</RootNamespace>
   </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="ZoyaRadio.MediaProbe.Tests" />
+  </ItemGroup>
 </Project>

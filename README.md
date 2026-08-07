@@ -1,8 +1,8 @@
 # Zoya Radio
 
-Zoya Radio is currently at **Milestone 0 only**. This repository contains a small Windows console probe that checks what media information Firefox exposes to Windows while YouTube Music is playing.
+Milestone 0 has passed Steve's manual test. The repository now also contains the explicit Milestone 1 Firefox pause/resume test harness, which is ready for manual testing but has not yet passed.
 
-The probe is **read only**. It lists and watches Windows media sessions, but it cannot pause, play, skip, change volume, or otherwise control playback. It does not inspect Firefox, webpage content, URLs, cookies, history, or Google account information.
+The original media probe is **read only**. It lists and watches Windows media sessions, but it cannot pause, play, skip, change volume, or otherwise control playback. It does not inspect Firefox, webpage content, URLs, cookies, history, or Google account information.
 
 ## Run the watcher
 
@@ -29,9 +29,19 @@ Use this shorter check when you only want to list the sessions that exist right 
 
 ## Logs
 
-Each run creates a timestamped text file in the repository's `logs` folder. The console and log contain the same useful diagnostics. These files remain on this computer, are excluded from Git, and may be deleted whenever they are no longer needed.
+Each run creates a timestamped text file in the repository's `logs` folder. Read-only runs use `media-probe-*.txt`; control-test runs use `playback-control-test-*.txt`. The console and log contain the same useful diagnostics. These files remain on this computer, are excluded from Git, and may be deleted whenever they are no longer needed.
 
-For Steve's Firefox and YouTube Music acceptance test, follow [docs/MILESTONE_0_TEST.md](docs/MILESTONE_0_TEST.md).
+The completed Milestone 0 procedure is preserved in [docs/MILESTONE_0_TEST.md](docs/MILESTONE_0_TEST.md).
+
+## Run the explicit playback-control test
+
+This is separate from the read-only probe. It lists every Windows media session, refuses zero or multiple `firefox.exe` matches, requires Firefox to already be Playing, and asks for confirmation before issuing any control request.
+
+```powershell
+.\run-playback-control-test.cmd
+```
+
+Only an explicit `y` or `yes` confirms the test; Enter and every other answer mean no. If confirmed, the tester requests pause on the one selected Firefox session, verifies Paused, waits about three seconds, then requests and verifies Playing on that same session. Follow [docs/MILESTONE_1_TEST.md](docs/MILESTONE_1_TEST.md) for the complete acceptance test.
 
 ## Developer build
 
@@ -41,6 +51,7 @@ From the repository root:
 
 ```powershell
 .\.dotnet\dotnet.exe build .\src\ZoyaRadio.MediaProbe\ZoyaRadio.MediaProbe.csproj --configuration Release
+.\.dotnet\dotnet.exe run --project .\tests\ZoyaRadio.MediaProbe.Tests\ZoyaRadio.MediaProbe.Tests.csproj --configuration Release
 ```
 
 The project uses Microsoft's supported [`Windows.Media.Control`](https://learn.microsoft.com/en-us/uwp/api/windows.media.control.globalsystemmediatransportcontrolssessionmanager) APIs. It has no third-party runtime dependencies.

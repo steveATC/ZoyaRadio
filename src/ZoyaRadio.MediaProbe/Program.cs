@@ -7,6 +7,7 @@ internal static class Program
     private static async Task<int> Main(string[] args)
     {
         bool once = false;
+        bool controlTest = false;
 
         foreach (string argument in args)
         {
@@ -16,8 +17,21 @@ internal static class Program
                 continue;
             }
 
+            if (string.Equals(argument, "--control-test", StringComparison.OrdinalIgnoreCase))
+            {
+                controlTest = true;
+                continue;
+            }
+
             Console.Error.WriteLine($"Unknown option: {argument}");
-            Console.Error.WriteLine("Usage: run-media-probe.cmd [--once]");
+            WriteUsage();
+            return 2;
+        }
+
+        if (once && controlTest)
+        {
+            Console.Error.WriteLine("The --once and --control-test options cannot be combined.");
+            WriteUsage();
             return 2;
         }
 
@@ -25,7 +39,7 @@ internal static class Program
 
         try
         {
-            log = LocalLog.Create();
+            log = LocalLog.Create(controlTest ? "playback-control-test" : "media-probe");
         }
         catch (Exception exception)
         {
@@ -35,9 +49,18 @@ internal static class Program
 
         using (log)
         {
-            log.Write("ZOYA RADIO - MILESTONE 0 MEDIA-SESSION PROBE");
-            log.Write("READ ONLY: this probe observes Windows media sessions and will not control playback.");
-            log.Write($"Mode: {(once ? "one-time snapshot" : "watch for changes")}");
+            if (controlTest)
+            {
+                log.Write("ZOYA RADIO - MILESTONE 1 EXPLICIT PLAYBACK-CONTROL TEST");
+                log.Write("This test can pause and resume exactly one firefox.exe session, but only after confirmation.");
+            }
+            else
+            {
+                log.Write("ZOYA RADIO - MILESTONE 0 MEDIA-SESSION PROBE");
+                log.Write("READ ONLY: this probe observes Windows media sessions and will not control playback.");
+                log.Write($"Mode: {(once ? "one-time snapshot" : "watch for changes")}");
+            }
+
             log.Write($"Local log: {log.FilePath}");
 
             GlobalSystemMediaTransportControlsSessionManager manager;
@@ -60,6 +83,28 @@ internal static class Program
                 }
 
                 return 1;
+            }
+
+            if (controlTest)
+            {
+                using var controlCancellation = new CancellationTokenSource();
+                ConsoleCancelEventHandler controlCancelHandler = (_, eventArgs) =>
+                {
+                    eventArgs.Cancel = true;
+                    controlCancellation.Cancel();
+                };
+
+                Console.CancelKeyPress += controlCancelHandler;
+
+                try
+                {
+                    var test = new PlaybackControlTest(manager, log);
+                    return await test.RunAsync(controlCancellation.Token);
+                }
+                finally
+                {
+                    Console.CancelKeyPress -= controlCancelHandler;
+                }
             }
 
             await using var watcher = new MediaSessionWatcher(manager, log);
@@ -102,5 +147,11 @@ internal static class Program
             log.Write("Stopped cleanly. No playback controls were used.");
             return 0;
         }
+    }
+
+    private static void WriteUsage()
+    {
+        Console.Error.WriteLine("Usage: run-media-probe.cmd [--once]");
+        Console.Error.WriteLine("   or: run-playback-control-test.cmd");
     }
 }

@@ -17,14 +17,14 @@ internal sealed class LocalLog : IDisposable
 
     public string FilePath { get; }
 
-    public static LocalLog Create()
+    public static LocalLog Create(string filePrefix = "media-probe")
     {
         string repositoryRoot = FindRepositoryRoot();
         string logDirectory = Path.Combine(repositoryRoot, "logs");
         Directory.CreateDirectory(logDirectory);
 
         string timestamp = DateTimeOffset.Now.ToString("yyyyMMdd-HHmmss-fff", CultureInfo.InvariantCulture);
-        string filePath = Path.Combine(logDirectory, $"media-probe-{timestamp}.txt");
+        string filePath = Path.Combine(logDirectory, $"{filePrefix}-{timestamp}.txt");
         var writer = new StreamWriter(filePath, append: false, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false))
         {
             AutoFlush = true,
@@ -45,8 +45,23 @@ internal sealed class LocalLog : IDisposable
                 return;
             }
 
-            Console.WriteLine(line);
-            _writer.WriteLine(line);
+            try
+            {
+                Console.WriteLine(line);
+            }
+            catch
+            {
+                // Playback recovery must not be blocked by a closed or unavailable console.
+            }
+
+            try
+            {
+                _writer.WriteLine(line);
+            }
+            catch
+            {
+                // Playback recovery must not be blocked by a local log write failure.
+            }
         }
     }
 
@@ -86,7 +101,15 @@ internal sealed class LocalLog : IDisposable
             }
 
             _disposed = true;
-            _writer.Dispose();
+
+            try
+            {
+                _writer.Dispose();
+            }
+            catch
+            {
+                // Disposal happens after useful work and should not turn a clean shutdown into a crash.
+            }
         }
     }
 }
