@@ -1,6 +1,6 @@
 # Zoya Radio
 
-Milestones 0 through 5 and Milestone 7 have passed Steve's manual tests. Milestone 6 is deliberately deferred. Milestone 7.5A is the current Phase-1 safety gate and is awaiting Steve's manual Firefox audio-ducking test; Milestone 8 follows the complete Milestone 7.5 transition work.
+Milestones 0 through 5, Milestone 7, and Milestone 7.5A have passed Steve's manual tests. Milestone 6 is deliberately deferred. Milestone 7.5B transition delivery is implemented and awaiting Steve's manual acceptance. Milestone 8 has not started.
 
 The original media probe is **read only**. It lists and watches Windows media sessions, but it cannot pause, play, skip, change volume, or otherwise control playback. It does not inspect Firefox, webpage content, URLs, cookies, history, or Google account information.
 
@@ -88,9 +88,11 @@ The test shows the final text before asking permission. Only `y` or `yes` allows
 
 Generate-only and measurement modes never speak or control playback. No-AI mode makes no Ollama request. Zoya's and Steve's names are defined in `HostPersonaConfiguration.cs`; her editable text persona is in `Prompts/Milestone4HostPersonaPrompt.txt`. Follow [docs/MILESTONE_4_TEST.md](docs/MILESTONE_4_TEST.md) for the personality review. The completed Milestone 3 procedure remains in [docs/MILESTONE_3_TEST.md](docs/MILESTONE_3_TEST.md).
 
-## Run the automatic radio-behavior test
+## Run the transition-aware automatic radio test
 
-Milestone 5 watches genuine deduplicated Firefox track changes and schedules one automatic comment after a new random interval of 2-5 transitions. It asks once before arming and defaults to **NO**. It never treats launching the program as permission to control playback. The small validated defaults are collected in `RadioBehaviorConfiguration.cs`.
+Milestone 7.5B watches genuine deduplicated Firefox track changes and schedules one automatic comment at a new random interval of 2-5 transitions. One transition before delivery, it prepares a comment about Track A and synthesizes Nicole's audio while Track A keeps playing. When Track B appears, a valid prepared comment has a strict two-second window to begin: Firefox is smoothly ducked to 25% of its current application-session volume, Nicole speaks over the still-playing music, and the exact volume/mute state captured at delivery time is restored.
+
+The test asks once before arming and defaults to **NO**. Normal automatic delivery does **not** pause or resume Firefox. Unsafe, unfinished, stale, late, ambiguous, or rapidly skipped opportunities produce silence instead of a catch-up comment.
 
 ```powershell
 .\run-radio-behavior-test.cmd
@@ -102,7 +104,7 @@ While armed:
 - press **C** to clear the small in-memory recent-track/comment history;
 - press **Ctrl+C** to stop safely.
 
-The current track must be at least eight seconds old before Zoya may pause it. AI generation and Nicole's neural speech preparation both happen while music remains Playing. Immediately before pause, the program rechecks that exactly the original `firefox.exe` session, expected track, Playing state, age guard, armed state, and Silent Mode are all safe. A changed track cancels the pending interruption instead of creating catch-up chatter.
+Track A must be at least eight seconds old before preparation begins. Immediately before delivery, the program rechecks the original `firefox.exe` media session, current Track B and Playing state, the two-second window, and the active Firefox Core Audio target. The volume captured then is the value protected restoration owns—even if Steve changed Firefox's mixer volume during Track A.
 
 Recent behavioral history is deliberately temporary: at most 10 tracks and 6 accepted AI comments, discarded when the application closes. Diagnostic text logs are separate and are not deleted by **C**.
 
@@ -112,7 +114,13 @@ The zero-GPU automatic mode keeps the same 2-5 scheduling and fixed announcement
 .\run-radio-behavior-test.cmd --no-ai
 ```
 
-The completed Milestone 5 procedure is preserved in [docs/MILESTONE_5_TEST.md](docs/MILESTONE_5_TEST.md).
+The deliberate first-delivery recovery check is:
+
+```powershell
+.\run-radio-behavior-test.cmd --simulate-transition-failure
+```
+
+It deliberately fails after Firefox is ducked and must still restore the captured volume. Follow [docs/MILESTONE_7_5B_TEST.md](docs/MILESTONE_7_5B_TEST.md) for the current manual acceptance procedure. The completed Milestone 5 procedure remains preserved in [docs/MILESTONE_5_TEST.md](docs/MILESTONE_5_TEST.md).
 
 ## Milestone 7 local neural voice
 
@@ -134,7 +142,7 @@ The approved model and packages are project-local, require no administrator acce
 
 ## Run the isolated Firefox audio-ducking test
 
-Milestone 7.5A is a separate diagnostic. It uses Windows Core Audio to enumerate the current default output device's application sessions and considers only **active**, exact `firefox`/`firefox.exe` process matches. It refuses zero or multiple active Firefox candidates and never guesses at a browser tab.
+Milestone 7.5A passed Steve's manual acceptance and remains available as a separate diagnostic. It uses Windows Core Audio to enumerate the current default output device's application sessions and considers only **active**, exact `firefox`/`firefox.exe` process matches. It refuses zero or multiple active Firefox candidates and never guesses at a browser tab.
 
 Start with the completely read-only inventory:
 
@@ -156,7 +164,7 @@ The deliberate restoration check is:
 .\run-audio-ducking-test.cmd --simulate-duck-failure
 ```
 
-Follow [docs/MILESTONE_7_5A_TEST.md](docs/MILESTONE_7_5A_TEST.md) before running either volume-changing mode. M7.5A is not passed until Steve confirms Firefox-only ducking, unrelated-audio isolation, exact restoration, Ctrl+C recovery, and simulated-failure recovery.
+The preserved procedure and accepted observations are in [docs/MILESTONE_7_5A_TEST.md](docs/MILESTONE_7_5A_TEST.md). Windows aggregates multiple audible Firefox tabs into the same application session on Steve's PC, so they duck together; this application-level behavior is accepted for Phase 1.
 
 ## Developer build
 

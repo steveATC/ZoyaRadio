@@ -2,23 +2,20 @@
 
 ## Current milestone
 
-**Milestone 7.5A - isolated Firefox per-session audio ducking**
+**Milestone 7.5B - transition-aware automatic delivery**
 
-Implementation is **READY FOR STEVE'S MANUAL ACCEPTANCE**, but neither Milestone 7.5A nor the complete Milestone 7.5 transition is passed yet.
+Implementation is **READY FOR STEVE'S MANUAL ACCEPTANCE**. Milestone 7.5A passed; the complete Milestone 7.5 is not passed until Steve completes the real transition tests. Milestone 8 has not started.
 
-- Milestone 6 remains deliberately deferred. Milestone 7 passed Steve's manual acceptance. Milestone 7.5 is the current Phase-1 gate; Milestone 8 follows it and is the Phase-1 usable-MVP completion gate.
-- The dedicated `run-audio-ducking-test.cmd` probe is not integrated into automatic radio behavior. It performs no AI generation, speech, media pause, or media resume.
-- The implementation uses Windows Core Audio `IAudioSessionManager2`, `IAudioSessionEnumerator`, `IAudioSessionControl2`, and `ISimpleAudioVolume` directly. No new dependency was added.
-- It enumerates sessions on the default multimedia render endpoint, logs a short hash tag instead of raw session/device identifiers, and reads process ID, process name, activity, per-session scalar, and mute state.
-- Only active sessions whose process name is exactly `firefox` or `firefox.exe`, case-insensitively, are candidates. Zero candidates cause a safe refusal; multiple active candidates are explicitly ambiguous and cause a safe refusal.
-- Exactly one candidate still requires an explicit **Y**. Read-only enumeration, Enter/default NO, muted Firefox, volume below 5%, an inactive/expired session, or unreadable volume state issues no volume command.
-- The fixed diagnostic target is 25% of the exact captured starting scalar, not 25% absolute. A 60% starting value therefore ducks to 15% and restores to exactly 60%.
-- Ducking and restoration use ten 60 ms scalar steps. The audible hold is about three seconds. The captured mute state is restored as well.
-- Protected cleanup retains the original session object and attempts exact restoration after normal completion, Ctrl+C, a simulated failure, or another exception. It never re-enumerates or redirects restoration to another session.
-- If the original session disappears, the probe warns Steve to restore Firefox manually and does not guess at a replacement.
-- A safe live `--enumerate-only` run found three sessions on Steve's default output: one active `firefox.exe` candidate at 100% and unmuted, inactive Steam at 17.7%, and one inactive system/unidentified session. It issued no volume command.
-- Automated verification currently reports 91 passed and 0 failed. No automated run changed real volume or playback.
-- M7.5B transition integration and Milestone 8 were not started.
+- The existing 2-5-transition schedule now creates one Track-A preparation opportunity one genuine transition before delivery is due.
+- Once Track A is at least eight seconds old, local AI generation and Nicole/Windows-fallback speech preparation occur while Firefox remains Playing. Only one prepared opportunity is held in memory.
+- At the genuine Track A -> Track B event, delivery revalidates the same `firefox.exe` GSMTC session, Track B, Playing state, pending opportunity, Silent Mode, and a strict two-second delivery window.
+- Delivery re-enumerates the current Core Audio sessions and applies Milestone 7.5A's exact active Firefox selection rules. Zero or multiple active Firefox audio candidates cause silence.
+- The current Firefox application-session scalar and mute state are captured immediately before ducking. The target remains 25% of that captured scalar, and protected cleanup restores the exact captured values on success, cancellation, speech failure, simulated failure, stale state discovered after duck, or another exception.
+- Normal automatic delivery uses no GSMTC pause/resume command. The proven pause/resume implementation remains available only to earlier explicit diagnostic paths.
+- If preparation misses the transition, Track B changes again, the delivery window expires, Silent Mode activates, or any safety check fails, the material is discarded with no late catch-up comment.
+- `--no-ai` still bypasses Ollama. Qwen unloading, Nicole's CPU-only preparation/disposal, Windows TTS fallback, Unicode metadata, and the 25-second speech bound are unchanged.
+- `--simulate-transition-failure` deliberately fails the first scheduled delivery after duck verification and exercises the real exact-volume restoration path.
+- Automated verification reports 114 passed and 0 failed. All tests use fakes for automatic delivery; no automated run produced sound, changed real volume, or controlled playback.
 
 ## Completed milestones
 
@@ -76,6 +73,15 @@ Implementation is **READY FOR STEVE'S MANUAL ACCEPTANCE**, but neither Milestone
 - Steve described the Cyrillic sample as natural-sounding but did not claim verified Russian pronunciation.
 - The application keeps Windows TTS as fallback, prepares neural audio while Firefox plays, disposes the CPU model before pause, and retains protected same-session resume behavior.
 
+**Milestone 7.5A - PASSED manual acceptance on Steve's Windows PC.**
+
+- The active Firefox Core Audio application session was identified, smoothly ducked to 25% of its captured scalar, and restored exactly.
+- A 50.0% starting Firefox volume ducked to 12.5% and returned to 50.0%.
+- Normal, Ctrl+C, and simulated-failure restoration passed; the ramp sounded natural to Steve.
+- Chrome, unrelated application audio, and Windows master volume were unaffected.
+- Windows aggregates multiple audible Firefox tabs on Steve's PC, so they duck together. This application-level isolation is accepted for Phase 1; tab-level isolation is not required.
+- YouTube Music's in-page volume control is a separate gain stage and remains untouched.
+
 ## Known issues and limits
 
 - Windows or Firefox may omit album information. The probe displays `<not provided>` and does not treat that as an error.
@@ -93,6 +99,8 @@ Implementation is **READY FOR STEVE'S MANUAL ACCEPTANCE**, but neither Milestone
 - Natural track endings and manual skips are indistinguishable with the current metadata. M5 calls both a track transition and never claims the previous track finished naturally.
 - Dramatic genre/style-change detection is intentionally deferred; inferring it from title, artist name, or model memory would violate grounding.
 - Steve's performance run measured 4.262 seconds wall-clock, 2.191 seconds Ollama total duration, 1.999 seconds model load, 2.68 GiB loaded size/VRAM, and context length 2048. The selected-model unload verification passed. These are measurements from that run, not estimates.
+- Core Audio isolation is application-level on Steve's PC. Multiple audible Firefox tabs duck together; this is accepted for Phase 1 and is not a Milestone 7.5B defect.
+- The two-second transition window is intentionally conservative. Slow or busy-machine opportunities may be abandoned; silence is preferred to a late interruption.
 
 ## Important decisions and evidence
 
@@ -125,7 +133,7 @@ Implementation is **READY FOR STEVE'S MANUAL ACCEPTANCE**, but neither Milestone
 - `NeuralSpeechConfiguration.Default` selects `af_nicole`, 24 kHz mono output, normal speed, a 20-second preparation timeout, and the repository-local model. Changing the voice later is a single readable configuration edit.
 - Each neural preparation explicitly loads the FP32 model from disk, performs CPU inference, validates nonempty finite audio, encodes a WAV in memory, and disposes the model before any pause request. Cancellation waits for in-flight CPU inference to finish safely and discards the result.
 - `--windows-tts` bypasses neural initialization. `--simulate-neural-tts-failure` safely exercises Windows fallback, and `--measure-neural-tts` prepares three comments without sound or media control.
-- Automatic radio ordering is comment generation, Ollama unload, neural preparation, minimum-age wait if needed, final safety recheck, targeted pause, prepared playback, and protected same-session resume.
+- Milestone 5 originally used comment generation, Ollama unload, neural preparation, final safety recheck, targeted pause, prepared playback, and protected same-session resume. Milestone 7.5B replaces only the normal automatic presentation with one-transition-ahead preparation followed by ducked speech over still-playing Track B; earlier explicit pause/resume diagnostics remain intact.
 - The model is stored at ignored `.tools/kokoro/kokoro.onnx`: 325,532,387 bytes (310.5 MiB), SHA-256 `7D5DF8ECF7D4B1878015A32686053FD0EEBE2BC377234608764CC0EF3636A6C5`.
 - The restored package closure occupies about 559.69 MiB in the ignored NuGet cache; the model, package cache, and one built application output require about 1.20 GiB, with additional ignored audition build output if both projects are built.
 - KokoroSharp is MIT licensed; the Kokoro model and voices are Apache-2.0; the bundled eSpeak NG phonemization component is GPLv3. Distribution remains a later review, not part of this private audition.
@@ -134,3 +142,8 @@ Implementation is **READY FOR STEVE'S MANUAL ACCEPTANCE**, but neither Milestone
 - Build tooling is project-local: Microsoft .NET SDK 8.0.423 and Microsoft's `Microsoft.Windows.SDK.NET.Ref` targeting pack. Neither requires administrator privileges.
 - Milestone 7.5A follows Microsoft's documented Core Audio route: `IMMDeviceEnumerator::GetDefaultAudioEndpoint` for the default multimedia render device, `IAudioSessionManager2::GetSessionEnumerator` to list its sessions, `IAudioSessionControl2::GetProcessId` for process association, and `ISimpleAudioVolume` for that session's scalar/mute only. It never calls endpoint/master-volume APIs.
 - Microsoft documentation used for the decision: `https://learn.microsoft.com/windows/win32/api/audiopolicy/nn-audiopolicy-iaudiosessionenumerator`, `https://learn.microsoft.com/windows/win32/api/audiopolicy/nf-audiopolicy-iaudiosessioncontrol2-getprocessid`, and `https://learn.microsoft.com/windows/win32/coreaudio/session-volume-controls`.
+- Milestone 7.5A manual acceptance proved a 50.0% Firefox session ducks proportionally to 12.5%, restores exactly, leaves Chrome and master volume untouched, and recovers after cancellation or simulated failure. Its ten-step 600 ms ramp and 25% ratio are reused unchanged.
+- Milestone 7.5B changes only the normal automatic presentation path: preparation is scheduled one transition ahead, Track-A AI and Nicole audio are completed before Track B, and prepared speech begins only within two seconds after the Track A -> Track B event.
+- `TransitionRadioPipeline` separates preparation from delivery. `RadioBehaviorState.MarkPreparationReady` makes readiness atomic with scheduling, so a transition arriving before completed preparation discards the opportunity rather than allowing a late race.
+- `WindowsTransitionAudioDucker` re-enumerates the delivery-time Core Audio sessions, requires exactly one active exact Firefox process match, then runs speech inside `AudioDuckingSequence`'s protected restoration scope. It never selects Chrome or manipulates endpoint/master volume.
+- Track B changing while speech is active cancels the same opportunity; the speech cancellation flows through protected restoration before cleanup. Failed, late, unsafe, and rapid-skip opportunities are intentionally logged as abandoned rather than queued.

@@ -2,12 +2,14 @@ using Windows.Media.Control;
 
 namespace ZoyaRadio.MediaProbe;
 
-internal sealed class WindowsRadioOpportunityHost : IRadioOpportunityHost
+internal sealed class WindowsRadioOpportunityHost : IRadioOpportunityHost, ITransitionRadioHost
 {
     private readonly Func<GlobalSystemMediaTransportControlsSession?> _selectedSessionProvider;
     private readonly Func<RadioRuntimeState> _runtimeStateProvider;
     private readonly RadioSessionAccess _sessionAccess;
     private readonly IAnnouncementSpeechService _speechService;
+    private readonly IRadioClock _clock;
+    private readonly ITransitionAudioDucker _transitionDucker;
     private readonly IAnnouncementLog _log;
 
     public WindowsRadioOpportunityHost(
@@ -15,12 +17,16 @@ internal sealed class WindowsRadioOpportunityHost : IRadioOpportunityHost
         Func<RadioRuntimeState> runtimeStateProvider,
         RadioSessionAccess sessionAccess,
         IAnnouncementSpeechService speechService,
+        IRadioClock clock,
+        ITransitionAudioDucker transitionDucker,
         IAnnouncementLog log)
     {
         _selectedSessionProvider = selectedSessionProvider;
         _runtimeStateProvider = runtimeStateProvider;
         _sessionAccess = sessionAccess;
         _speechService = speechService;
+        _clock = clock;
+        _transitionDucker = transitionDucker;
         _log = log;
     }
 
@@ -84,6 +90,73 @@ internal sealed class WindowsRadioOpportunityHost : IRadioOpportunityHost
             target,
             preparedSpeech,
             simulateSpeechFailure: false,
+            cancellationToken);
+    }
+
+    public async Task<TransitionDuckingResult> RunDuckedAnnouncementAsync(
+        RadioTransitionDelivery transition,
+        IPreparedAnnouncementSpeech preparedSpeech,
+        TimeSpan maximumSpeechDuration,
+        DateTimeOffset speechStartDeadline,
+        bool simulatePostDuckFailure,
+        CancellationToken cancellationToken)
+    {
+        if (_clock.Now > speechStartDeadline)
+        {
+            return new TransitionDuckingResult(
+                TransitionDuckingStatus.Refused,
+                "the transition delivery window expired before Core Audio targeting began",
+                null);
+        }
+
+        return await _transitionDucker.RunAsync(
+            async actionCancellationToken =>
+            {
+                RadioOpportunitySnapshot finalSnapshot = await ReadSnapshotAsync(
+                    transition.OpportunityId,
+                    actionCancellationToken);
+                TimeSpan deliveryWindow = speechStartDeadline - transition.TransitionObservedAt;
+                RadioSafetyDecision finalSafety = TransitionDeliverySafety.Evaluate(
+                    transition,
+                    finalSnapshot,
+                    _clock.Now,
+                    deliveryWindow);
+
+                if (!finalSafety.CanProceed)
+                {
+                    throw new InvalidOperationException(
+                        $"Prepared speech became stale after ducking: {finalSafety.Reason}.");
+                }
+
+                if (_clock.Now > speechStartDeadline)
+                {
+                    throw new InvalidOperationException(
+                        "Prepared speech could not begin inside the transition delivery window.");
+                }
+
+                _log.Write($"SPEECH STARTED: {_clock.Now:O}");
+                SpeechPlaybackResult speech = await preparedSpeech.SpeakAsync(
+                    maximumSpeechDuration,
+                    actionCancellationToken);
+
+                switch (speech.Status)
+                {
+                    case SpeechPlaybackStatus.Completed:
+                        _log.Write($"SPEECH COMPLETED: {_clock.Now:O}");
+                        return;
+                    case SpeechPlaybackStatus.Cancelled:
+                        _log.Write("SPEECH CANCELLED: protected exact-volume restoration is running.");
+                        throw new OperationCanceledException(actionCancellationToken);
+                    case SpeechPlaybackStatus.TimedOut:
+                        _log.Write("SPEECH TIMEOUT: protected exact-volume restoration is running.");
+                        throw new InvalidOperationException("Prepared speech exceeded its bounded duration.");
+                    default:
+                        _log.Write("SPEECH FAILED: protected exact-volume restoration is running.");
+                        throw new InvalidOperationException(
+                            speech.ErrorMessage ?? "Prepared speech playback failed.");
+                }
+            },
+            simulatePostDuckFailure,
             cancellationToken);
     }
 }

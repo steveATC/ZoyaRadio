@@ -67,6 +67,20 @@ internal sealed class AiCommentService
             cancellationToken);
     }
 
+    public async Task<CommentSelection> SelectPreparedTransitionCommentAsync(
+        RadioPreparationContext context,
+        bool aiEnabled,
+        CancellationToken cancellationToken)
+    {
+        return await SelectCommentCoreAsync(
+            context.SubjectTrack,
+            () => CommentPromptFactory.CreateForPreparedTransition(context, _persona),
+            context.RecentAcceptedAiComments,
+            aiEnabled,
+            simulateAiFailure: false,
+            cancellationToken);
+    }
+
     private async Task<CommentSelection> SelectCommentCoreAsync(
         MediaSnapshot fallbackMedia,
         Func<CommentPrompt> promptFactory,

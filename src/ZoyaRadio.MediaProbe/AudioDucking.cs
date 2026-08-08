@@ -207,6 +207,34 @@ internal sealed class AudioDuckingSequence
         bool simulateFailure,
         CancellationToken cancellationToken)
     {
+        return await RunCoreAsync(
+            target,
+            simulateFailure,
+            async actionCancellationToken =>
+            {
+                _log.Write(
+                    $"DUCK HOLD: approximately {_configuration.HoldDuration.TotalSeconds:0.#} seconds. Firefox remains Playing.");
+                await Task.Delay(_configuration.HoldDuration, actionCancellationToken);
+            },
+            cancellationToken);
+    }
+
+    public async Task<AudioDuckingResult> RunWithProtectedActionAsync(
+        IAudioSessionVolumeTarget target,
+        Func<CancellationToken, Task> protectedAction,
+        bool simulateFailure,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(protectedAction);
+        return await RunCoreAsync(target, simulateFailure, protectedAction, cancellationToken);
+    }
+
+    private async Task<AudioDuckingResult> RunCoreAsync(
+        IAudioSessionVolumeTarget target,
+        bool simulateFailure,
+        Func<CancellationToken, Task> protectedAction,
+        CancellationToken cancellationToken)
+    {
         AudioSessionVolumeState captured = target.ReadState();
         string? unsuitableReason = AudioDuckingSafety.GetUnsuitableReason(captured, _configuration);
 
@@ -265,8 +293,7 @@ internal sealed class AudioDuckingSequence
                 throw new SimulatedAudioDuckingException();
             }
 
-            _log.Write($"DUCK HOLD: approximately {_configuration.HoldDuration.TotalSeconds:0.#} seconds. Firefox remains Playing.");
-            await Task.Delay(_configuration.HoldDuration, cancellationToken);
+            await protectedAction(cancellationToken);
         }
         catch (OperationCanceledException)
         {

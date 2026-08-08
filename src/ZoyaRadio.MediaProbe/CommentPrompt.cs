@@ -74,6 +74,36 @@ internal static class CommentPromptFactory
             "from recentAcceptedComments. Write the comment now.");
     }
 
+    public static CommentPrompt CreateForPreparedTransition(
+        RadioPreparationContext context,
+        HostPersonaConfiguration persona)
+    {
+        if (context.SubjectTrack.Title is null || context.SubjectTrack.Artist is null)
+        {
+            throw new ArgumentException(
+                "Track-A title and artist metadata are required for transition preparation.",
+                nameof(context));
+        }
+
+        persona.Validate();
+
+        string contextJson = JsonSerializer.Serialize(new
+        {
+            title = context.SubjectTrack.Title,
+            artist = context.SubjectTrack.Artist,
+            trustedListeningObservations = context.TrustedListeningObservations,
+            recentAcceptedComments = context.RecentAcceptedAiComments,
+        });
+
+        return new CommentPrompt(
+            RenderSystemInstruction(persona),
+            "Prepared Track-A context JSON: " + contextJson + "\n" +
+            "Comment only on the supplied Track-A title and artist. No future Track B is known. " +
+            "Use trustedListeningObservations only as explicitly supplied facts. " +
+            "Avoid repeating the opening, joke structure, distinctive metaphor, or unusually similar wording " +
+            "from recentAcceptedComments. Write the comment now.");
+    }
+
     private static string RenderSystemInstruction(HostPersonaConfiguration persona)
     {
         string rendered = SystemInstructionTemplate.Value

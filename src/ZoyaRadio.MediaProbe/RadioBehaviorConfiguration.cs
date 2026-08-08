@@ -4,6 +4,7 @@ internal sealed record RadioBehaviorConfiguration(
     int MinimumTransitionsBetweenComments,
     int MaximumTransitionsBetweenComments,
     TimeSpan MinimumTrackAgeBeforeSpeech,
+    TimeSpan TransitionDeliveryWindow,
     TimeSpan MaximumSpeechDuration,
     int RecentTrackLimit,
     int RecentCommentLimit)
@@ -12,16 +13,17 @@ internal sealed record RadioBehaviorConfiguration(
         MinimumTransitionsBetweenComments: 2,
         MaximumTransitionsBetweenComments: 5,
         MinimumTrackAgeBeforeSpeech: TimeSpan.FromSeconds(8),
+        TransitionDeliveryWindow: TimeSpan.FromSeconds(2),
         MaximumSpeechDuration: TimeSpan.FromSeconds(25),
         RecentTrackLimit: 10,
         RecentCommentLimit: 6);
 
     public void Validate()
     {
-        if (MinimumTransitionsBetweenComments is < 1 or > 50)
+        if (MinimumTransitionsBetweenComments is < 2 or > 50)
         {
             throw new InvalidOperationException(
-                "MinimumTransitionsBetweenComments must be between 1 and 50.");
+                "MinimumTransitionsBetweenComments must be between 2 and 50 so preparation can begin one transition ahead.");
         }
 
         if (MaximumTransitionsBetweenComments < MinimumTransitionsBetweenComments
@@ -36,6 +38,13 @@ internal sealed record RadioBehaviorConfiguration(
         {
             throw new InvalidOperationException(
                 "MinimumTrackAgeBeforeSpeech must be greater than zero and no more than 5 minutes.");
+        }
+
+        if (TransitionDeliveryWindow <= TimeSpan.Zero
+            || TransitionDeliveryWindow > TimeSpan.FromSeconds(10))
+        {
+            throw new InvalidOperationException(
+                "TransitionDeliveryWindow must be greater than zero and no more than 10 seconds.");
         }
 
         if (MaximumSpeechDuration <= TimeSpan.Zero

@@ -9,6 +9,20 @@ internal sealed record RadioCommentContext(
 
 internal sealed record RadioCommentOpportunity(long Id, RadioCommentContext Context);
 
+internal sealed record RadioPreparationContext(
+    MediaSnapshot SubjectTrack,
+    DateTimeOffset SubjectTrackStartedAt,
+    IReadOnlyList<string> TrustedListeningObservations,
+    IReadOnlyList<string> RecentAcceptedAiComments);
+
+internal sealed record RadioPreparationOpportunity(long Id, RadioPreparationContext Context);
+
+internal sealed record RadioTransitionDelivery(
+    long OpportunityId,
+    MediaSnapshot CommentedTrack,
+    MediaSnapshot NewTrack,
+    DateTimeOffset TransitionObservedAt);
+
 internal enum RadioTrackObservationKind
 {
     Duplicate,
@@ -24,7 +38,9 @@ internal sealed record RadioTrackObservation(
     int ScheduledThreshold,
     int TotalObservedTransitions,
     bool PendingOpportunityInvalidated,
-    RadioCommentOpportunity? Opportunity,
+    bool PreparationMissedTransition,
+    RadioPreparationOpportunity? PreparationOpportunity,
+    RadioTransitionDelivery? Delivery,
     IReadOnlyList<string> TrustedListeningObservations);
 
 internal sealed record RadioModeChange(
@@ -47,7 +63,9 @@ internal sealed class RadioBehaviorState
     private MediaSnapshot _currentTrack = MediaSnapshot.Empty;
     private DateTimeOffset _currentTrackStartedAt;
     private long _nextOpportunityId;
-    private RadioCommentOpportunity? _pendingOpportunity;
+    private RadioPreparationOpportunity? _pendingOpportunity;
+    private bool _preparationReady;
+    private bool _deliveryTransitionObserved;
 
     public RadioBehaviorState(
         RadioBehaviorConfiguration configuration,
@@ -81,6 +99,8 @@ internal sealed class RadioBehaviorState
         TransitionCounter = 0;
         TotalObservedTransitions = 0;
         _pendingOpportunity = null;
+        _preparationReady = false;
+        _deliveryTransitionObserved = false;
         _currentTrack = initialTrack;
         _currentTrackStartedAt = observedAt;
         _history.Clear();
@@ -92,18 +112,20 @@ internal sealed class RadioBehaviorState
     {
         Armed = false;
         _pendingOpportunity = null;
+        _preparationReady = false;
+        _deliveryTransitionObserved = false;
     }
 
     public RadioTrackObservation ObserveTrack(MediaSnapshot media, DateTimeOffset observedAt)
     {
         if (!HasUsableTitleAndArtist(media))
         {
-            return CreateObservation(RadioTrackObservationKind.Unusable, null, null, false, null, []);
+            return CreateObservation(RadioTrackObservationKind.Unusable, null, null, false, false, null, null, []);
         }
 
         if (HasSameNormalizedTrackIdentity(_currentTrack, media))
         {
-            return CreateObservation(RadioTrackObservationKind.Duplicate, null, _currentTrack, false, null, []);
+            return CreateObservation(RadioTrackObservationKind.Duplicate, null, _currentTrack, false, false, null, null, []);
         }
 
         MediaSnapshot previous = _currentTrack;
@@ -115,13 +137,52 @@ internal sealed class RadioBehaviorState
 
         if (_pendingOpportunity is not null)
         {
+            if (!_deliveryTransitionObserved)
+            {
+                if (!_preparationReady)
+                {
+                    _pendingOpportunity = null;
+                    _preparationReady = false;
+                    ChooseFreshSchedule();
+                    return CreateObservation(
+                        RadioTrackObservationKind.Transition,
+                        previous,
+                        media,
+                        true,
+                        true,
+                        null,
+                        null,
+                        observations);
+                }
+
+                _deliveryTransitionObserved = true;
+                var delivery = new RadioTransitionDelivery(
+                    _pendingOpportunity.Id,
+                    _pendingOpportunity.Context.SubjectTrack,
+                    media,
+                    observedAt);
+                return CreateObservation(
+                    RadioTrackObservationKind.Transition,
+                    previous,
+                    media,
+                    false,
+                    false,
+                    null,
+                    delivery,
+                    observations);
+            }
+
             _pendingOpportunity = null;
+            _preparationReady = false;
+            _deliveryTransitionObserved = false;
             ChooseFreshSchedule();
             return CreateObservation(
                 RadioTrackObservationKind.Transition,
                 previous,
                 media,
                 true,
+                false,
+                null,
                 null,
                 observations);
         }
@@ -133,23 +194,26 @@ internal sealed class RadioBehaviorState
                 previous,
                 media,
                 false,
+                false,
+                null,
                 null,
                 observations);
         }
 
         TransitionCounter++;
-        RadioCommentOpportunity? opportunity = null;
+        RadioPreparationOpportunity? preparation = null;
 
-        if (TransitionCounter >= ScheduledThreshold && HasUsableTitleAndArtist(previous))
+        if (TransitionCounter == ScheduledThreshold - 1 && HasUsableTitleAndArtist(media))
         {
-            var context = new RadioCommentContext(
-                previous,
+            var context = new RadioPreparationContext(
                 media,
                 observedAt,
                 observations,
                 _history.AcceptedAiComments);
-            opportunity = new RadioCommentOpportunity(++_nextOpportunityId, context);
-            _pendingOpportunity = opportunity;
+            preparation = new RadioPreparationOpportunity(++_nextOpportunityId, context);
+            _pendingOpportunity = preparation;
+            _preparationReady = false;
+            _deliveryTransitionObserved = false;
         }
 
         return CreateObservation(
@@ -157,7 +221,9 @@ internal sealed class RadioBehaviorState
             previous,
             media,
             false,
-            opportunity,
+            false,
+            preparation,
+            null,
             observations);
     }
 
@@ -171,6 +237,8 @@ internal sealed class RadioBehaviorState
         bool invalidated = _pendingOpportunity is not null;
         SilentMode = silent;
         _pendingOpportunity = null;
+        _preparationReady = false;
+        _deliveryTransitionObserved = false;
         TransitionCounter = 0;
 
         if (!silent)
@@ -186,6 +254,8 @@ internal sealed class RadioBehaviorState
         bool invalidated = _pendingOpportunity is not null;
         _history.Clear();
         _pendingOpportunity = null;
+        _preparationReady = false;
+        _deliveryTransitionObserved = false;
         ChooseFreshSchedule();
         return invalidated;
     }
@@ -198,6 +268,8 @@ internal sealed class RadioBehaviorState
         }
 
         _pendingOpportunity = null;
+        _preparationReady = false;
+        _deliveryTransitionObserved = false;
         ChooseFreshSchedule();
         return true;
     }
@@ -218,6 +290,8 @@ internal sealed class RadioBehaviorState
         }
 
         _pendingOpportunity = null;
+        _preparationReady = false;
+        _deliveryTransitionObserved = false;
         ChooseFreshSchedule();
         return true;
     }
@@ -230,6 +304,17 @@ internal sealed class RadioBehaviorState
             _currentTrack,
             _currentTrackStartedAt,
             _pendingOpportunity?.Id);
+    }
+
+    public bool MarkPreparationReady(long opportunityId)
+    {
+        if (_pendingOpportunity?.Id != opportunityId || _deliveryTransitionObserved)
+        {
+            return false;
+        }
+
+        _preparationReady = true;
+        return true;
     }
 
     private void ChooseFreshSchedule()
@@ -251,7 +336,9 @@ internal sealed class RadioBehaviorState
         MediaSnapshot? previous,
         MediaSnapshot? current,
         bool invalidated,
-        RadioCommentOpportunity? opportunity,
+        bool preparationMissedTransition,
+        RadioPreparationOpportunity? preparation,
+        RadioTransitionDelivery? delivery,
         IReadOnlyList<string> observations)
     {
         return new RadioTrackObservation(
@@ -262,7 +349,9 @@ internal sealed class RadioBehaviorState
             ScheduledThreshold,
             TotalObservedTransitions,
             invalidated,
-            opportunity,
+            preparationMissedTransition,
+            preparation,
+            delivery,
             observations);
     }
 

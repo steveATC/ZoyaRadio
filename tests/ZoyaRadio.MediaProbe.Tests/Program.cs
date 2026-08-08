@@ -96,6 +96,29 @@ var tests = new (string Name, Func<Task> Run)[]
     ("radio Ollama timeout unloads and selects fallback", RadioTimeoutUsesFallback),
     ("radio maximum speech duration uses protected recovery", RadioSpeechLimitUsesProtectedRecovery),
     ("radio pipeline passes configured speech limit", RadioPipelinePassesSpeechLimit),
+    ("transition schedule prepares Track A one transition ahead", () => RunSynchronous(TransitionSchedulePreparesOneAhead)),
+    ("unfinished preparation misses its transition without catch-up", () => RunSynchronous(UnfinishedTransitionPreparationIsAbandoned)),
+    ("transition prompt contains Track A and no speculative Track B", () => RunSynchronous(TransitionPromptContainsTrackAOnly)),
+    ("AI and Nicole preparation finish before transition delivery", TransitionPreparationPrecedesDelivery),
+    ("prepared Track-A speech is delivered only after A-to-B transition", PreparedSpeechWaitsForTransition),
+    ("normal transition delivery uses ducking without playback controls", TransitionDeliveryUsesDuckingOnly),
+    ("delivery captures changed Firefox volume at transition time", TransitionDeliveryCapturesCurrentVolume),
+    ("successful transition speech restores exact volume", TransitionSpeechSuccessRestoresVolume),
+    ("failed transition speech restores exact volume", TransitionSpeechFailureRestoresVolume),
+    ("cancelled transition speech restores exact volume", TransitionSpeechCancellationRestoresVolume),
+    ("simulated post-duck transition failure restores exact volume", TransitionSimulatedFailureRestoresVolume),
+    ("ambiguous transition media target causes silence", TransitionAmbiguousTargetCausesSilence),
+    ("ambiguous Core Audio target causes no automatic duck or speech", TransitionAmbiguousAudioTargetCausesSilence),
+    ("automatic ducking selects Firefox and leaves Chrome unchanged", TransitionDuckingLeavesChromeUnchanged),
+    ("rapid A-B-C transition invalidates stale prepared material", () => RunSynchronous(TransitionRapidSkipInvalidatesPrepared)),
+    ("late transition delivery is abandoned", TransitionLateDeliveryIsAbandoned),
+    ("changed Track B abandons stale prepared speech", TransitionChangedTrackBIsAbandoned),
+    ("Silent Mode invalidates pending transition preparation", () => RunSynchronous(TransitionSilentModeInvalidatesPreparation)),
+    ("transition no-AI mode bypasses Ollama", TransitionNoAiBypassesOllama),
+    ("transition AI generation still unloads Ollama", TransitionAiStillUnloadsOllama),
+    ("transition preparation preserves Unicode metadata", TransitionPreparationPreservesUnicode),
+    ("only one transition opportunity remains pending", () => RunSynchronous(OnlyOneTransitionOpportunityRemainsPending)),
+    ("prepared transition audio is disposable after use", TransitionPreparedAudioIsDisposed),
 };
 
 int failures = 0;
@@ -1074,10 +1097,12 @@ static void RadioScheduleUsesInclusiveBounds()
     AssertEqual(2, state.ScheduledThreshold);
     AssertEqual((2, 5), targets.Requests[0]);
 
-    state.ObserveTrack(Track("B", "Artist B"), now.AddSeconds(10));
+    RadioTrackObservation preparation = state.ObserveTrack(Track("B", "Artist B"), now.AddSeconds(10));
+    AssertTrue(preparation.PreparationOpportunity is not null);
+    AssertTrue(state.MarkPreparationReady(preparation.PreparationOpportunity!.Id));
     RadioTrackObservation due = state.ObserveTrack(Track("C", "Artist C"), now.AddSeconds(20));
-    AssertTrue(due.Opportunity is not null);
-    AssertTrue(state.ResolveOpportunity(due.Opportunity!.Id, true, "A sufficiently long accepted comment for history."));
+    AssertTrue(due.Delivery is not null);
+    AssertTrue(state.ResolveOpportunity(due.Delivery!.OpportunityId, true, "A sufficiently long accepted comment for history."));
     AssertEqual(5, state.ScheduledThreshold);
     AssertEqual((2, 5), targets.Requests[1]);
 }
@@ -1122,11 +1147,14 @@ static void RadioCompletionChoosesFreshInterval()
         new FakeTransitionTargetSource(2, 4));
     DateTimeOffset now = DateTimeOffset.Parse("2026-08-07T12:00:00Z");
     state.Arm(Track("A", "Artist A"), now);
-    state.ObserveTrack(Track("B", "Artist B"), now.AddSeconds(10));
+    RadioTrackObservation preparation = state.ObserveTrack(Track("B", "Artist B"), now.AddSeconds(10));
+    AssertTrue(state.MarkPreparationReady(preparation.PreparationOpportunity!.Id));
     RadioTrackObservation due = state.ObserveTrack(Track("C", "Artist C"), now.AddSeconds(20));
 
+    AssertTrue(preparation.PreparationOpportunity is not null);
+    AssertTrue(due.Delivery is not null);
     AssertTrue(state.ResolveOpportunity(
-        due.Opportunity!.Id,
+        due.Delivery!.OpportunityId,
         announcementCompleted: true,
         "This accepted AI comment is long enough to represent a completed automatic announcement."));
     AssertEqual(0, state.TransitionCounter);
@@ -1259,16 +1287,19 @@ static void RadioPendingChangeCreatesNoQueue()
         new FakeTransitionTargetSource(2, 5));
     DateTimeOffset now = DateTimeOffset.Parse("2026-08-07T12:00:00Z");
     state.Arm(Track("A", "Artist A"), now);
-    state.ObserveTrack(Track("B", "Artist B"), now.AddSeconds(10));
+    RadioTrackObservation preparation = state.ObserveTrack(Track("B", "Artist B"), now.AddSeconds(10));
+    AssertTrue(state.MarkPreparationReady(preparation.PreparationOpportunity!.Id));
     RadioTrackObservation due = state.ObserveTrack(Track("C", "Artist C"), now.AddSeconds(20));
-    AssertTrue(due.Opportunity is not null);
+    AssertTrue(preparation.PreparationOpportunity is not null);
+    AssertTrue(due.Delivery is not null);
 
     RadioTrackObservation changedAgain = state.ObserveTrack(
         Track("D", "Artist D"),
         now.AddSeconds(30));
 
     AssertTrue(changedAgain.PendingOpportunityInvalidated);
-    AssertTrue(changedAgain.Opportunity is null);
+    AssertTrue(changedAgain.PreparationOpportunity is null);
+    AssertTrue(changedAgain.Delivery is null);
     AssertTrue(state.GetRuntimeState().PendingOpportunityId is null);
     AssertEqual(0, state.TransitionCounter);
     AssertEqual(5, state.ScheduledThreshold);
@@ -1355,20 +1386,25 @@ static void RadioCommentHistoryIsBounded()
 {
     RadioBehaviorConfiguration configuration = RadioBehaviorConfiguration.Default with
     {
-        MinimumTransitionsBetweenComments = 1,
-        MaximumTransitionsBetweenComments = 1,
+        MinimumTransitionsBetweenComments = 2,
+        MaximumTransitionsBetweenComments = 2,
         RecentCommentLimit = 2,
     };
-    var state = new RadioBehaviorState(configuration, new FakeTransitionTargetSource(1, 1, 1, 1));
+    var state = new RadioBehaviorState(configuration, new FakeTransitionTargetSource(2, 2, 2, 2));
     DateTimeOffset now = DateTimeOffset.Parse("2026-08-07T12:00:00Z");
     state.Arm(Track("A", "Artist A"), now);
 
     for (int index = 1; index <= 3; index++)
     {
+        RadioTrackObservation preparation = state.ObserveTrack(
+            Track($"Track {index}A", $"Artist {index}A"),
+            now.AddSeconds(index * 2));
+        AssertTrue(preparation.PreparationOpportunity is not null);
+        AssertTrue(state.MarkPreparationReady(preparation.PreparationOpportunity!.Id));
         RadioTrackObservation due = state.ObserveTrack(
-            Track($"Track {index}", $"Artist {index}"),
-            now.AddSeconds(index));
-        state.ResolveOpportunity(due.Opportunity!.Id, true, $"Accepted AI comment number {index}");
+            Track($"Track {index}B", $"Artist {index}B"),
+            now.AddSeconds((index * 2) + 1));
+        state.ResolveOpportunity(due.Delivery!.OpportunityId, true, $"Accepted AI comment number {index}");
     }
 
     AssertEqual(2, state.RecentAcceptedAiComments.Count);
@@ -1380,14 +1416,14 @@ static void RadioClearHistoryIsHarmless()
 {
     RadioBehaviorConfiguration configuration = RadioBehaviorConfiguration.Default with
     {
-        MinimumTransitionsBetweenComments = 1,
-        MaximumTransitionsBetweenComments = 1,
+        MinimumTransitionsBetweenComments = 2,
+        MaximumTransitionsBetweenComments = 2,
     };
-    var state = new RadioBehaviorState(configuration, new FakeTransitionTargetSource(1, 1));
+    var state = new RadioBehaviorState(configuration, new FakeTransitionTargetSource(2, 2));
     DateTimeOffset now = DateTimeOffset.Parse("2026-08-07T12:00:00Z");
     state.Arm(Track("A", "Artist A"), now);
     RadioTrackObservation due = state.ObserveTrack(Track("B", "Artist B"), now.AddSeconds(10));
-    AssertTrue(due.Opportunity is not null);
+    AssertTrue(due.PreparationOpportunity is not null);
 
     bool invalidated = state.ClearRecentHistory();
 
@@ -1577,6 +1613,574 @@ static async Task RadioPipelinePassesSpeechLimit()
     AssertEqual(TimeSpan.FromSeconds(25), host.MaximumSpeechDuration);
 }
 
+static void TransitionSchedulePreparesOneAhead()
+{
+    var state = new RadioBehaviorState(
+        RadioBehaviorConfiguration.Default,
+        new FakeTransitionTargetSource(3));
+    DateTimeOffset now = DateTimeOffset.Parse("2026-08-08T12:00:00Z");
+    state.Arm(Track("Initial", "Artist 0"), now);
+
+    RadioTrackObservation first = state.ObserveTrack(Track("Track A1", "Artist 1"), now.AddSeconds(10));
+    RadioTrackObservation preparation = state.ObserveTrack(Track("Track A", "Artist A"), now.AddSeconds(20));
+    AssertTrue(preparation.PreparationOpportunity is not null);
+    AssertTrue(state.MarkPreparationReady(preparation.PreparationOpportunity!.Id));
+    RadioTrackObservation delivery = state.ObserveTrack(Track("Track B", "Artist B"), now.AddSeconds(30));
+
+    AssertTrue(first.PreparationOpportunity is null);
+    AssertEqual("Track A", preparation.PreparationOpportunity!.Context.SubjectTrack.Title!);
+    AssertTrue(delivery.Delivery is not null);
+    AssertEqual(preparation.PreparationOpportunity.Id, delivery.Delivery!.OpportunityId);
+    AssertEqual("Track A", delivery.Delivery.CommentedTrack.Title!);
+    AssertEqual("Track B", delivery.Delivery.NewTrack.Title!);
+}
+
+static void UnfinishedTransitionPreparationIsAbandoned()
+{
+    var state = new RadioBehaviorState(
+        RadioBehaviorConfiguration.Default,
+        new FakeTransitionTargetSource(2, 5));
+    DateTimeOffset now = DateTimeOffset.Parse("2026-08-08T12:00:00Z");
+    state.Arm(Track("Initial", "Artist 0"), now);
+
+    RadioTrackObservation preparation = state.ObserveTrack(Track("Track A", "Artist A"), now.AddSeconds(10));
+    RadioTrackObservation transition = state.ObserveTrack(Track("Track B", "Artist B"), now.AddSeconds(20));
+
+    AssertTrue(preparation.PreparationOpportunity is not null);
+    AssertTrue(transition.PendingOpportunityInvalidated);
+    AssertTrue(transition.PreparationMissedTransition);
+    AssertTrue(transition.Delivery is null);
+    AssertTrue(state.GetRuntimeState().PendingOpportunityId is null);
+}
+
+static void TransitionPromptContainsTrackAOnly()
+{
+    var context = new RadioPreparationContext(
+        Track("Track A", "Artist A"),
+        DateTimeOffset.Parse("2026-08-08T12:00:00Z"),
+        ["The exact artist string 'Artist A' has appeared 2 times in the last 6 observed tracks."],
+        ["A recent accepted comment that should not be echoed."]);
+
+    CommentPrompt prompt = CommentPromptFactory.CreateForPreparedTransition(
+        context,
+        HostPersonaConfiguration.Default);
+    const string prefix = "Prepared Track-A context JSON: ";
+    string json = prompt.MetadataPrompt[prefix.Length..];
+    json = json[..json.IndexOf('\n')];
+    using JsonDocument parsed = JsonDocument.Parse(json);
+
+    AssertEqual("Track A", parsed.RootElement.GetProperty("title").GetString()!);
+    AssertEqual("Artist A", parsed.RootElement.GetProperty("artist").GetString()!);
+    AssertEqual(1, parsed.RootElement.GetProperty("trustedListeningObservations").GetArrayLength());
+    AssertEqual(1, parsed.RootElement.GetProperty("recentAcceptedComments").GetArrayLength());
+    AssertEqual(4, parsed.RootElement.EnumerateObject().Count());
+    AssertContains(prompt.MetadataPrompt, "No future Track B is known");
+    AssertFalse(prompt.MetadataPrompt.Contains("previousTitle", StringComparison.Ordinal));
+    AssertFalse(prompt.MetadataPrompt.Contains("currentTitle", StringComparison.Ordinal));
+    AssertFalse(prompt.MetadataPrompt.Contains("album", StringComparison.OrdinalIgnoreCase));
+}
+
+static async Task TransitionPreparationPrecedesDelivery()
+{
+    DateTimeOffset now = DateTimeOffset.Parse("2026-08-08T12:00:20Z");
+    RadioPreparationOpportunity opportunity = TestTransitionPreparation(now.AddSeconds(-20));
+    var events = new List<string>();
+    var provider = new FakeTransitionCommentProvider(events);
+    var host = new FakeTransitionRadioHost(ValidTransitionSnapshot(opportunity), events);
+    var pipeline = new TransitionRadioPipeline(
+        RadioBehaviorConfiguration.Default,
+        provider,
+        host,
+        new FakeRadioClock(now),
+        new FakeLog());
+
+    TransitionPreparationResult result = await pipeline.PrepareAsync(
+        opportunity,
+        true,
+        CancellationToken.None);
+
+    AssertEqual(TransitionPreparationStatus.Ready, result.Status);
+    AssertEqual(2, events.Count);
+    AssertEqual("ai", events[0]);
+    AssertEqual("tts", events[1]);
+    AssertEqual(0, host.DuckedDeliveryCalls);
+    AssertEqual(0, host.PauseCalls);
+    AssertEqual(0, host.PlayCalls);
+    result.Prepared!.Dispose();
+}
+
+static async Task PreparedSpeechWaitsForTransition()
+{
+    DateTimeOffset now = DateTimeOffset.Parse("2026-08-08T12:00:20Z");
+    RadioPreparationOpportunity opportunity = TestTransitionPreparation(now.AddSeconds(-20));
+    var host = new FakeTransitionRadioHost(ValidTransitionSnapshot(opportunity));
+    var pipeline = new TransitionRadioPipeline(
+        RadioBehaviorConfiguration.Default,
+        new FakeTransitionCommentProvider(),
+        host,
+        new FakeRadioClock(now),
+        new FakeLog());
+    TransitionPreparationResult preparation = await pipeline.PrepareAsync(
+        opportunity,
+        true,
+        CancellationToken.None);
+
+    AssertEqual(0, host.DuckedDeliveryCalls);
+    AssertEqual(0, host.Speech.SpeakCalls);
+
+    RadioTransitionDelivery transition = TestTransitionDelivery(opportunity, now);
+    host.Snapshot = ValidTransitionSnapshot(opportunity, transition.NewTrack);
+    TransitionDeliveryResult delivery = await pipeline.DeliverAsync(
+        preparation.Prepared!,
+        transition,
+        false,
+        CancellationToken.None);
+
+    AssertEqual(TransitionDeliveryStatus.Completed, delivery.Status);
+    AssertEqual(1, host.DuckedDeliveryCalls);
+    AssertEqual(1, host.Speech.SpeakCalls);
+    preparation.Prepared!.Dispose();
+}
+
+static async Task TransitionDeliveryUsesDuckingOnly()
+{
+    DateTimeOffset now = DateTimeOffset.Parse("2026-08-08T12:00:20Z");
+    RadioPreparationOpportunity opportunity = TestTransitionPreparation(now.AddSeconds(-20));
+    RadioTransitionDelivery transition = TestTransitionDelivery(opportunity, now);
+    var host = new FakeTransitionRadioHost(ValidTransitionSnapshot(opportunity, transition.NewTrack));
+    var pipeline = new TransitionRadioPipeline(
+        RadioBehaviorConfiguration.Default,
+        new FakeTransitionCommentProvider(),
+        host,
+        new FakeRadioClock(now),
+        new FakeLog());
+    using PreparedTransitionOpportunity prepared = FakePreparedTransition(opportunity, now);
+
+    TransitionDeliveryResult result = await pipeline.DeliverAsync(
+        prepared,
+        transition,
+        false,
+        CancellationToken.None);
+
+    AssertEqual(TransitionDeliveryStatus.Completed, result.Status);
+    AssertEqual(1, host.DuckedDeliveryCalls);
+    AssertEqual(0, host.PauseCalls);
+    AssertEqual(0, host.PlayCalls);
+}
+
+static async Task TransitionDeliveryCapturesCurrentVolume()
+{
+    using var target = new FakeAudioSessionTarget("firefox", 20, "FIREFOX01", 0.8f);
+    target.ChangeExternally(0.5f);
+    var sequence = new AudioDuckingSequence(new FakeLog(), FastAudioDuckingConfiguration());
+
+    AudioDuckingResult result = await sequence.RunWithProtectedActionAsync(
+        target,
+        _ => Task.CompletedTask,
+        false,
+        CancellationToken.None);
+
+    AssertTrue(result.TestPassed);
+    AssertApproximately(0.125f, target.MinimumRequestedVolume);
+    AssertApproximately(0.5f, target.VolumeScalar);
+}
+
+static async Task TransitionSpeechSuccessRestoresVolume()
+{
+    using var target = new FakeAudioSessionTarget("firefox", 20, "FIREFOX01", 0.6f);
+    var sequence = new AudioDuckingSequence(new FakeLog(), FastAudioDuckingConfiguration());
+    int speechCalls = 0;
+
+    AudioDuckingResult result = await sequence.RunWithProtectedActionAsync(
+        target,
+        _ =>
+        {
+            speechCalls++;
+            return Task.CompletedTask;
+        },
+        false,
+        CancellationToken.None);
+
+    AssertTrue(result.TestPassed);
+    AssertEqual(1, speechCalls);
+    AssertApproximately(0.6f, target.VolumeScalar);
+}
+
+static async Task TransitionSpeechFailureRestoresVolume()
+{
+    using var target = new FakeAudioSessionTarget("firefox", 20, "FIREFOX01", 0.6f);
+    var sequence = new AudioDuckingSequence(new FakeLog(), FastAudioDuckingConfiguration());
+
+    AudioDuckingResult result = await sequence.RunWithProtectedActionAsync(
+        target,
+        _ => Task.FromException(new InvalidOperationException("simulated speech failure")),
+        false,
+        CancellationToken.None);
+
+    AssertFalse(result.TestPassed);
+    AssertTrue(result.RestorationVerified);
+    AssertApproximately(0.6f, target.VolumeScalar);
+}
+
+static async Task TransitionSpeechCancellationRestoresVolume()
+{
+    using var cancellation = new CancellationTokenSource();
+    using var target = new FakeAudioSessionTarget("firefox", 20, "FIREFOX01", 0.6f);
+    var sequence = new AudioDuckingSequence(new FakeLog(), FastAudioDuckingConfiguration());
+
+    AudioDuckingResult result = await sequence.RunWithProtectedActionAsync(
+        target,
+        _ =>
+        {
+            cancellation.Cancel();
+            throw new OperationCanceledException(cancellation.Token);
+        },
+        false,
+        cancellation.Token);
+
+    AssertTrue(result.Cancelled);
+    AssertTrue(result.RestorationVerified);
+    AssertApproximately(0.6f, target.VolumeScalar);
+}
+
+static async Task TransitionSimulatedFailureRestoresVolume()
+{
+    using var target = new FakeAudioSessionTarget("firefox", 20, "FIREFOX01", 0.6f);
+    var sequence = new AudioDuckingSequence(new FakeLog(), FastAudioDuckingConfiguration());
+    int actionCalls = 0;
+
+    AudioDuckingResult result = await sequence.RunWithProtectedActionAsync(
+        target,
+        _ =>
+        {
+            actionCalls++;
+            return Task.CompletedTask;
+        },
+        true,
+        CancellationToken.None);
+
+    AssertTrue(result.ExpectedFailureRecoveryPassed);
+    AssertEqual(0, actionCalls);
+    AssertApproximately(0.6f, target.VolumeScalar);
+}
+
+static async Task TransitionAmbiguousTargetCausesSilence()
+{
+    DateTimeOffset now = DateTimeOffset.Parse("2026-08-08T12:00:20Z");
+    RadioPreparationOpportunity opportunity = TestTransitionPreparation(now.AddSeconds(-20));
+    RadioTransitionDelivery transition = TestTransitionDelivery(opportunity, now);
+    RadioOpportunitySnapshot ambiguous = ValidTransitionSnapshot(opportunity, transition.NewTrack) with
+    {
+        MatchingFirefoxSessionCount = 2,
+        SameSelectedSession = false,
+    };
+    var host = new FakeTransitionRadioHost(ambiguous);
+    var pipeline = new TransitionRadioPipeline(
+        RadioBehaviorConfiguration.Default,
+        new FakeTransitionCommentProvider(),
+        host,
+        new FakeRadioClock(now),
+        new FakeLog());
+    using PreparedTransitionOpportunity prepared = FakePreparedTransition(opportunity, now);
+
+    TransitionDeliveryResult result = await pipeline.DeliverAsync(
+        prepared,
+        transition,
+        false,
+        CancellationToken.None);
+
+    AssertEqual(TransitionDeliveryStatus.Abandoned, result.Status);
+    AssertEqual(0, host.DuckedDeliveryCalls);
+    AssertEqual(0, host.Speech.SpeakCalls);
+}
+
+static async Task TransitionAmbiguousAudioTargetCausesSilence()
+{
+    using var first = new FakeAudioSessionTarget("firefox", 20, "FIREFOX01", 0.6f);
+    using var second = new FakeAudioSessionTarget("firefox.exe", 21, "FIREFOX02", 0.7f);
+    var provider = new FakeAudioSessionEnumerationProvider(
+        AudioDescriptor(first),
+        AudioDescriptor(second));
+    var ducker = new WindowsTransitionAudioDucker(
+        new FakeLog(),
+        FastAudioDuckingConfiguration(),
+        provider);
+    int actionCalls = 0;
+
+    TransitionDuckingResult result = await ducker.RunAsync(
+        _ =>
+        {
+            actionCalls++;
+            return Task.CompletedTask;
+        },
+        false,
+        CancellationToken.None);
+
+    AssertEqual(TransitionDuckingStatus.Refused, result.Status);
+    AssertEqual(0, actionCalls);
+    AssertEqual(0, first.SetVolumeCalls);
+    AssertEqual(0, second.SetVolumeCalls);
+}
+
+static async Task TransitionDuckingLeavesChromeUnchanged()
+{
+    using var firefox = new FakeAudioSessionTarget("firefox", 20, "FIREFOX01", 0.5f);
+    using var chrome = new FakeAudioSessionTarget("chrome", 30, "CHROME01", 0.8f);
+    var provider = new FakeAudioSessionEnumerationProvider(
+        AudioDescriptor(chrome),
+        AudioDescriptor(firefox));
+    var ducker = new WindowsTransitionAudioDucker(
+        new FakeLog(),
+        FastAudioDuckingConfiguration(),
+        provider);
+    int actionCalls = 0;
+
+    TransitionDuckingResult result = await ducker.RunAsync(
+        _ =>
+        {
+            actionCalls++;
+            return Task.CompletedTask;
+        },
+        false,
+        CancellationToken.None);
+
+    AssertEqual(TransitionDuckingStatus.Completed, result.Status);
+    AssertEqual(1, actionCalls);
+    AssertApproximately(0.5f, firefox.VolumeScalar);
+    AssertTrue(firefox.SetVolumeCalls > 0);
+    AssertApproximately(0.8f, chrome.VolumeScalar);
+    AssertEqual(0, chrome.SetVolumeCalls);
+    AssertEqual(0, chrome.SetMuteCalls);
+}
+
+static void TransitionRapidSkipInvalidatesPrepared()
+{
+    var state = new RadioBehaviorState(
+        RadioBehaviorConfiguration.Default,
+        new FakeTransitionTargetSource(2, 5));
+    DateTimeOffset now = DateTimeOffset.Parse("2026-08-08T12:00:00Z");
+    state.Arm(Track("Initial", "Artist 0"), now);
+
+    RadioTrackObservation preparation = state.ObserveTrack(Track("Track A", "Artist A"), now.AddSeconds(10));
+    AssertTrue(preparation.PreparationOpportunity is not null);
+    AssertTrue(state.MarkPreparationReady(preparation.PreparationOpportunity!.Id));
+    RadioTrackObservation delivery = state.ObserveTrack(Track("Track B", "Artist B"), now.AddSeconds(20));
+    RadioTrackObservation rapidSkip = state.ObserveTrack(Track("Track C", "Artist C"), now.AddSeconds(21));
+
+    AssertTrue(delivery.Delivery is not null);
+    AssertTrue(rapidSkip.PendingOpportunityInvalidated);
+    AssertTrue(rapidSkip.Delivery is null);
+    AssertTrue(state.GetRuntimeState().PendingOpportunityId is null);
+}
+
+static async Task TransitionLateDeliveryIsAbandoned()
+{
+    DateTimeOffset transitionTime = DateTimeOffset.Parse("2026-08-08T12:00:20Z");
+    RadioPreparationOpportunity opportunity = TestTransitionPreparation(transitionTime.AddSeconds(-20));
+    RadioTransitionDelivery transition = TestTransitionDelivery(opportunity, transitionTime);
+    var host = new FakeTransitionRadioHost(ValidTransitionSnapshot(opportunity, transition.NewTrack));
+    var pipeline = new TransitionRadioPipeline(
+        RadioBehaviorConfiguration.Default,
+        new FakeTransitionCommentProvider(),
+        host,
+        new FakeRadioClock(transitionTime.AddSeconds(3)),
+        new FakeLog());
+    using PreparedTransitionOpportunity prepared = FakePreparedTransition(opportunity, transitionTime);
+
+    TransitionDeliveryResult result = await pipeline.DeliverAsync(
+        prepared,
+        transition,
+        false,
+        CancellationToken.None);
+
+    AssertEqual(TransitionDeliveryStatus.Abandoned, result.Status);
+    AssertEqual(0, host.DuckedDeliveryCalls);
+}
+
+static async Task TransitionChangedTrackBIsAbandoned()
+{
+    DateTimeOffset now = DateTimeOffset.Parse("2026-08-08T12:00:20Z");
+    RadioPreparationOpportunity opportunity = TestTransitionPreparation(now.AddSeconds(-20));
+    RadioTransitionDelivery transition = TestTransitionDelivery(opportunity, now);
+    var host = new FakeTransitionRadioHost(
+        ValidTransitionSnapshot(opportunity, Track("Track C", "Artist C")));
+    var pipeline = new TransitionRadioPipeline(
+        RadioBehaviorConfiguration.Default,
+        new FakeTransitionCommentProvider(),
+        host,
+        new FakeRadioClock(now),
+        new FakeLog());
+    using PreparedTransitionOpportunity prepared = FakePreparedTransition(opportunity, now);
+
+    TransitionDeliveryResult result = await pipeline.DeliverAsync(
+        prepared,
+        transition,
+        false,
+        CancellationToken.None);
+
+    AssertEqual(TransitionDeliveryStatus.Abandoned, result.Status);
+    AssertEqual(0, host.DuckedDeliveryCalls);
+}
+
+static void TransitionSilentModeInvalidatesPreparation()
+{
+    var state = new RadioBehaviorState(
+        RadioBehaviorConfiguration.Default,
+        new FakeTransitionTargetSource(2));
+    DateTimeOffset now = DateTimeOffset.Parse("2026-08-08T12:00:00Z");
+    state.Arm(Track("Initial", "Artist 0"), now);
+    RadioTrackObservation preparation = state.ObserveTrack(Track("Track A", "Artist A"), now.AddSeconds(10));
+
+    RadioModeChange change = state.SetSilentMode(true);
+
+    AssertTrue(preparation.PreparationOpportunity is not null);
+    AssertTrue(change.PendingOpportunityInvalidated);
+    AssertTrue(state.GetRuntimeState().PendingOpportunityId is null);
+}
+
+static async Task TransitionNoAiBypassesOllama()
+{
+    var generator = new FakeCommentGenerator();
+    var service = new AiCommentService(generator, AiCommentConfiguration.Default, new FakeLog());
+    RadioPreparationContext context = TestTransitionPreparation(
+        DateTimeOffset.Parse("2026-08-08T12:00:00Z")).Context;
+
+    CommentSelection result = await service.SelectPreparedTransitionCommentAsync(
+        context,
+        false,
+        CancellationToken.None);
+
+    AssertEqual(CommentTextSource.FixedFallback, result.Source);
+    AssertEqual(0, generator.GenerateCalls);
+    AssertEqual(0, generator.UnloadCalls);
+    AssertEqual(0, generator.PsCalls);
+}
+
+static async Task TransitionAiStillUnloadsOllama()
+{
+    var generator = new FakeCommentGenerator();
+    var service = new AiCommentService(generator, AiCommentConfiguration.Default, new FakeLog());
+    RadioPreparationContext context = TestTransitionPreparation(
+        DateTimeOffset.Parse("2026-08-08T12:00:00Z")).Context;
+
+    CommentSelection result = await service.SelectPreparedTransitionCommentAsync(
+        context,
+        true,
+        CancellationToken.None);
+
+    AssertEqual(CommentTextSource.Ai, result.Source);
+    AssertEqual(1, generator.GenerateCalls);
+    AssertEqual(1, generator.UnloadCalls);
+    AssertEqual(1, generator.PsCalls);
+}
+
+static async Task TransitionPreparationPreservesUnicode()
+{
+    var generator = new FakeCommentGenerator();
+    var service = new AiCommentService(generator, AiCommentConfiguration.Default, new FakeLog());
+    var context = new RadioPreparationContext(
+        new MediaSnapshot("Кукушка", "Кино", null),
+        DateTimeOffset.Parse("2026-08-08T12:00:00Z"),
+        [],
+        []);
+
+    CommentSelection result = await service.SelectPreparedTransitionCommentAsync(
+        context,
+        false,
+        CancellationToken.None);
+
+    AssertEqual("That was Кукушка by Кино.", result.Text);
+    AssertEqual(0, generator.GenerateCalls);
+}
+
+static void OnlyOneTransitionOpportunityRemainsPending()
+{
+    var state = new RadioBehaviorState(
+        RadioBehaviorConfiguration.Default,
+        new FakeTransitionTargetSource(2));
+    DateTimeOffset now = DateTimeOffset.Parse("2026-08-08T12:00:00Z");
+    state.Arm(Track("Initial", "Artist 0"), now);
+
+    RadioTrackObservation preparation = state.ObserveTrack(Track("Track A", "Artist A"), now.AddSeconds(10));
+    RadioTrackObservation duplicate = state.ObserveTrack(Track("Track A", "Artist A"), now.AddSeconds(11));
+    AssertTrue(preparation.PreparationOpportunity is not null);
+    AssertTrue(state.MarkPreparationReady(preparation.PreparationOpportunity!.Id));
+    RadioTrackObservation delivery = state.ObserveTrack(Track("Track B", "Artist B"), now.AddSeconds(20));
+
+    AssertTrue(duplicate.PreparationOpportunity is null);
+    AssertTrue(delivery.PreparationOpportunity is null);
+    AssertEqual(preparation.PreparationOpportunity!.Id, delivery.Delivery!.OpportunityId);
+}
+
+static Task TransitionPreparedAudioIsDisposed()
+{
+    DateTimeOffset now = DateTimeOffset.Parse("2026-08-08T12:00:20Z");
+    RadioPreparationOpportunity opportunity = TestTransitionPreparation(now.AddSeconds(-20));
+    var speech = new FakePreparedSpeech(new SpeechPlaybackResult(SpeechPlaybackStatus.Completed));
+    var prepared = new PreparedTransitionOpportunity(
+        opportunity,
+        FakeTransitionCommentProvider.DefaultSelection,
+        speech,
+        now);
+
+    prepared.Dispose();
+
+    AssertEqual(1, speech.DisposeCalls);
+    return Task.CompletedTask;
+}
+
+static RadioPreparationOpportunity TestTransitionPreparation(DateTimeOffset subjectStartedAt)
+{
+    return new RadioPreparationOpportunity(
+        700,
+        new RadioPreparationContext(
+            Track("Track A", "Artist A"),
+            subjectStartedAt,
+            [],
+            []));
+}
+
+static RadioTransitionDelivery TestTransitionDelivery(
+    RadioPreparationOpportunity opportunity,
+    DateTimeOffset transitionObservedAt)
+{
+    return new RadioTransitionDelivery(
+        opportunity.Id,
+        opportunity.Context.SubjectTrack,
+        Track("Track B", "Artist B"),
+        transitionObservedAt);
+}
+
+static RadioOpportunitySnapshot ValidTransitionSnapshot(
+    RadioPreparationOpportunity opportunity,
+    MediaSnapshot? currentTrack = null)
+{
+    return new RadioOpportunitySnapshot(
+        Armed: true,
+        SilentMode: false,
+        OpportunityStillPending: true,
+        SessionListReadSucceeded: true,
+        MatchingFirefoxSessionCount: 1,
+        SameSelectedSession: true,
+        SourceId: "firefox.exe",
+        SourceReadSucceeded: true,
+        CurrentMedia: currentTrack ?? opportunity.Context.SubjectTrack,
+        MediaReadSucceeded: true,
+        PlaybackStatus: GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing,
+        PlaybackReadSucceeded: true);
+}
+
+static PreparedTransitionOpportunity FakePreparedTransition(
+    RadioPreparationOpportunity opportunity,
+    DateTimeOffset readyAt)
+{
+    return new PreparedTransitionOpportunity(
+        opportunity,
+        FakeTransitionCommentProvider.DefaultSelection,
+        new FakePreparedSpeech(new SpeechPlaybackResult(SpeechPlaybackStatus.Completed)),
+        readyAt);
+}
+
 static MediaSnapshot Track(string title, string artist)
 {
     return new MediaSnapshot(title, artist, null);
@@ -1759,6 +2363,17 @@ internal sealed class FakeAudioSessionTarget : IAudioSessionVolumeTarget
     public int? DisappearAfterSuccessfulReads { get; init; }
 
     public Action<float>? OnVolumeSet { get; init; }
+
+    public void ChangeExternally(float volumeScalar, bool? muted = null)
+    {
+        VolumeScalar = volumeScalar;
+        MinimumRequestedVolume = volumeScalar;
+
+        if (muted is not null)
+        {
+            Muted = muted.Value;
+        }
+    }
 
     public AudioSessionVolumeState ReadState()
     {
@@ -2000,6 +2615,135 @@ internal sealed class FakeRadioCommentProvider : IRadioCommentProvider
         Calls++;
         OnSelect?.Invoke();
         return Task.FromResult(Selection);
+    }
+}
+
+internal sealed class FakeTransitionCommentProvider : ITransitionCommentProvider
+{
+    private readonly List<string>? _events;
+
+    public FakeTransitionCommentProvider(List<string>? events = null)
+    {
+        _events = events;
+    }
+
+    public static CommentSelection DefaultSelection { get; } = new(
+        "That title has arrived with enough confidence to rearrange the furniture, Steve, and frankly I admire the paperwork-free commitment.",
+        CommentTextSource.Ai,
+        19,
+        "fake accepted AI comment",
+        null,
+        false);
+
+    public int Calls { get; private set; }
+
+    public bool? LastAiEnabled { get; private set; }
+
+    public Task<CommentSelection> SelectAsync(
+        RadioPreparationContext context,
+        bool aiEnabled,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        Calls++;
+        LastAiEnabled = aiEnabled;
+        _events?.Add("ai");
+        return Task.FromResult(DefaultSelection);
+    }
+}
+
+internal sealed class FakeTransitionRadioHost : ITransitionRadioHost
+{
+    private readonly List<string>? _events;
+
+    public FakeTransitionRadioHost(
+        RadioOpportunitySnapshot snapshot,
+        List<string>? events = null)
+    {
+        Snapshot = snapshot;
+        _events = events;
+    }
+
+    public RadioOpportunitySnapshot Snapshot { get; set; }
+
+    public FakePreparedSpeech Speech { get; } = new(
+        new SpeechPlaybackResult(SpeechPlaybackStatus.Completed));
+
+    public int SnapshotReads { get; private set; }
+
+    public int PrepareCalls { get; private set; }
+
+    public int DuckedDeliveryCalls { get; private set; }
+
+    public int PauseCalls { get; private set; }
+
+    public int PlayCalls { get; private set; }
+
+    public TransitionDuckingResult? ResultOverride { get; init; }
+
+    public Task<RadioOpportunitySnapshot> ReadSnapshotAsync(
+        long opportunityId,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        SnapshotReads++;
+        return Task.FromResult(Snapshot);
+    }
+
+    public Task<IPreparedAnnouncementSpeech> PrepareSpeechAsync(
+        string text,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        PrepareCalls++;
+        _events?.Add("tts");
+        return Task.FromResult<IPreparedAnnouncementSpeech>(Speech);
+    }
+
+    public async Task<TransitionDuckingResult> RunDuckedAnnouncementAsync(
+        RadioTransitionDelivery transition,
+        IPreparedAnnouncementSpeech preparedSpeech,
+        TimeSpan maximumSpeechDuration,
+        DateTimeOffset speechStartDeadline,
+        bool simulatePostDuckFailure,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        DuckedDeliveryCalls++;
+        _events?.Add("duck");
+
+        if (ResultOverride is not null)
+        {
+            return ResultOverride;
+        }
+
+        SpeechPlaybackResult speech = await preparedSpeech.SpeakAsync(
+            maximumSpeechDuration,
+            cancellationToken);
+        return speech.Status == SpeechPlaybackStatus.Completed
+            ? new TransitionDuckingResult(
+                TransitionDuckingStatus.Completed,
+                "fake duck, speech, and restoration completed",
+                null)
+            : new TransitionDuckingResult(
+                TransitionDuckingStatus.Failed,
+                "fake speech failed",
+                null);
+    }
+}
+
+internal sealed class FakeAudioSessionEnumerationProvider : IAudioSessionEnumerationProvider
+{
+    private readonly IReadOnlyList<AudioSessionDescriptor> _sessions;
+
+    public FakeAudioSessionEnumerationProvider(params AudioSessionDescriptor[] sessions)
+    {
+        _sessions = sessions;
+    }
+
+    public AudioSessionEnumeration Enumerate()
+    {
+        return new AudioSessionEnumeration("FAKE-ENDPOINT", _sessions);
     }
 }
 

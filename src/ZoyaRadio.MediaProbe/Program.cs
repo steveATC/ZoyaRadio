@@ -16,6 +16,7 @@ internal static class Program
         bool noAi = false;
         bool simulateAiFailure = false;
         bool radioBehaviorTest = false;
+        bool simulateTransitionFailure = false;
         bool windowsTts = false;
         bool simulateNeuralTtsFailure = false;
         bool measureNeuralTts = false;
@@ -85,6 +86,12 @@ internal static class Program
                 continue;
             }
 
+            if (string.Equals(argument, "--simulate-transition-failure", StringComparison.OrdinalIgnoreCase))
+            {
+                simulateTransitionFailure = true;
+                continue;
+            }
+
             if (string.Equals(argument, "--windows-tts", StringComparison.OrdinalIgnoreCase))
             {
                 windowsTts = true;
@@ -145,6 +152,14 @@ internal static class Program
         {
             Console.Error.WriteLine(
                 "--enumerate-only and --simulate-duck-failure require --audio-ducking-test (normally supplied by its launcher).");
+            WriteUsage();
+            return 2;
+        }
+
+        if (simulateTransitionFailure && !radioBehaviorTest)
+        {
+            Console.Error.WriteLine(
+                "--simulate-transition-failure requires --radio-behavior-test (normally supplied by its launcher).");
             WriteUsage();
             return 2;
         }
@@ -261,10 +276,13 @@ internal static class Program
             }
             else if (radioBehaviorTest)
             {
-                log.Write("ZOYA RADIO - MILESTONE 5 AUTOMATIC RADIO-BEHAVIOR TEST");
-                log.Write("This mode can automatically pause and resume exactly one firefox.exe session only after arming.");
+                log.Write("ZOYA RADIO - MILESTONE 7.5B TRANSITION-AWARE AUTOMATIC RADIO TEST");
+                log.Write(
+                    "After arming, this mode may automatically duck exactly one safe Firefox Core Audio session and speak; normal delivery never pauses playback.");
                 log.Write("Ollama requests remain loopback-only; recent behavioral history remains bounded and in memory.");
-                log.Write($"Mode: {(noAi ? "automatic fixed fallback; AI disabled" : "automatic local-AI comments")}");
+                log.Write(
+                    $"Mode: {(noAi ? "automatic fixed fallback; AI disabled" : "automatic local-AI comments")}" +
+                    $"{(simulateTransitionFailure ? "; first delivery simulates a post-duck failure" : string.Empty)}");
             }
             else if (aiCommentTest)
             {
@@ -481,7 +499,10 @@ internal static class Program
                         aiConfiguration,
                         persona,
                         radioConfiguration);
-                    return await test.RunAsync(aiEnabled: !noAi, radioCancellation.Token);
+                    return await test.RunAsync(
+                        aiEnabled: !noAi,
+                        simulateTransitionFailure,
+                        radioCancellation.Token);
                 }
                 finally
                 {
@@ -635,7 +656,8 @@ internal static class Program
         Console.Error.WriteLine("   or: run-spoken-announcement-test.cmd");
         Console.Error.WriteLine("   or: run-simulated-speech-failure-test.cmd");
         Console.Error.WriteLine("   or: run-ai-comment-test.cmd [--generate-only|--measure-ai|--no-ai|--simulate-ai-failure|--windows-tts]");
-        Console.Error.WriteLine("   or: run-radio-behavior-test.cmd [--no-ai|--windows-tts]");
+        Console.Error.WriteLine(
+            "   or: run-radio-behavior-test.cmd [--no-ai|--windows-tts|--simulate-transition-failure]");
         Console.Error.WriteLine("   or: run-neural-tts-fallback-test.cmd");
         Console.Error.WriteLine("   or: run-neural-tts-diagnostic.cmd");
         Console.Error.WriteLine("   or: run-audio-ducking-test.cmd [--enumerate-only|--simulate-duck-failure]");

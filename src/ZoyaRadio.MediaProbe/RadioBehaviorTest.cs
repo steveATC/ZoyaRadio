@@ -10,7 +10,7 @@ internal sealed class RadioBehaviorTest
     private readonly IRadioClock _clock;
     private readonly RadioBehaviorState _state;
     private readonly RadioSessionAccess _sessionAccess;
-    private readonly RadioOpportunityPipeline _pipeline;
+    private readonly TransitionRadioPipeline _pipeline;
     private readonly object _stateLock = new();
     private readonly object _pipelineLock = new();
     private readonly SemaphoreSlim _mediaEventGate = new(1, 1);
@@ -18,6 +18,8 @@ internal sealed class RadioBehaviorTest
     private CancellationToken _shutdownToken;
     private CancellationTokenSource? _pendingCancellation;
     private Task? _pipelineTask;
+    private PreparedTransitionOpportunity? _preparedOpportunity;
+    private bool _simulateNextTransitionFailure;
     private bool _mediaSubscribed;
     private bool _managerSubscribed;
 
@@ -43,14 +45,17 @@ internal sealed class RadioBehaviorTest
         _sessionAccess = new RadioSessionAccess(manager, log);
 
         var aiService = new AiCommentService(generator, aiConfiguration, log, persona);
-        var commentProvider = new LocalRadioCommentProvider(aiService);
+        var commentProvider = new LocalTransitionCommentProvider(aiService);
+        var transitionDucker = new WindowsTransitionAudioDucker(log);
         var opportunityHost = new WindowsRadioOpportunityHost(
             () => _selectedSession,
             GetRuntimeState,
             _sessionAccess,
             speechService,
+            _clock,
+            transitionDucker,
             log);
-        _pipeline = new RadioOpportunityPipeline(
+        _pipeline = new TransitionRadioPipeline(
             _radioConfiguration,
             commentProvider,
             opportunityHost,
@@ -58,9 +63,13 @@ internal sealed class RadioBehaviorTest
             log);
     }
 
-    public async Task<int> RunAsync(bool aiEnabled, CancellationToken cancellationToken)
+    public async Task<int> RunAsync(
+        bool aiEnabled,
+        bool simulateTransitionFailure,
+        CancellationToken cancellationToken)
     {
         _shutdownToken = cancellationToken;
+        _simulateNextTransitionFailure = simulateTransitionFailure;
         WriteConfiguration(aiEnabled);
 
         RadioSessionDetails[] sessions;
@@ -112,7 +121,8 @@ internal sealed class RadioBehaviorTest
             return 1;
         }
 
-        _log.Write("Enable automatic Zoya Radio behavior? [y/N]");
+        _log.Write(
+            "Enable automatic transition delivery? This may duck Firefox and speak, but will not pause playback. [y/N]");
         string? response;
 
         try
@@ -174,7 +184,7 @@ internal sealed class RadioBehaviorTest
         }
         catch (OperationCanceledException)
         {
-            _log.Write("Shutdown requested. Cancelling any pending comment and preserving playback recovery.");
+            _log.Write("Shutdown requested. Cancelling prepared delivery and preserving exact Firefox volume restoration.");
         }
         finally
         {
@@ -186,6 +196,7 @@ internal sealed class RadioBehaviorTest
             CancelPendingPipeline("automatic behavior is shutting down");
             Unsubscribe();
             await WaitForPipelineAsync();
+            DisposePreparedOpportunity();
             await _mediaEventGate.WaitAsync();
             _mediaEventGate.Release();
         }
@@ -249,7 +260,7 @@ internal sealed class RadioBehaviorTest
 
         if (change.SilentMode)
         {
-            _log.Write("No new AI generation, automatic speech, or automatic pause will begin.");
+            _log.Write("No new AI generation, speech preparation, automatic duck, or speech will begin.");
         }
         else
         {
@@ -276,8 +287,8 @@ internal sealed class RadioBehaviorTest
         _log.Write("The current diagnostic log was not deleted or rewritten.");
         _log.Write(
             invalidated
-                ? "A pending comment was cancelled; if Zoya had already paused Firefox, only protected resume recovery may run."
-                : "No playback or speech command was issued by the clear-history command.");
+                ? "A pending comment was cancelled; if Firefox was already ducked, protected exact-volume restoration still runs."
+                : "No volume or speech command was issued by the clear-history command.");
         WriteHistorySizes();
         WriteNextSchedule();
     }
@@ -299,7 +310,8 @@ internal sealed class RadioBehaviorTest
     private async Task HandleMediaPropertiesChangedAsync()
     {
         await _mediaEventGate.WaitAsync();
-        RadioCommentOpportunity? opportunity = null;
+        RadioPreparationOpportunity? preparation = null;
+        RadioTransitionDelivery? delivery = null;
 
         try
         {
@@ -336,21 +348,32 @@ internal sealed class RadioBehaviorTest
 
             if (observation.PendingOpportunityInvalidated)
             {
-                _log.Write("PENDING COMMENT ABANDONED: the track changed during generation or waiting.");
-                CancelPendingPipeline("the current track changed");
+                _log.Write(
+                    observation.PreparationMissedTransition
+                        ? "PENDING COMMENT ABANDONED: Track A changed before AI/Nicole preparation finished."
+                        : "PENDING COMMENT ABANDONED: a rapid additional transition made the prepared material stale.");
+                CancelPendingPipeline(
+                    observation.PreparationMissedTransition
+                        ? "Track A changed before preparation completed"
+                        : "Track B changed again before delivery completed");
                 WriteNextSchedule();
             }
 
-            opportunity = observation.Opportunity;
+            preparation = observation.PreparationOpportunity;
+            delivery = observation.Delivery;
         }
         finally
         {
             _mediaEventGate.Release();
         }
 
-        if (opportunity is not null)
+        if (delivery is not null)
         {
-            StartOpportunity(opportunity);
+            StartDelivery(delivery);
+        }
+        else if (preparation is not null)
+        {
+            StartPreparation(preparation);
         }
     }
 
@@ -406,58 +429,212 @@ internal sealed class RadioBehaviorTest
 
     }
 
-    private void StartOpportunity(RadioCommentOpportunity opportunity)
+    private void StartPreparation(RadioPreparationOpportunity opportunity)
     {
         var linkedCancellation = CancellationTokenSource.CreateLinkedTokenSource(_shutdownToken);
+        bool skipped;
 
         lock (_pipelineLock)
         {
-            if (_pipelineTask is not null && !_pipelineTask.IsCompleted)
+            skipped = (_pipelineTask is not null && !_pipelineTask.IsCompleted)
+                || _preparedOpportunity is not null;
+
+            if (!skipped)
             {
-                linkedCancellation.Dispose();
-                lock (_stateLock)
-                {
-                    _state.ResolveOpportunity(opportunity.Id, false, null);
-                }
-
-                _log.Write("COMMENT OPPORTUNITY SKIPPED: another announcement pipeline is still cleaning up.");
-                _log.Write("No missed comment was queued.");
-                WriteNextSchedule();
-                return;
+                _pendingCancellation = linkedCancellation;
+                _pipelineTask = Task.Run(
+                    () => RunPreparationAndStoreAsync(opportunity, linkedCancellation));
             }
-
-            _pendingCancellation = linkedCancellation;
-            _pipelineTask = Task.Run(
-                () => RunOpportunityAndFinalizeAsync(opportunity, linkedCancellation));
         }
+
+        if (!skipped)
+        {
+            return;
+        }
+
+        linkedCancellation.Dispose();
+        lock (_stateLock)
+        {
+            _state.ResolveOpportunity(opportunity.Id, false, null);
+        }
+
+        _log.Write("PREPARATION SKIPPED: another automatic pipeline already exists.");
+        _log.Write("No missed comment was queued.");
+        WriteNextSchedule();
     }
 
-    private async Task RunOpportunityAndFinalizeAsync(
-        RadioCommentOpportunity opportunity,
+    private async Task RunPreparationAndStoreAsync(
+        RadioPreparationOpportunity opportunity,
         CancellationTokenSource opportunityCancellation)
     {
+        bool retainedForDelivery = false;
+
         try
         {
-            RadioOpportunityResult result = await _pipeline.RunAsync(
+            TransitionPreparationResult result = await _pipeline.PrepareAsync(
                 opportunity,
                 _aiEnabled,
                 opportunityCancellation.Token);
 
-            string? acceptedAiComment = result.Status == RadioOpportunityResultStatus.Completed
-                && result.Selection?.Source == CommentTextSource.Ai
-                    ? result.Selection.Text
+            if (result.Status == TransitionPreparationStatus.Ready && result.Prepared is not null)
+            {
+                lock (_stateLock)
+                {
+                    if (_state.MarkPreparationReady(opportunity.Id))
+                    {
+                        lock (_pipelineLock)
+                        {
+                            if (ReferenceEquals(_pendingCancellation, opportunityCancellation)
+                                && !opportunityCancellation.IsCancellationRequested)
+                            {
+                                _preparedOpportunity = result.Prepared;
+                                retainedForDelivery = true;
+                            }
+                        }
+                    }
+                }
+
+                if (!retainedForDelivery)
+                {
+                    result.Prepared.Dispose();
+                }
+            }
+
+            _log.Write(
+                $"AUTOMATIC PREPARATION RESULT: {result.Status.ToString().ToUpperInvariant()} - {result.Reason}.");
+
+            if (!retainedForDelivery)
+            {
+                bool resolved;
+                lock (_stateLock)
+                {
+                    resolved = _state.ResolveOpportunity(opportunity.Id, false, null);
+                }
+
+                if (resolved)
+                {
+                    WriteNextSchedule();
+                }
+            }
+        }
+        catch (Exception exception)
+        {
+            _log.Warning("Unexpected transition-preparation cleanup failure", exception);
+            lock (_stateLock)
+            {
+                _state.ResolveOpportunity(opportunity.Id, false, null);
+            }
+        }
+        finally
+        {
+            if (!retainedForDelivery)
+            {
+                lock (_pipelineLock)
+                {
+                    if (ReferenceEquals(_pendingCancellation, opportunityCancellation))
+                    {
+                        _pendingCancellation = null;
+                    }
+                }
+
+                opportunityCancellation.Dispose();
+            }
+            else if (opportunityCancellation.IsCancellationRequested)
+            {
+                bool disposeCancellation = false;
+
+                lock (_pipelineLock)
+                {
+                    if (ReferenceEquals(_pendingCancellation, opportunityCancellation)
+                        && _preparedOpportunity is null)
+                    {
+                        _pendingCancellation = null;
+                        disposeCancellation = true;
+                    }
+                }
+
+                if (disposeCancellation)
+                {
+                    opportunityCancellation.Dispose();
+                }
+            }
+        }
+    }
+
+    private void StartDelivery(RadioTransitionDelivery transition)
+    {
+        PreparedTransitionOpportunity? prepared;
+        CancellationTokenSource? cancellation;
+        bool simulateFailure;
+
+        lock (_pipelineLock)
+        {
+            prepared = _preparedOpportunity;
+            cancellation = _pendingCancellation;
+
+            if (prepared is null
+                || prepared.Opportunity.Id != transition.OpportunityId
+                || cancellation is null
+                || cancellation.IsCancellationRequested)
+            {
+                prepared = null;
+            }
+            else
+            {
+                _preparedOpportunity = null;
+                simulateFailure = _simulateNextTransitionFailure;
+                _simulateNextTransitionFailure = false;
+                _pipelineTask = Task.Run(
+                    () => RunDeliveryAndFinalizeAsync(
+                        prepared,
+                        transition,
+                        cancellation,
+                        simulateFailure));
+                return;
+            }
+        }
+
+        _log.Write(
+            "TRANSITION DELIVERY ABANDONED: Track-A speech was not fully ready when Track B arrived. Silence is correct.");
+        CancelPendingPipeline("preparation did not finish before the delivery transition");
+        lock (_stateLock)
+        {
+            _state.ResolveOpportunity(transition.OpportunityId, false, null);
+        }
+
+        WriteNextSchedule();
+    }
+
+    private async Task RunDeliveryAndFinalizeAsync(
+        PreparedTransitionOpportunity prepared,
+        RadioTransitionDelivery transition,
+        CancellationTokenSource opportunityCancellation,
+        bool simulateFailure)
+    {
+        try
+        {
+            TransitionDeliveryResult result = await _pipeline.DeliverAsync(
+                prepared,
+                transition,
+                simulateFailure,
+                opportunityCancellation.Token);
+
+            string? acceptedAiComment = result.Status == TransitionDeliveryStatus.Completed
+                && prepared.Selection.Source == CommentTextSource.Ai
+                    ? prepared.Selection.Text
                     : null;
             bool resolved;
 
             lock (_stateLock)
             {
                 resolved = _state.ResolveOpportunity(
-                    opportunity.Id,
-                    result.Status == RadioOpportunityResultStatus.Completed,
+                    transition.OpportunityId,
+                    result.Status == TransitionDeliveryStatus.Completed,
                     acceptedAiComment);
             }
 
-            _log.Write($"AUTOMATIC COMMENT RESULT: {result.Status.ToString().ToUpperInvariant()} - {result.Reason}.");
+            _log.Write(
+                $"AUTOMATIC TRANSITION RESULT: {result.Status.ToString().ToUpperInvariant()} - {result.Reason}.");
 
             if (resolved)
             {
@@ -467,14 +644,16 @@ internal sealed class RadioBehaviorTest
         }
         catch (Exception exception)
         {
-            _log.Warning("Unexpected automatic pipeline cleanup failure", exception);
+            _log.Warning("Unexpected transition-delivery cleanup failure", exception);
             lock (_stateLock)
             {
-                _state.ResolveOpportunity(opportunity.Id, false, null);
+                _state.ResolveOpportunity(transition.OpportunityId, false, null);
             }
         }
         finally
         {
+            prepared.Dispose();
+
             lock (_pipelineLock)
             {
                 if (ReferenceEquals(_pendingCancellation, opportunityCancellation))
@@ -492,19 +671,41 @@ internal sealed class RadioBehaviorTest
     private void CancelPendingPipeline(string reason)
     {
         CancellationTokenSource? cancellation;
+        PreparedTransitionOpportunity? prepared;
+        bool disposeCancellation = false;
 
         lock (_pipelineLock)
         {
             cancellation = _pendingCancellation;
+            prepared = _preparedOpportunity;
+            _preparedOpportunity = null;
+
+            if (cancellation is not null
+                && prepared is not null
+                && (_pipelineTask is null || _pipelineTask.IsCompleted))
+            {
+                _pendingCancellation = null;
+                disposeCancellation = true;
+            }
         }
 
-        if (cancellation is null || cancellation.IsCancellationRequested)
+        prepared?.Dispose();
+
+        if (cancellation is null)
         {
             return;
         }
 
-        _log.Write($"Cancelling pending automatic comment because {reason}.");
-        cancellation.Cancel();
+        if (!cancellation.IsCancellationRequested)
+        {
+            _log.Write($"Cancelling pending automatic preparation/delivery because {reason}.");
+            cancellation.Cancel();
+        }
+
+        if (disposeCancellation)
+        {
+            cancellation.Dispose();
+        }
     }
 
     private async Task WaitForPipelineAsync()
@@ -520,6 +721,23 @@ internal sealed class RadioBehaviorTest
         {
             await task;
         }
+    }
+
+    private void DisposePreparedOpportunity()
+    {
+        PreparedTransitionOpportunity? prepared;
+        CancellationTokenSource? cancellation;
+
+        lock (_pipelineLock)
+        {
+            prepared = _preparedOpportunity;
+            _preparedOpportunity = null;
+            cancellation = _pendingCancellation;
+            _pendingCancellation = null;
+        }
+
+        prepared?.Dispose();
+        cancellation?.Dispose();
     }
 
     private bool TrySubscribe()
@@ -592,11 +810,16 @@ internal sealed class RadioBehaviorTest
             $"  Transitions between comments: {_radioConfiguration.MinimumTransitionsBetweenComments}-" +
             $"{_radioConfiguration.MaximumTransitionsBetweenComments} (random and inclusive)");
         _log.Write(
-            $"  Minimum current-track age before speech: {_radioConfiguration.MinimumTrackAgeBeforeSpeech.TotalSeconds:0} seconds");
+            $"  Minimum Track-A age before preparation: {_radioConfiguration.MinimumTrackAgeBeforeSpeech.TotalSeconds:0} seconds");
+        _log.Write(
+            $"  Transition delivery window: {_radioConfiguration.TransitionDeliveryWindow.TotalSeconds:0.0} seconds after Track B is observed");
         _log.Write($"  Maximum automatic speech duration: {_radioConfiguration.MaximumSpeechDuration.TotalSeconds:0} seconds");
         _log.Write($"  Recent in-memory tracks: {_radioConfiguration.RecentTrackLimit}");
         _log.Write($"  Recent accepted AI comments: {_radioConfiguration.RecentCommentLimit}");
         _log.Write($"  AI mode: {(aiEnabled ? "local Ollama when scheduled" : "OFF - fixed fallback only")}");
+        _log.Write("  Delivery: Firefox Core Audio ducking at 25% of the captured current scalar; no GSMTC pause/resume");
+        _log.Write(
+            $"  Simulated post-duck failure: {(_simulateNextTransitionFailure ? "ON for the first delivery" : "OFF")}");
         _log.Write("Recent behavioral history is memory-only and is discarded when this process exits.");
     }
 
@@ -629,10 +852,15 @@ internal sealed class RadioBehaviorTest
 
         WriteHistorySizes();
 
-        if (observation.Opportunity is not null)
+        if (observation.PreparationOpportunity is not null)
         {
-            _log.Write("COMMENT OPPORTUNITY REACHED: one generation pipeline will start.");
-            _log.Write("The primary comment subject is the previously playing track.");
+            _log.Write("OPPORTUNITY SCHEDULED: one transition remains before delivery.");
+            _log.Write("Track A preparation will begin when its stability age is satisfied, while music keeps Playing.");
+        }
+
+        if (observation.Delivery is not null)
+        {
+            _log.Write("DELIVERY TRANSITION REACHED: prepared Track-A material may be delivered over Track B now.");
         }
     }
 
@@ -650,25 +878,27 @@ internal sealed class RadioBehaviorTest
     {
         lock (_stateLock)
         {
-            _log.Write($"Next comment target: after {_state.ScheduledThreshold} observed track transition(s).");
+            _log.Write(
+                $"Next comment target: delivery on transition {_state.ScheduledThreshold}; " +
+                $"preparation starts one transition earlier.");
         }
     }
 
-    private sealed class LocalRadioCommentProvider : IRadioCommentProvider
+    private sealed class LocalTransitionCommentProvider : ITransitionCommentProvider
     {
         private readonly AiCommentService _service;
 
-        public LocalRadioCommentProvider(AiCommentService service)
+        public LocalTransitionCommentProvider(AiCommentService service)
         {
             _service = service;
         }
 
         public Task<CommentSelection> SelectAsync(
-            RadioCommentContext context,
+            RadioPreparationContext context,
             bool aiEnabled,
             CancellationToken cancellationToken)
         {
-            return _service.SelectRadioCommentAsync(context, aiEnabled, cancellationToken);
+            return _service.SelectPreparedTransitionCommentAsync(context, aiEnabled, cancellationToken);
         }
     }
 }

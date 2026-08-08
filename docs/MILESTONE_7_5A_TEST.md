@@ -1,6 +1,8 @@
-# Milestone 7.5A manual acceptance - Firefox audio ducking
+# Milestone 7.5A manual acceptance - PASSED
 
-Milestone 7.5A is implemented but not passed until Steve completes the applicable checks below. This is an isolated volume-safety test, not the automatic radio transition.
+Steve completed this isolated volume-safety test successfully. A 50.0% Firefox application volume ducked to 12.5% and restored exactly to 50.0%; normal, Ctrl+C, and simulated-failure restoration passed; Chrome and Windows master volume were unaffected; and Steve described the ramp as natural.
+
+Windows grouped multiple audible Firefox tabs into the same application session, so they ducked together. That application-level isolation is accepted for Phase 1. The procedure is preserved below for troubleshooting and repeatability.
 
 The probe changes only the selected Firefox **application-session** volume. It must never pause the music, change the Windows master volume, or affect another application.
 
