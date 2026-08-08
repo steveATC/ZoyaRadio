@@ -1,6 +1,6 @@
 # Zoya Radio
 
-Milestones 0 through 4 have passed Steve's manual tests. Milestone 5 radio behavior is the current milestone.
+Milestones 0 through 5 have passed Steve's manual tests. Milestone 6 is deliberately deferred. Milestone 7 Stage B has produced local Kokoro voice samples and is waiting for Steve to choose a voice before any radio integration begins.
 
 The original media probe is **read only**. It lists and watches Windows media sessions, but it cannot pause, play, skip, change volume, or otherwise control playback. It does not inspect Firefox, webpage content, URLs, cookies, history, or Google account information.
 
@@ -106,7 +106,21 @@ The zero-GPU automatic mode keeps the same 2-5 scheduling and fixed announcement
 .\run-radio-behavior-test.cmd --no-ai
 ```
 
-Follow [docs/MILESTONE_5_TEST.md](docs/MILESTONE_5_TEST.md) for the required manual acceptance test. Milestone 5 remains unpassed until that real Firefox/TTS test succeeds.
+The completed Milestone 5 procedure is preserved in [docs/MILESTONE_5_TEST.md](docs/MILESTONE_5_TEST.md).
+
+## Compare the Milestone 7 voice samples
+
+The separate voice-audition tool uses the approved CPU-only Kokoro model to create WAV files. It does **not** play them automatically, inspect Firefox, control music, call Ollama, or change the working Windows speech fallback.
+
+The current samples are under `artifacts\voice-audition\20260807-235846-809`. Open that folder in File Explorer and double-click files `01` through `05` to compare the voices. Follow [docs/MILESTONE_7_VOICE_AUDITION.md](docs/MILESTONE_7_VOICE_AUDITION.md) and tell the Work chat which exact voice name you prefer.
+
+To create a fresh set later:
+
+```powershell
+.\run-voice-audition.cmd
+```
+
+The approved model and packages are project-local, require no administrator access, and remain excluded from Git. Milestone 7 has not been integrated into the radio yet; that work waits for Steve's voice choice.
 
 ## Developer build
 
@@ -117,6 +131,7 @@ From the repository root:
 ```powershell
 .\.dotnet\dotnet.exe build .\src\ZoyaRadio.MediaProbe\ZoyaRadio.MediaProbe.csproj --configuration Release
 .\.dotnet\dotnet.exe run --project .\tests\ZoyaRadio.MediaProbe.Tests\ZoyaRadio.MediaProbe.Tests.csproj --configuration Release
+.\.dotnet\dotnet.exe build .\src\ZoyaRadio.VoiceAudition\ZoyaRadio.VoiceAudition.csproj --configuration Release
 ```
 
-The project uses Microsoft's supported `Windows.Media.Control`, `Windows.Media.SpeechSynthesis`, and `Windows.Media.Playback` APIs plus Ollama's loopback-only local HTTP API. No third-party .NET package, cloud AI service, or API key is used.
+The radio project uses Microsoft's supported `Windows.Media.Control`, `Windows.Media.SpeechSynthesis`, and `Windows.Media.Playback` APIs plus Ollama's loopback-only local HTTP API. The separate Milestone 7 audition project adds the approved `KokoroSharp.CPU` 0.8.0 package and CPU ONNX runtime locally. No cloud speech service or API key is used.

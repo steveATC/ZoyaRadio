@@ -2,21 +2,18 @@
 
 ## Current milestone
 
-**Milestone 5 - radio behavior and minimal listening state**
+**Milestone 7 - better local voice, Stage B audition**
 
-Implementation is ready for Steve's manual automatic-behavior test but is **AWAITING MANUAL ACCEPTANCE**.
+The CPU-only audition is ready for Steve to hear, but Milestone 7 is **AWAITING VOICE SELECTION AND LATER MANUAL ACCEPTANCE**.
 
-- `run-radio-behavior-test.cmd` is a separate explicit launcher. It asks once and defaults to not armed.
-- A testable random source chooses an inclusive 2-5 transition target. The startup track does not count; deduplicated title/artist changes count once.
-- AI generation and model unloading happen while music remains Playing. An eight-second minimum current-track age and a final same-session/track/Playing recheck precede every automatic pause.
-- Track or session changes, Silent Mode, clearing history, cancellation, and shutdown invalidate pending work. Missed comments are discarded rather than queued.
-- Only one comment pipeline may run. Automatic speech is limited to 25 seconds and reuses protected same-session recovery.
-- **S** toggles Silent Mode; leaving Silent Mode resets scheduling. **C** clears bounded behavioral history without deleting diagnostic logs.
-- Recent history is in memory only: 10 exact title/artist tracks and 6 accepted AI comments. It is discarded on process exit.
-- Exact artist repetition uses trimmed/collapsed, case-insensitive string comparison only. No fuzzy artist matching or preference inference is performed.
-- Recent comments are compact prompt context for wording variety. Exact normalized duplicates use the fixed fallback without a regeneration loop.
-- `--no-ai` preserves automatic scheduling and fixed pause/speech/resume behavior while making no Ollama request.
-- Genre/style-change detection is intentionally deferred because M5 has no trusted genre or audio-analysis data.
+- Milestone 6 remains deliberately deferred; no Milestone 6 or Milestone 8 work was added.
+- `run-voice-audition.cmd` is a separate diagnostic. It creates WAV files only and contains no Firefox, media-session, playback-control, Ollama, or automatic-radio path.
+- Five feminine Kokoro voices were rendered with the same English audition sentence: `af_heart`, `af_bella`, `af_nicole`, `bf_emma`, and `af_sarah`.
+- A separate `af_heart` Cyrillic robustness sample preserved the exact Unicode text in the UTF-8 report and produced audio. Russian is not a documented Kokoro language, so pronunciation or omissions require Steve's listening review.
+- All six samples completed. The cold first sample took 3.475 seconds; warm samples took 0.939-1.404 seconds for 8.125-12.450 seconds of audio.
+- Model load took 0.673 seconds. Working set measured 24.5 MiB before load and 486.2 MiB after load. The audition process was not listed by `nvidia-smi`, as expected for CPU-only inference.
+- The engine was disposed after synthesis and the process exited. Kokoro is not yet wired into Zoya Radio; the existing Windows speech path remains unchanged.
+- Samples and the UTF-8 report are in ignored `artifacts/voice-audition/20260807-235846-809/`.
 
 ## Completed milestones
 
@@ -60,6 +57,13 @@ Implementation is ready for Steve's manual automatic-behavior test but is **AWAI
 - The known repeated `Borrowed Umbrella` invention on unrelated Cyrillic metadata is a model/prompt grounding defect, not Unicode corruption. Steve accepted the current persona and deferred that tuning.
 - Ollama sampling remained at temperature `0.7`; no model, voice, playback-control, GUI, scheduling, history, or retrieval change was part of Milestone 4.
 
+**Milestone 5 - PASSED manual acceptance on Steve's Windows PC.**
+
+- Automatic comments use an inclusive random interval of 2-5 genuine deduplicated Firefox track transitions; the startup track does not count.
+- AI generation occurs while music remains Playing. The eight-second age guard and final same-session, same-track, and Playing recheck precede a targeted pause.
+- Silent Mode, clearing bounded in-memory history, cancellation, speech timeout, and shutdown preserve the tested same-session recovery behavior.
+- `--no-ai` keeps fixed-template automatic behavior without contacting Ollama. No persistent listening history, genre inference, GUI, or volume control was added.
+
 ## Known issues and limits
 
 - Windows or Firefox may omit album information. The probe displays `<not provided>` and does not treat that as an error.
@@ -68,6 +72,8 @@ Implementation is ready for Steve's manual automatic-behavior test but is **AWAI
 - Real playback-control calls remain excluded from automated test runs. Steve's Milestone 1 manual acceptance supplied that evidence.
 - PowerShell may cosmetically display Cyrillic metadata as question marks. The UTF-8 logs preserve the original Unicode, and the announcement sentence is built directly from the in-memory Unicode title and artist.
 - The current en-US Microsoft David voice speaks the English parts of an announcement but may skip Cyrillic title and artist text. Multilingual TTS remains outside Milestone 5.
+- Kokoro's documented language list does not include Russian. The Milestone 7 Cyrillic sample preserves the characters, but its audible pronunciation or omissions are a manual observation rather than claimed language support.
+- Kokoro voice quality is subjective. Stage B deliberately does not select or integrate a voice until Steve listens to the five comparable samples.
 - Mechanical validation cannot prove factual grounding or personality quality; those remain manual review concerns for AI-generated prose.
 - Milestone 5 supplies up to six recent accepted AI comments for repetition avoidance, but it intentionally performs no semantic-similarity analysis or regeneration loop.
 - Manual Milestone 4 testing found that `qwen3:4b-instruct` sometimes invented `Borrowed Umbrella` for unrelated Cyrillic metadata. This is a known model/prompt grounding defect, not Unicode corruption, and Steve deferred it rather than adding a brittle blacklist.
@@ -102,4 +108,9 @@ Implementation is ready for Steve's manual automatic-behavior test but is **AWAI
 - Automatic prompt context contains previous/current title and artist, explicitly derived exact-string observations, and recent accepted comments. No album, genre, audio description, biography, or remembered trivia is added.
 - If the intended track changes during generation or age waiting, the cancellation token abandons that interruption and the state chooses a fresh future interval. There is no missed-comment queue.
 - The known local Ollama model, endpoint, 20-second generation timeout, `keep_alive: 0`, 15-40-word validation, exact `FALLBACK`, Windows voice, and same-session recovery mechanisms remain unchanged.
+- Milestone 7 Stage B is isolated in `src/ZoyaRadio.VoiceAudition`. It uses `KokoroSharp.CPU` 0.8.0, Kokoro 82M v1.0 FP32 ONNX, and Microsoft ONNX Runtime 1.22.0 without requesting a CUDA provider.
+- The model is stored at ignored `.tools/kokoro/kokoro.onnx`: 325,532,387 bytes (310.5 MiB), SHA-256 `7D5DF8ECF7D4B1878015A32686053FD0EEBE2BC377234608764CC0EF3636A6C5`.
+- The restored audition package closure occupies about 559.69 MiB in the ignored NuGet cache; the model, cache, build output, and generated samples together occupy about 1.20 GiB at this checkpoint, within the approved project-local footprint.
+- KokoroSharp is MIT licensed; the Kokoro model and voices are Apache-2.0; the bundled eSpeak NG phonemization component is GPLv3. Distribution remains a later review, not part of this private audition.
+- `.tools/`, `.packages/`, `bin/`, `obj/`, and `artifacts/` were already excluded from Git, so the model, native runtime, generated WAV files, and reports cannot be committed accidentally.
 - Build tooling is project-local: Microsoft .NET SDK 8.0.423 and Microsoft's `Microsoft.Windows.SDK.NET.Ref` targeting pack. Neither requires administrator privileges.
