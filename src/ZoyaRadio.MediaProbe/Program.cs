@@ -19,6 +19,9 @@ internal static class Program
         bool windowsTts = false;
         bool simulateNeuralTtsFailure = false;
         bool measureNeuralTts = false;
+        bool audioDuckingTest = false;
+        bool enumerateAudioOnly = false;
+        bool simulateDuckFailure = false;
 
         foreach (string argument in args)
         {
@@ -100,6 +103,24 @@ internal static class Program
                 continue;
             }
 
+            if (string.Equals(argument, "--audio-ducking-test", StringComparison.OrdinalIgnoreCase))
+            {
+                audioDuckingTest = true;
+                continue;
+            }
+
+            if (string.Equals(argument, "--enumerate-only", StringComparison.OrdinalIgnoreCase))
+            {
+                enumerateAudioOnly = true;
+                continue;
+            }
+
+            if (string.Equals(argument, "--simulate-duck-failure", StringComparison.OrdinalIgnoreCase))
+            {
+                simulateDuckFailure = true;
+                continue;
+            }
+
             Console.Error.WriteLine($"Unknown option: {argument}");
             WriteUsage();
             return 2;
@@ -110,11 +131,27 @@ internal static class Program
             + (announcementTest ? 1 : 0)
             + (aiCommentTest ? 1 : 0)
             + (radioBehaviorTest ? 1 : 0)
-            + (measureNeuralTts ? 1 : 0);
+            + (measureNeuralTts ? 1 : 0)
+            + (audioDuckingTest ? 1 : 0);
         if (selectedModes > 1)
         {
             Console.Error.WriteLine(
-                "Snapshot, playback-control, announcement, AI-comment, radio-behavior, and neural-TTS measurement modes cannot be combined.");
+                "Snapshot, playback-control, announcement, AI-comment, radio-behavior, neural-TTS measurement, and audio-ducking modes cannot be combined.");
+            WriteUsage();
+            return 2;
+        }
+
+        if ((enumerateAudioOnly || simulateDuckFailure) && !audioDuckingTest)
+        {
+            Console.Error.WriteLine(
+                "--enumerate-only and --simulate-duck-failure require --audio-ducking-test (normally supplied by its launcher).");
+            WriteUsage();
+            return 2;
+        }
+
+        if (enumerateAudioOnly && simulateDuckFailure)
+        {
+            Console.Error.WriteLine("--enumerate-only cannot be combined with --simulate-duck-failure.");
             WriteUsage();
             return 2;
         }
@@ -186,6 +223,8 @@ internal static class Program
         {
             string logPrefix = measureNeuralTts
                 ? "neural-tts-diagnostic"
+                : audioDuckingTest
+                ? "audio-ducking-test"
                 : radioBehaviorTest
                 ? "radio-behavior-test"
                 : aiCommentTest
@@ -209,6 +248,16 @@ internal static class Program
             {
                 log.Write("ZOYA RADIO - MILESTONE 7 NEURAL TTS PERFORMANCE DIAGNOSTIC");
                 log.Write("READ ONLY WITH RESPECT TO MEDIA: no audio playback or Firefox control is used.");
+            }
+            else if (audioDuckingTest)
+            {
+                log.Write("ZOYA RADIO - MILESTONE 7.5A FIREFOX AUDIO-DUCKING DIAGNOSTIC");
+                log.Write(
+                    enumerateAudioOnly
+                        ? "READ ONLY: this mode enumerates Windows audio sessions and will not change volume or playback."
+                        : "This mode can temporarily change exactly one confirmed Firefox audio session's volume; it never pauses playback.");
+                log.Write(
+                    $"Mode: {(enumerateAudioOnly ? "read-only enumeration" : simulateDuckFailure ? "simulated failure with real protected volume restoration" : "one confirmed duck-and-restore cycle")}");
             }
             else if (radioBehaviorTest)
             {
@@ -286,6 +335,31 @@ internal static class Program
                 finally
                 {
                     Console.CancelKeyPress -= diagnosticCancelHandler;
+                }
+            }
+
+            if (audioDuckingTest)
+            {
+                using var audioDuckingCancellation = new CancellationTokenSource();
+                ConsoleCancelEventHandler audioDuckingCancelHandler = (_, eventArgs) =>
+                {
+                    eventArgs.Cancel = true;
+                    audioDuckingCancellation.Cancel();
+                };
+
+                Console.CancelKeyPress += audioDuckingCancelHandler;
+
+                try
+                {
+                    var test = new AudioDuckingTest(log);
+                    return await test.RunAsync(
+                        enumerateAudioOnly,
+                        simulateDuckFailure,
+                        audioDuckingCancellation.Token);
+                }
+                finally
+                {
+                    Console.CancelKeyPress -= audioDuckingCancelHandler;
                 }
             }
 
@@ -564,5 +638,6 @@ internal static class Program
         Console.Error.WriteLine("   or: run-radio-behavior-test.cmd [--no-ai|--windows-tts]");
         Console.Error.WriteLine("   or: run-neural-tts-fallback-test.cmd");
         Console.Error.WriteLine("   or: run-neural-tts-diagnostic.cmd");
+        Console.Error.WriteLine("   or: run-audio-ducking-test.cmd [--enumerate-only|--simulate-duck-failure]");
     }
 }

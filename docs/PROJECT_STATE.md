@@ -2,20 +2,23 @@
 
 ## Current milestone
 
-**Milestone 7 - better local voice, Stage C integration**
+**Milestone 7.5A - isolated Firefox per-session audio ducking**
 
-Implementation is **READY FOR STEVE'S MANUAL ACCEPTANCE**, but Milestone 7 is not yet passed.
+Implementation is **READY FOR STEVE'S MANUAL ACCEPTANCE**, but neither Milestone 7.5A nor the complete Milestone 7.5 transition is passed yet.
 
-- Steve selected Kokoro `af_nicole` as Zoya's normal voice and `af_heart` as runner-up. He found Nicole clearly preferable and described the Cyrillic sample as natural-sounding, while correctly noting that he cannot verify Russian pronunciation.
-- The application now prefers `KokoroSharp.CPU` 0.8.0 with `af_nicole`; the existing Windows voice remains the automatic preparation fallback and can be forced with `--windows-tts`.
-- AI generation and Ollama unload remain first. Nicole's in-memory WAV is then synthesized while Firefox remains Playing. The model is disposed before the final age/session/track/Playing/Silent Mode recheck and targeted pause.
-- Missing model, unavailable neural initialization, and neural synthesis failure fall back to Windows TTS before pause. Cancellation abandons the prepared comment rather than starting fallback work.
-- Playback failure after pause, speech timeout, or Ctrl+C uses the existing protected same-session resume path. No global media key, alternate session, or toggle fallback was added.
-- Prepared WAV data lives only in a disposable in-memory stream. No temporary speech files accumulate.
-- The selected-voice diagnostic prepared three 15-40-word comments in 2.641, 2.154, and 1.809 seconds. Audio durations were 11.275, 13.575, and 10.850 seconds.
-- Model load measured 0.785 seconds cold and 0.558/0.555 seconds on the next preparations. Peak working set was about 764.3 MiB; after disposal it settled near 333.3 MiB. CPU mode requested 0 MiB VRAM.
-- Automated verification currently reports 80 passed and 0 failed. No audible speech or real Firefox playback control was used automatically.
-- Milestone 6 remains deliberately deferred; no Milestone 6 or Milestone 8 work was added.
+- Milestone 6 remains deliberately deferred. Milestone 7 passed Steve's manual acceptance. Milestone 7.5 is the current Phase-1 gate; Milestone 8 follows it and is the Phase-1 usable-MVP completion gate.
+- The dedicated `run-audio-ducking-test.cmd` probe is not integrated into automatic radio behavior. It performs no AI generation, speech, media pause, or media resume.
+- The implementation uses Windows Core Audio `IAudioSessionManager2`, `IAudioSessionEnumerator`, `IAudioSessionControl2`, and `ISimpleAudioVolume` directly. No new dependency was added.
+- It enumerates sessions on the default multimedia render endpoint, logs a short hash tag instead of raw session/device identifiers, and reads process ID, process name, activity, per-session scalar, and mute state.
+- Only active sessions whose process name is exactly `firefox` or `firefox.exe`, case-insensitively, are candidates. Zero candidates cause a safe refusal; multiple active candidates are explicitly ambiguous and cause a safe refusal.
+- Exactly one candidate still requires an explicit **Y**. Read-only enumeration, Enter/default NO, muted Firefox, volume below 5%, an inactive/expired session, or unreadable volume state issues no volume command.
+- The fixed diagnostic target is 25% of the exact captured starting scalar, not 25% absolute. A 60% starting value therefore ducks to 15% and restores to exactly 60%.
+- Ducking and restoration use ten 60 ms scalar steps. The audible hold is about three seconds. The captured mute state is restored as well.
+- Protected cleanup retains the original session object and attempts exact restoration after normal completion, Ctrl+C, a simulated failure, or another exception. It never re-enumerates or redirects restoration to another session.
+- If the original session disappears, the probe warns Steve to restore Firefox manually and does not guess at a replacement.
+- A safe live `--enumerate-only` run found three sessions on Steve's default output: one active `firefox.exe` candidate at 100% and unmuted, inactive Steam at 17.7%, and one inactive system/unidentified session. It issued no volume command.
+- Automated verification currently reports 91 passed and 0 failed. No automated run changed real volume or playback.
+- M7.5B transition integration and Milestone 8 were not started.
 
 ## Completed milestones
 
@@ -66,6 +69,13 @@ Implementation is **READY FOR STEVE'S MANUAL ACCEPTANCE**, but Milestone 7 is no
 - Silent Mode, clearing bounded in-memory history, cancellation, speech timeout, and shutdown preserve the tested same-session recovery behavior.
 - `--no-ai` keeps fixed-template automatic behavior without contacting Ollama. No persistent listening history, genre inference, GUI, or volume control was added.
 
+**Milestone 7 - PASSED manual acceptance on Steve's Windows PC.**
+
+- Steve selected Kokoro `af_nicole` as Zoya's primary local voice and `af_heart` as runner-up.
+- Steve reported Milestone 7's manual acceptance passed with Nicole as the accepted primary local voice and Windows TTS retained as fallback.
+- Steve described the Cyrillic sample as natural-sounding but did not claim verified Russian pronunciation.
+- The application keeps Windows TTS as fallback, prepares neural audio while Firefox plays, disposes the CPU model before pause, and retains protected same-session resume behavior.
+
 ## Known issues and limits
 
 - Windows or Firefox may omit album information. The probe displays `<not provided>` and does not treat that as an error.
@@ -75,7 +85,7 @@ Implementation is **READY FOR STEVE'S MANUAL ACCEPTANCE**, but Milestone 7 is no
 - PowerShell may cosmetically display Cyrillic metadata as question marks. The UTF-8 logs preserve the original Unicode, and the announcement sentence is built directly from the in-memory Unicode title and artist.
 - The fallback en-US Microsoft David voice may skip Cyrillic title and artist text. Multilingual transliteration remains outside Milestone 7.
 - Kokoro's documented language list does not include Russian. The Milestone 7 Cyrillic sample preserves the characters, but its audible pronunciation or omissions are a manual observation rather than claimed language support.
-- Nicole's quality won the audition, but real automatic-radio sound, timing, and recovery still require Steve's manual desktop test.
+- Milestone 7 passed Steve's manual acceptance. Russian pronunciation accuracy remains unverified.
 - Repeated CPU preparation disposes the ONNX model each time, but the long-running .NET/native process retained roughly 333 MiB working set after three preparations. No GPU provider is loaded.
 - Mechanical validation cannot prove factual grounding or personality quality; those remain manual review concerns for AI-generated prose.
 - Milestone 5 supplies up to six recent accepted AI comments for repetition avoidance, but it intentionally performs no semantic-similarity analysis or regeneration loop.
@@ -122,3 +132,5 @@ Implementation is **READY FOR STEVE'S MANUAL ACCEPTANCE**, but Milestone 7 is no
 - `.tools/`, `.packages/`, `bin/`, `obj/`, and `artifacts/` were already excluded from Git, so the model, native runtime, generated WAV files, and reports cannot be committed accidentally.
 - The performance evidence is in ignored `logs/neural-tts-diagnostic-20260808-001817-018.txt`.
 - Build tooling is project-local: Microsoft .NET SDK 8.0.423 and Microsoft's `Microsoft.Windows.SDK.NET.Ref` targeting pack. Neither requires administrator privileges.
+- Milestone 7.5A follows Microsoft's documented Core Audio route: `IMMDeviceEnumerator::GetDefaultAudioEndpoint` for the default multimedia render device, `IAudioSessionManager2::GetSessionEnumerator` to list its sessions, `IAudioSessionControl2::GetProcessId` for process association, and `ISimpleAudioVolume` for that session's scalar/mute only. It never calls endpoint/master-volume APIs.
+- Microsoft documentation used for the decision: `https://learn.microsoft.com/windows/win32/api/audiopolicy/nn-audiopolicy-iaudiosessionenumerator`, `https://learn.microsoft.com/windows/win32/api/audiopolicy/nf-audiopolicy-iaudiosessioncontrol2-getprocessid`, and `https://learn.microsoft.com/windows/win32/coreaudio/session-volume-controls`.

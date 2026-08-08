@@ -9,6 +9,17 @@ var tests = new (string Name, Func<Task> Run)[]
     ("case-insensitive exact Firefox match", () => RunSynchronous(CaseInsensitiveExactMatch)),
     ("partial Firefox name is not a match", () => RunSynchronous(PartialNameDoesNotMatch)),
     ("multiple Firefox matches remain ambiguous", () => RunSynchronous(MultipleFirefoxMatches)),
+    ("audio duck selector refuses when Firefox is absent", () => RunSynchronous(AudioDuckNoFirefoxCandidate)),
+    ("audio duck selector chooses one exact active Firefox session", () => RunSynchronous(AudioDuckSelectsOneFirefoxCandidate)),
+    ("audio duck selector ignores unrelated applications", () => RunSynchronous(AudioDuckIgnoresUnrelatedApplications)),
+    ("audio duck selector refuses ambiguous active Firefox sessions", () => RunSynchronous(AudioDuckRefusesAmbiguousFirefoxCandidates)),
+    ("audio duck target is relative to captured volume", () => RunSynchronous(AudioDuckLevelIsRelative)),
+    ("normal audio duck restores exact captured state", AudioDuckNormalRestoresExactState),
+    ("audio duck pre-cancellation issues no volume command", AudioDuckPreCancellationIssuesNoCommand),
+    ("audio duck cancellation restores exact captured state", AudioDuckCancellationRestoresExactState),
+    ("simulated audio duck failure restores exact captured state", AudioDuckSimulatedFailureRestoresExactState),
+    ("muted and near-zero sessions receive no volume command", AudioDuckRefusesUnsuitableStartingState),
+    ("audio duck restoration never redirects to a replacement session", AudioDuckDoesNotRedirectRestoration),
     ("confirmation defaults to no", () => RunSynchronous(ConfirmationDefaultsToNo)),
     ("only explicit y or yes confirms", () => RunSynchronous(ExplicitConfirmationOnly)),
     ("control starts only from Playing", () => RunSynchronous(StartingStateMustBePlaying)),
@@ -371,6 +382,160 @@ static void MultipleFirefoxMatches()
     });
 
     AssertEqual(2, matches.Count);
+}
+
+static void AudioDuckNoFirefoxCandidate()
+{
+    using var chrome = new FakeAudioSessionTarget("chrome", 10, "CHROME01", 0.8f);
+    AudioSessionSelection selection = AudioSessionSelector.SelectFirefox(
+        [AudioDescriptor(chrome)]);
+
+    AssertEqual(AudioSessionSelectionStatus.NoFirefoxCandidate, selection.Status);
+    AssertTrue(selection.Target is null);
+}
+
+static void AudioDuckSelectsOneFirefoxCandidate()
+{
+    using var firefox = new FakeAudioSessionTarget("FIREFOX.EXE", 20, "FIREFOX01", 0.6f);
+    using var inactiveFirefox = new FakeAudioSessionTarget(
+        "firefox",
+        21,
+        "FIREFOX02",
+        0.4f,
+        activity: AudioSessionActivity.Inactive);
+    AudioSessionSelection selection = AudioSessionSelector.SelectFirefox(
+        [AudioDescriptor(firefox), AudioDescriptor(inactiveFirefox)]);
+
+    AssertEqual(AudioSessionSelectionStatus.Selected, selection.Status);
+    AssertSame(firefox, selection.Target!);
+}
+
+static void AudioDuckIgnoresUnrelatedApplications()
+{
+    using var firefox = new FakeAudioSessionTarget("firefox", 20, "FIREFOX01", 0.6f);
+    using var chrome = new FakeAudioSessionTarget("chrome", 30, "CHROME01", 0.8f);
+    using var spotify = new FakeAudioSessionTarget("spotify", 40, "SPOTIFY01", 0.9f);
+    AudioSessionSelection selection = AudioSessionSelector.SelectFirefox(
+        [AudioDescriptor(chrome), AudioDescriptor(firefox), AudioDescriptor(spotify)]);
+
+    AssertEqual(AudioSessionSelectionStatus.Selected, selection.Status);
+    AssertSame(firefox, selection.Target!);
+}
+
+static void AudioDuckRefusesAmbiguousFirefoxCandidates()
+{
+    using var first = new FakeAudioSessionTarget("firefox", 20, "FIREFOX01", 0.6f);
+    using var second = new FakeAudioSessionTarget("firefox.exe", 21, "FIREFOX02", 0.7f);
+    AudioSessionSelection selection = AudioSessionSelector.SelectFirefox(
+        [AudioDescriptor(first), AudioDescriptor(second)]);
+
+    AssertEqual(AudioSessionSelectionStatus.Ambiguous, selection.Status);
+    AssertTrue(selection.Target is null);
+    AssertEqual(2, selection.FirefoxCandidates.Count);
+}
+
+static void AudioDuckLevelIsRelative()
+{
+    AudioDuckingConfiguration configuration = FastAudioDuckingConfiguration();
+    AssertApproximately(0.1f, configuration.CalculateDuckVolume(0.4f));
+    AssertApproximately(0.2f, configuration.CalculateDuckVolume(0.8f));
+}
+
+static async Task AudioDuckNormalRestoresExactState()
+{
+    using var target = new FakeAudioSessionTarget("firefox", 20, "FIREFOX01", 0.4f);
+    var sequence = new AudioDuckingSequence(new FakeLog(), FastAudioDuckingConfiguration());
+
+    AudioDuckingResult result = await sequence.RunAsync(target, false, CancellationToken.None);
+
+    AssertTrue(result.TestPassed);
+    AssertTrue(result.DuckVerified);
+    AssertTrue(result.RestorationVerified);
+    AssertApproximately(0.4f, target.VolumeScalar);
+    AssertFalse(target.Muted);
+    AssertApproximately(0.1f, target.MinimumRequestedVolume);
+    AssertTrue(target.SetVolumeCalls >= 4);
+}
+
+static async Task AudioDuckPreCancellationIssuesNoCommand()
+{
+    using var cancellation = new CancellationTokenSource();
+    cancellation.Cancel();
+    using var target = new FakeAudioSessionTarget("firefox", 20, "FIREFOX01", 0.52f);
+    var sequence = new AudioDuckingSequence(new FakeLog(), FastAudioDuckingConfiguration());
+
+    AudioDuckingResult result = await sequence.RunAsync(target, false, cancellation.Token);
+
+    AssertTrue(result.Cancelled);
+    AssertFalse(result.VolumeCommandMayHaveBeenIssued);
+    AssertFalse(result.RestorationAttempted);
+    AssertEqual(0, target.SetVolumeCalls);
+    AssertEqual(0, target.SetMuteCalls);
+}
+
+static async Task AudioDuckCancellationRestoresExactState()
+{
+    using var cancellation = new CancellationTokenSource();
+    using var target = new FakeAudioSessionTarget("firefox", 20, "FIREFOX01", 0.52f)
+    {
+        OnVolumeSet = _ => cancellation.Cancel(),
+    };
+    var sequence = new AudioDuckingSequence(new FakeLog(), FastAudioDuckingConfiguration());
+
+    AudioDuckingResult result = await sequence.RunAsync(target, false, cancellation.Token);
+
+    AssertTrue(result.Cancelled);
+    AssertTrue(result.RestorationAttempted);
+    AssertTrue(result.RestorationVerified);
+    AssertApproximately(0.52f, target.VolumeScalar);
+    AssertFalse(target.Muted);
+}
+
+static async Task AudioDuckSimulatedFailureRestoresExactState()
+{
+    using var target = new FakeAudioSessionTarget("firefox", 20, "FIREFOX01", 0.63f);
+    var sequence = new AudioDuckingSequence(new FakeLog(), FastAudioDuckingConfiguration());
+
+    AudioDuckingResult result = await sequence.RunAsync(target, true, CancellationToken.None);
+
+    AssertTrue(result.SimulatedFailure);
+    AssertTrue(result.ExpectedFailureRecoveryPassed);
+    AssertApproximately(0.63f, target.VolumeScalar);
+    AssertFalse(target.Muted);
+}
+
+static async Task AudioDuckRefusesUnsuitableStartingState()
+{
+    using var muted = new FakeAudioSessionTarget("firefox", 20, "FIREFOX01", 0.7f, muted: true);
+    using var nearZero = new FakeAudioSessionTarget("firefox", 21, "FIREFOX02", 0.01f);
+    var sequence = new AudioDuckingSequence(new FakeLog(), FastAudioDuckingConfiguration());
+
+    AudioDuckingResult mutedResult = await sequence.RunAsync(muted, false, CancellationToken.None);
+    AudioDuckingResult nearZeroResult = await sequence.RunAsync(nearZero, false, CancellationToken.None);
+
+    AssertFalse(mutedResult.VolumeCommandMayHaveBeenIssued);
+    AssertFalse(nearZeroResult.VolumeCommandMayHaveBeenIssued);
+    AssertEqual(0, muted.SetVolumeCalls);
+    AssertEqual(0, muted.SetMuteCalls);
+    AssertEqual(0, nearZero.SetVolumeCalls);
+    AssertEqual(0, nearZero.SetMuteCalls);
+}
+
+static async Task AudioDuckDoesNotRedirectRestoration()
+{
+    using var original = new FakeAudioSessionTarget("firefox", 20, "ORIGINAL", 0.5f)
+    {
+        DisappearAfterSuccessfulReads = 2,
+    };
+    using var replacement = new FakeAudioSessionTarget("firefox", 21, "REPLACEMENT", 0.9f);
+    var sequence = new AudioDuckingSequence(new FakeLog(), FastAudioDuckingConfiguration());
+
+    AudioDuckingResult result = await sequence.RunAsync(original, true, CancellationToken.None);
+
+    AssertFalse(result.RestorationVerified);
+    AssertEqual(0, replacement.SetVolumeCalls);
+    AssertEqual(0, replacement.SetMuteCalls);
+    AssertApproximately(0.9f, replacement.VolumeScalar);
 }
 
 static void ConfirmationDefaultsToNo()
@@ -1474,6 +1639,22 @@ static AnnouncementSequenceTimings FastTimings()
         3);
 }
 
+static AudioDuckingConfiguration FastAudioDuckingConfiguration()
+{
+    return new AudioDuckingConfiguration(
+        DuckRatio: 0.25f,
+        MinimumUsableStartingVolume: 0.05f,
+        RampDuration: TimeSpan.Zero,
+        HoldDuration: TimeSpan.Zero,
+        RampSteps: 2,
+        VerificationTolerance: 0.0001f);
+}
+
+static AudioSessionDescriptor AudioDescriptor(FakeAudioSessionTarget target)
+{
+    return new AudioSessionDescriptor(target, target.ReadState());
+}
+
 static Task RunSynchronous(Action action)
 {
     action();
@@ -1498,6 +1679,14 @@ static void AssertSame(object expected, object actual)
     if (!ReferenceEquals(expected, actual))
     {
         throw new InvalidOperationException("The selected session object reference changed.");
+    }
+}
+
+static void AssertApproximately(float expected, float actual, float tolerance = 0.0001f)
+{
+    if (Math.Abs(expected - actual) > tolerance)
+    {
+        throw new InvalidOperationException($"Expected approximately {expected}, got {actual}.");
     }
 }
 
@@ -1526,6 +1715,103 @@ static void AssertFalse(bool value)
 }
 
 internal sealed record FakeSession(string? SourceId);
+
+internal sealed class FakeAudioSessionTarget : IAudioSessionVolumeTarget
+{
+    private bool _disposed;
+    private int _successfulReads;
+
+    public FakeAudioSessionTarget(
+        string? processName,
+        int? processId,
+        string stableSessionTag,
+        float volumeScalar,
+        bool muted = false,
+        AudioSessionActivity activity = AudioSessionActivity.Active)
+    {
+        ProcessName = processName;
+        ProcessId = processId;
+        StableSessionTag = stableSessionTag;
+        VolumeScalar = volumeScalar;
+        MinimumRequestedVolume = volumeScalar;
+        Muted = muted;
+        Activity = activity;
+    }
+
+    public string StableSessionTag { get; }
+
+    public int? ProcessId { get; }
+
+    public string? ProcessName { get; }
+
+    public float VolumeScalar { get; private set; }
+
+    public float MinimumRequestedVolume { get; private set; }
+
+    public bool Muted { get; private set; }
+
+    public AudioSessionActivity Activity { get; set; }
+
+    public int SetVolumeCalls { get; private set; }
+
+    public int SetMuteCalls { get; private set; }
+
+    public int? DisappearAfterSuccessfulReads { get; init; }
+
+    public Action<float>? OnVolumeSet { get; init; }
+
+    public AudioSessionVolumeState ReadState()
+    {
+        if (_disposed)
+        {
+            return new AudioSessionVolumeState(false, AudioSessionActivity.Unknown, 0f, false, "disposed");
+        }
+
+        if (DisappearAfterSuccessfulReads is not null
+            && _successfulReads >= DisappearAfterSuccessfulReads.Value)
+        {
+            return new AudioSessionVolumeState(false, AudioSessionActivity.Expired, 0f, false, "session disappeared");
+        }
+
+        _successfulReads++;
+        return new AudioSessionVolumeState(true, Activity, VolumeScalar, Muted);
+    }
+
+    public void SetVolume(float volumeScalar, Guid eventContext)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        if (DisappearAfterSuccessfulReads is not null
+            && _successfulReads >= DisappearAfterSuccessfulReads.Value)
+        {
+            throw new InvalidOperationException("The original session disappeared.");
+        }
+
+        SetVolumeCalls++;
+        VolumeScalar = volumeScalar;
+        MinimumRequestedVolume = Math.Min(MinimumRequestedVolume, volumeScalar);
+        OnVolumeSet?.Invoke(volumeScalar);
+    }
+
+    public void SetMute(bool muted, Guid eventContext)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        if (DisappearAfterSuccessfulReads is not null
+            && _successfulReads >= DisappearAfterSuccessfulReads.Value)
+        {
+            throw new InvalidOperationException("The original session disappeared.");
+        }
+
+        SetMuteCalls++;
+        Muted = muted;
+    }
+
+    public void Dispose()
+    {
+        _disposed = true;
+    }
+}
 
 internal sealed class FakePlaybackTarget : IAnnouncementPlaybackTarget
 {

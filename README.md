@@ -1,6 +1,6 @@
 # Zoya Radio
 
-Milestones 0 through 5 have passed Steve's manual tests. Milestone 6 is deliberately deferred. Milestone 7 now prefers the local Kokoro `af_nicole` voice and is awaiting Steve's real Firefox/radio acceptance test.
+Milestones 0 through 5 and Milestone 7 have passed Steve's manual tests. Milestone 6 is deliberately deferred. Milestone 7.5A is the current Phase-1 safety gate and is awaiting Steve's manual Firefox audio-ducking test; Milestone 8 follows the complete Milestone 7.5 transition work.
 
 The original media probe is **read only**. It lists and watches Windows media sessions, but it cannot pause, play, skip, change volume, or otherwise control playback. It does not inspect Firefox, webpage content, URLs, cookies, history, or Google account information.
 
@@ -29,7 +29,7 @@ Use this shorter check when you only want to list the sessions that exist right 
 
 ## Logs
 
-Each run creates a timestamped text file in the repository's `logs` folder. Read-only runs use `media-probe-*.txt`, control-test runs use `playback-control-test-*.txt`, spoken tests use `spoken-announcement-test-*.txt`, AI-comment tests use `ai-comment-test-*.txt`, automatic behavior runs use `radio-behavior-test-*.txt`, and neural resource checks use `neural-tts-diagnostic-*.txt`. The console and log contain the same useful diagnostics. These files remain on this computer, are excluded from Git, and may be deleted whenever they are no longer needed.
+Each run creates a timestamped text file in the repository's `logs` folder. Read-only runs use `media-probe-*.txt`, control-test runs use `playback-control-test-*.txt`, spoken tests use `spoken-announcement-test-*.txt`, AI-comment tests use `ai-comment-test-*.txt`, automatic behavior runs use `radio-behavior-test-*.txt`, neural resource checks use `neural-tts-diagnostic-*.txt`, and audio-ducking checks use `audio-ducking-test-*.txt`. The console and log contain the same useful diagnostics. These files remain on this computer, are excluded from Git, and may be deleted whenever they are no longer needed.
 
 The completed Milestone 0 procedure is preserved in [docs/MILESTONE_0_TEST.md](docs/MILESTONE_0_TEST.md).
 
@@ -130,7 +130,33 @@ The safe resource diagnostic creates three in-memory Nicole preparations but pla
 .\run-neural-tts-diagnostic.cmd
 ```
 
-The approved model and packages are project-local, require no administrator access, and remain excluded from Git. See [docs/MILESTONE_7_TEST.md](docs/MILESTONE_7_TEST.md) for the manual acceptance test and [docs/MILESTONE_7_VOICE_AUDITION.md](docs/MILESTONE_7_VOICE_AUDITION.md) for the original samples. Milestone 7 is not passed until Steve verifies real automatic announcements and recovery.
+The approved model and packages are project-local, require no administrator access, and remain excluded from Git. See [docs/MILESTONE_7_TEST.md](docs/MILESTONE_7_TEST.md) for the completed manual acceptance test and [docs/MILESTONE_7_VOICE_AUDITION.md](docs/MILESTONE_7_VOICE_AUDITION.md) for the original samples.
+
+## Run the isolated Firefox audio-ducking test
+
+Milestone 7.5A is a separate diagnostic. It uses Windows Core Audio to enumerate the current default output device's application sessions and considers only **active**, exact `firefox`/`firefox.exe` process matches. It refuses zero or multiple active Firefox candidates and never guesses at a browser tab.
+
+Start with the completely read-only inventory:
+
+```powershell
+.\run-audio-ducking-test.cmd --enumerate-only
+```
+
+The real duck-and-restore test is:
+
+```powershell
+.\run-audio-ducking-test.cmd
+```
+
+It clearly displays the selected session and defaults to **NO**. After an explicit **Y**, it captures Firefox's exact per-session volume and mute state, smoothly lowers that captured volume to 25% of itself for about three seconds, and restores the exact captured values in protected cleanup. It does not change Windows master volume, pause or resume playback, generate AI text, or speak.
+
+The deliberate restoration check is:
+
+```powershell
+.\run-audio-ducking-test.cmd --simulate-duck-failure
+```
+
+Follow [docs/MILESTONE_7_5A_TEST.md](docs/MILESTONE_7_5A_TEST.md) before running either volume-changing mode. M7.5A is not passed until Steve confirms Firefox-only ducking, unrelated-audio isolation, exact restoration, Ctrl+C recovery, and simulated-failure recovery.
 
 ## Developer build
 
@@ -144,4 +170,4 @@ From the repository root:
 .\.dotnet\dotnet.exe build .\src\ZoyaRadio.VoiceAudition\ZoyaRadio.VoiceAudition.csproj --configuration Release
 ```
 
-The radio project uses Microsoft's supported `Windows.Media.Control`, `Windows.Media.SpeechSynthesis`, and `Windows.Media.Playback` APIs, Ollama's loopback-only local HTTP API, and the approved `KokoroSharp.CPU` 0.8.0 package with CPU ONNX Runtime. No cloud speech service or API key is used.
+The radio project uses Microsoft's supported `Windows.Media.Control`, `Windows.Media.SpeechSynthesis`, `Windows.Media.Playback`, and Core Audio session APIs, Ollama's loopback-only local HTTP API, and the approved `KokoroSharp.CPU` 0.8.0 package with CPU ONNX Runtime. No cloud speech service or API key is used.
