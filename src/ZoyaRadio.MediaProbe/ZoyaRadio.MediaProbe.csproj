@@ -15,4 +15,7 @@
   <ItemGroup>
     <EmbeddedResource Include="Prompts\Milestone4HostPersonaPrompt.txt" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="KokoroSharp.CPU" Version="0.8.0" />
+  </ItemGroup>
 </Project>

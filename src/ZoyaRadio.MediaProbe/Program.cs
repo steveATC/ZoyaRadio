@@ -16,6 +16,9 @@ internal static class Program
         bool noAi = false;
         bool simulateAiFailure = false;
         bool radioBehaviorTest = false;
+        bool windowsTts = false;
+        bool simulateNeuralTtsFailure = false;
+        bool measureNeuralTts = false;
 
         foreach (string argument in args)
         {
@@ -79,6 +82,24 @@ internal static class Program
                 continue;
             }
 
+            if (string.Equals(argument, "--windows-tts", StringComparison.OrdinalIgnoreCase))
+            {
+                windowsTts = true;
+                continue;
+            }
+
+            if (string.Equals(argument, "--simulate-neural-tts-failure", StringComparison.OrdinalIgnoreCase))
+            {
+                simulateNeuralTtsFailure = true;
+                continue;
+            }
+
+            if (string.Equals(argument, "--measure-neural-tts", StringComparison.OrdinalIgnoreCase))
+            {
+                measureNeuralTts = true;
+                continue;
+            }
+
             Console.Error.WriteLine($"Unknown option: {argument}");
             WriteUsage();
             return 2;
@@ -88,11 +109,12 @@ internal static class Program
             + (controlTest ? 1 : 0)
             + (announcementTest ? 1 : 0)
             + (aiCommentTest ? 1 : 0)
-            + (radioBehaviorTest ? 1 : 0);
+            + (radioBehaviorTest ? 1 : 0)
+            + (measureNeuralTts ? 1 : 0);
         if (selectedModes > 1)
         {
             Console.Error.WriteLine(
-                "Snapshot, playback-control, announcement, AI-comment, and radio-behavior modes cannot be combined.");
+                "Snapshot, playback-control, announcement, AI-comment, radio-behavior, and neural-TTS measurement modes cannot be combined.");
             WriteUsage();
             return 2;
         }
@@ -139,11 +161,32 @@ internal static class Program
             return 2;
         }
 
+        bool spokenMode = radioBehaviorTest
+            || announcementTest
+            || (aiCommentTest && !generateOnly && !measureAi);
+
+        if ((windowsTts || simulateNeuralTtsFailure) && !spokenMode)
+        {
+            Console.Error.WriteLine(
+                "--windows-tts and --simulate-neural-tts-failure require a spoken announcement, AI-comment, or radio-behavior mode.");
+            WriteUsage();
+            return 2;
+        }
+
+        if (windowsTts && simulateNeuralTtsFailure)
+        {
+            Console.Error.WriteLine("--windows-tts cannot be combined with --simulate-neural-tts-failure.");
+            WriteUsage();
+            return 2;
+        }
+
         LocalLog log;
 
         try
         {
-            string logPrefix = radioBehaviorTest
+            string logPrefix = measureNeuralTts
+                ? "neural-tts-diagnostic"
+                : radioBehaviorTest
                 ? "radio-behavior-test"
                 : aiCommentTest
                 ? "ai-comment-test"
@@ -162,7 +205,12 @@ internal static class Program
 
         using (log)
         {
-            if (radioBehaviorTest)
+            if (measureNeuralTts)
+            {
+                log.Write("ZOYA RADIO - MILESTONE 7 NEURAL TTS PERFORMANCE DIAGNOSTIC");
+                log.Write("READ ONLY WITH RESPECT TO MEDIA: no audio playback or Firefox control is used.");
+            }
+            else if (radioBehaviorTest)
             {
                 log.Write("ZOYA RADIO - MILESTONE 5 AUTOMATIC RADIO-BEHAVIOR TEST");
                 log.Write("This mode can automatically pause and resume exactly one firefox.exe session only after arming.");
@@ -188,7 +236,7 @@ internal static class Program
             {
                 log.Write("ZOYA RADIO - MILESTONE 2 EXPLICIT SPOKEN-ANNOUNCEMENT TEST");
                 log.Write(
-                    "This test can pause and resume exactly one firefox.exe session and play local Windows speech, " +
+                    "This test can pause and resume exactly one firefox.exe session and play prepared local speech, " +
                     "but only after confirmation.");
                 log.Write(
                     $"Mode: {(simulateSpeechFailure ? "simulated speech failure and real playback recovery" : "one spoken announcement")}");
@@ -207,20 +255,80 @@ internal static class Program
 
             log.Write($"Local log: {log.FilePath}");
 
-            bool spokenMode = radioBehaviorTest
-                || announcementTest
-                || (aiCommentTest && !generateOnly && !measureAi);
-            using WindowsSpeechService? speechService = spokenMode
-                ? WindowsSpeechService.TryCreate(log)
+            if (measureNeuralTts)
+            {
+                using KokoroSpeechService? neuralDiagnostic = KokoroSpeechService.TryCreate(log);
+                if (neuralDiagnostic is null)
+                {
+                    log.Write("NEURAL TTS PERFORMANCE RESULT: FAIL - Nicole could not be initialized.");
+                    return 1;
+                }
+
+                using var diagnosticCancellation = new CancellationTokenSource();
+                ConsoleCancelEventHandler diagnosticCancelHandler = (_, eventArgs) =>
+                {
+                    eventArgs.Cancel = true;
+                    diagnosticCancellation.Cancel();
+                };
+
+                Console.CancelKeyPress += diagnosticCancelHandler;
+
+                try
+                {
+                    var diagnostic = new NeuralSpeechPerformanceDiagnostic(neuralDiagnostic, log);
+                    return await diagnostic.RunAsync(diagnosticCancellation.Token) ? 0 : 1;
+                }
+                catch (OperationCanceledException)
+                {
+                    log.Write("NEURAL TTS PERFORMANCE RESULT: CANCELLED - no audio was played.");
+                    return 0;
+                }
+                finally
+                {
+                    Console.CancelKeyPress -= diagnosticCancelHandler;
+                }
+            }
+
+            IAnnouncementSpeechService? neuralSpeech = null;
+            WindowsSpeechService? windowsSpeech = null;
+
+            if (spokenMode)
+            {
+                if (!windowsTts)
+                {
+                    if (simulateNeuralTtsFailure)
+                    {
+                        log.Write("SIMULATED NEURAL TTS INITIALIZATION FAILURE: automatic Windows fallback will be tested.");
+                    }
+                    else
+                    {
+                        neuralSpeech = KokoroSpeechService.TryCreate(log);
+                    }
+                }
+
+                windowsSpeech = WindowsSpeechService.TryCreate(log);
+            }
+
+            using IAnnouncementSpeechService? speechService = spokenMode
+                ? SpeechServiceSelection.Select(
+                    windowsTts ? SpeechProviderPreference.WindowsOnly : SpeechProviderPreference.PreferNeural,
+                    neuralSpeech,
+                    windowsSpeech,
+                    log)
                 : null;
 
             if (spokenMode && speechService is null)
             {
                 log.Write(
                     radioBehaviorTest
-                        ? "RADIO BEHAVIOR RESULT: NOT ARMED - no usable local Windows voice was available."
-                        : "SPOKEN TEST RESULT: NOT RUN - no usable local Windows voice was available.");
+                        ? "RADIO BEHAVIOR RESULT: NOT ARMED - no usable local speech provider was available."
+                        : "SPOKEN TEST RESULT: NOT RUN - no usable local speech provider was available.");
                 return 1;
+            }
+
+            if (speechService is not null)
+            {
+                log.Write($"Active speech service: {speechService.ProviderName}");
             }
 
             GlobalSystemMediaTransportControlsSessionManager manager;
@@ -452,7 +560,9 @@ internal static class Program
         Console.Error.WriteLine("   or: run-playback-control-test.cmd");
         Console.Error.WriteLine("   or: run-spoken-announcement-test.cmd");
         Console.Error.WriteLine("   or: run-simulated-speech-failure-test.cmd");
-        Console.Error.WriteLine("   or: run-ai-comment-test.cmd [--generate-only|--measure-ai|--no-ai|--simulate-ai-failure]");
-        Console.Error.WriteLine("   or: run-radio-behavior-test.cmd [--no-ai]");
+        Console.Error.WriteLine("   or: run-ai-comment-test.cmd [--generate-only|--measure-ai|--no-ai|--simulate-ai-failure|--windows-tts]");
+        Console.Error.WriteLine("   or: run-radio-behavior-test.cmd [--no-ai|--windows-tts]");
+        Console.Error.WriteLine("   or: run-neural-tts-fallback-test.cmd");
+        Console.Error.WriteLine("   or: run-neural-tts-diagnostic.cmd");
     }
 }

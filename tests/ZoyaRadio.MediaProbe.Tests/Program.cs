@@ -20,6 +20,19 @@ var tests = new (string Name, Func<Task> Run)[]
     ("speech timeout uses protected playback recovery", SpeechTimeoutRestoresPlayback),
     ("simulated speech failure uses real recovery path", SimulatedFailureRestoresPlayback),
     ("speech cancellation uses protected playback recovery", SpeechCancellationRestoresPlayback),
+    ("Nicole is the selected CPU neural voice", () => RunSynchronous(NeuralSpeechDefaultsSelectNicole)),
+    ("neural provider is selected normally", NeuralProviderIsSelectedNormally),
+    ("explicit Windows-TTS mode bypasses neural provider", ExplicitWindowsModeBypassesNeural),
+    ("neural initialization failure selects Windows fallback", NeuralInitializationFailureUsesWindows),
+    ("missing neural model is safely unavailable", () => RunSynchronous(MissingNeuralModelIsSafe)),
+    ("neural synthesis failure selects Windows fallback", NeuralSynthesisFailureUsesWindows),
+    ("neural cancellation does not start fallback work", NeuralCancellationDoesNotFallback),
+    ("Unicode text survives neural provider selection", UnicodeSurvivesSpeechProviderSelection),
+    ("neural PCM encoder produces a valid in-memory WAV", () => RunSynchronous(NeuralWaveEncodingIsValid)),
+    ("neural playback failure triggers protected recovery", SpeechFailureRestoresPlayback),
+    ("neural preparation occurs before the pause path", NeuralPreparationPrecedesPausePath),
+    ("stale track during neural preparation prevents control", StaleTrackDuringNeuralPreparationBlocksControl),
+    ("prepared neural audio is disposed after pipeline use", PreparedNeuralAudioIsDisposed),
     ("Ollama endpoint permits loopback only", () => RunSynchronous(OllamaEndpointIsLoopbackOnly)),
     ("host persona defaults to Zoya and Steve", () => RunSynchronous(HostPersonaUsesExpectedDefaults)),
     ("host and listener names render from configuration", () => RunSynchronous(HostPersonaRendersConfiguredNames)),
@@ -92,6 +105,243 @@ foreach ((string name, Func<Task> run) in tests)
 
 Console.WriteLine($"RESULT: {tests.Length - failures} passed, {failures} failed");
 return failures == 0 ? 0 : 1;
+
+static void NeuralSpeechDefaultsSelectNicole()
+{
+    NeuralSpeechConfiguration configuration = NeuralSpeechConfiguration.Default;
+
+    configuration.Validate();
+    AssertEqual("af_nicole", configuration.VoiceName);
+    AssertEqual(24_000, configuration.SampleRate);
+    AssertEqual(1f, configuration.Speed);
+    AssertContains(configuration.ModelRelativePath, "kokoro.onnx");
+}
+
+static async Task NeuralProviderIsSelectedNormally()
+{
+    var neural = new FakeSpeechService("Kokoro CPU (af_nicole)");
+    var windows = new FakeSpeechService("Windows TTS");
+    using IAnnouncementSpeechService selected = SpeechServiceSelection.Select(
+        SpeechProviderPreference.PreferNeural,
+        neural,
+        windows,
+        new FakeLog())!;
+
+    using IPreparedAnnouncementSpeech prepared = await selected.PrepareAsync(
+        "A sufficiently ordinary neural speech test sentence.",
+        CancellationToken.None);
+
+    AssertEqual(1, neural.PrepareCalls);
+    AssertEqual(0, windows.PrepareCalls);
+    AssertContains(selected.ProviderName, "af_nicole");
+}
+
+static async Task ExplicitWindowsModeBypassesNeural()
+{
+    var neural = new FakeSpeechService("Kokoro CPU (af_nicole)");
+    var windows = new FakeSpeechService("Windows TTS");
+    using IAnnouncementSpeechService selected = SpeechServiceSelection.Select(
+        SpeechProviderPreference.WindowsOnly,
+        neural,
+        windows,
+        new FakeLog())!;
+
+    using IPreparedAnnouncementSpeech prepared = await selected.PrepareAsync(
+        "This troubleshooting sentence must use Windows speech.",
+        CancellationToken.None);
+
+    AssertEqual(0, neural.PrepareCalls);
+    AssertEqual(1, neural.DisposeCalls);
+    AssertEqual(1, windows.PrepareCalls);
+    AssertEqual("Windows TTS", selected.ProviderName);
+}
+
+static async Task NeuralInitializationFailureUsesWindows()
+{
+    var windows = new FakeSpeechService("Windows TTS");
+    var log = new FakeLog();
+    using IAnnouncementSpeechService selected = SpeechServiceSelection.Select(
+        SpeechProviderPreference.PreferNeural,
+        neural: null,
+        windows,
+        log)!;
+
+    using IPreparedAnnouncementSpeech prepared = await selected.PrepareAsync(
+        "This sentence uses the safe initialization fallback.",
+        CancellationToken.None);
+
+    AssertEqual(1, windows.PrepareCalls);
+    AssertTrue(log.Contains("AUTOMATIC SPEECH FALLBACK ACTIVE"));
+}
+
+static void MissingNeuralModelIsSafe()
+{
+    NeuralSpeechConfiguration configuration = NeuralSpeechConfiguration.Default with
+    {
+        ModelRelativePath = Path.Combine(".tools", "kokoro", "definitely-missing-model.onnx"),
+    };
+    var log = new FakeLog();
+
+    KokoroSpeechService? service = KokoroSpeechService.TryCreate(log, configuration);
+
+    AssertTrue(service is null);
+    AssertTrue(log.Contains("NEURAL TTS UNAVAILABLE"));
+}
+
+static async Task NeuralSynthesisFailureUsesWindows()
+{
+    var neural = new FakeSpeechService("Kokoro CPU (af_nicole)")
+    {
+        ExceptionToThrow = new InvalidOperationException("simulated neural synthesis failure"),
+    };
+    var windows = new FakeSpeechService("Windows TTS");
+    var log = new FakeLog();
+    using IAnnouncementSpeechService selected = SpeechServiceSelection.Select(
+        SpeechProviderPreference.PreferNeural,
+        neural,
+        windows,
+        log)!;
+
+    using IPreparedAnnouncementSpeech prepared = await selected.PrepareAsync(
+        "The fallback must receive this exact sentence.",
+        CancellationToken.None);
+
+    AssertEqual(1, neural.PrepareCalls);
+    AssertEqual(1, windows.PrepareCalls);
+    AssertEqual("The fallback must receive this exact sentence.", windows.LastText!);
+    AssertTrue(log.Contains("AUTOMATIC WINDOWS TTS FALLBACK PREPARED"));
+}
+
+static async Task NeuralCancellationDoesNotFallback()
+{
+    var neural = new FakeSpeechService("Kokoro CPU (af_nicole)")
+    {
+        ExceptionToThrow = new OperationCanceledException("simulated cancellation"),
+    };
+    var windows = new FakeSpeechService("Windows TTS");
+    using IAnnouncementSpeechService selected = SpeechServiceSelection.Select(
+        SpeechProviderPreference.PreferNeural,
+        neural,
+        windows,
+        new FakeLog())!;
+
+    bool cancelled = false;
+
+    try
+    {
+        using IPreparedAnnouncementSpeech _ = await selected.PrepareAsync(
+            "Cancelled neural work should not create more speech work.",
+            CancellationToken.None);
+    }
+    catch (OperationCanceledException)
+    {
+        cancelled = true;
+    }
+
+    AssertTrue(cancelled);
+    AssertEqual(1, neural.PrepareCalls);
+    AssertEqual(0, windows.PrepareCalls);
+}
+
+static async Task UnicodeSurvivesSpeechProviderSelection()
+{
+    const string unicode = "Steve, that was ‘Группа крови’ by Кино.";
+    var neural = new FakeSpeechService("Kokoro CPU (af_nicole)");
+    var windows = new FakeSpeechService("Windows TTS");
+    using IAnnouncementSpeechService selected = SpeechServiceSelection.Select(
+        SpeechProviderPreference.PreferNeural,
+        neural,
+        windows,
+        new FakeLog())!;
+
+    using IPreparedAnnouncementSpeech prepared = await selected.PrepareAsync(
+        unicode,
+        CancellationToken.None);
+
+    AssertEqual(unicode, neural.LastText!);
+    AssertEqual(0, windows.PrepareCalls);
+}
+
+static void NeuralWaveEncodingIsValid()
+{
+    byte[] wave = PcmWaveEncoder.Encode16BitMono([0f, 0.5f, -0.5f], 24_000);
+
+    AssertEqual("RIFF", System.Text.Encoding.ASCII.GetString(wave, 0, 4));
+    AssertEqual("WAVE", System.Text.Encoding.ASCII.GetString(wave, 8, 4));
+    AssertEqual(6, BitConverter.ToInt32(wave, 40));
+    AssertEqual(50, wave.Length);
+}
+
+static async Task NeuralPreparationPrecedesPausePath()
+{
+    DateTimeOffset now = DateTimeOffset.Parse("2026-08-07T12:00:20Z");
+    RadioCommentOpportunity opportunity = TestRadioOpportunity(now.AddSeconds(-20));
+    var host = new FakeRadioOpportunityHost(ValidRadioSnapshot(opportunity));
+    var pipeline = new RadioOpportunityPipeline(
+        RadioBehaviorConfiguration.Default,
+        new FakeRadioCommentProvider(),
+        host,
+        new FakeRadioClock(now),
+        new FakeLog());
+
+    RadioOpportunityResult result = await pipeline.RunAsync(
+        opportunity,
+        true,
+        CancellationToken.None);
+
+    AssertEqual(RadioOpportunityResultStatus.Completed, result.Status);
+    AssertEqual(2, host.Events.Count);
+    AssertEqual("prepare", host.Events[0]);
+    AssertEqual("announce", host.Events[1]);
+}
+
+static async Task StaleTrackDuringNeuralPreparationBlocksControl()
+{
+    DateTimeOffset now = DateTimeOffset.Parse("2026-08-07T12:00:20Z");
+    RadioCommentOpportunity opportunity = TestRadioOpportunity(now.AddSeconds(-20));
+    var host = new FakeRadioOpportunityHost(ValidRadioSnapshot(opportunity));
+    host.OnPrepare = () => host.Snapshot = host.Snapshot with
+    {
+        CurrentMedia = Track("Changed During Neural Synthesis", "Different Artist"),
+    };
+    var pipeline = new RadioOpportunityPipeline(
+        RadioBehaviorConfiguration.Default,
+        new FakeRadioCommentProvider(),
+        host,
+        new FakeRadioClock(now),
+        new FakeLog());
+
+    RadioOpportunityResult result = await pipeline.RunAsync(
+        opportunity,
+        true,
+        CancellationToken.None);
+
+    AssertEqual(RadioOpportunityResultStatus.Abandoned, result.Status);
+    AssertEqual(1, host.PrepareCalls);
+    AssertEqual(0, host.AnnouncementCalls);
+    AssertEqual(1, host.PreparedDisposeCalls);
+}
+
+static async Task PreparedNeuralAudioIsDisposed()
+{
+    DateTimeOffset now = DateTimeOffset.Parse("2026-08-07T12:00:20Z");
+    RadioCommentOpportunity opportunity = TestRadioOpportunity(now.AddSeconds(-20));
+    var host = new FakeRadioOpportunityHost(ValidRadioSnapshot(opportunity));
+    var pipeline = new RadioOpportunityPipeline(
+        RadioBehaviorConfiguration.Default,
+        new FakeRadioCommentProvider(),
+        host,
+        new FakeRadioClock(now),
+        new FakeLog());
+
+    RadioOpportunityResult result = await pipeline.RunAsync(
+        opportunity,
+        true,
+        CancellationToken.None);
+
+    AssertEqual(RadioOpportunityResultStatus.Completed, result.Status);
+    AssertEqual(1, host.PreparedDisposeCalls);
+}
 
 static void ZeroFirefoxMatches()
 {
@@ -832,8 +1082,9 @@ static async Task RadioTrackChangeDuringWaitAbandonsPipeline()
 
     AssertEqual(RadioOpportunityResultStatus.Abandoned, result.Status);
     AssertEqual(1, clock.Delays.Count);
-    AssertEqual(0, host.PrepareCalls);
+    AssertEqual(1, host.PrepareCalls);
     AssertEqual(0, host.AnnouncementCalls);
+    AssertEqual(1, host.PreparedDisposeCalls);
 }
 
 static void RadioPendingChangeCreatesNoQueue()
@@ -1326,6 +1577,8 @@ internal sealed class FakePreparedSpeech : IPreparedAnnouncementSpeech
 
     public TimeSpan? LastTimeout { get; private set; }
 
+    public int DisposeCalls { get; private set; }
+
     public Task<SpeechPlaybackResult> SpeakAsync(TimeSpan timeout, CancellationToken cancellationToken)
     {
         SpeakCalls++;
@@ -1341,6 +1594,47 @@ internal sealed class FakePreparedSpeech : IPreparedAnnouncementSpeech
 
     public void Dispose()
     {
+        DisposeCalls++;
+    }
+}
+
+internal sealed class FakeSpeechService : IAnnouncementSpeechService
+{
+    public FakeSpeechService(string providerName)
+    {
+        ProviderName = providerName;
+    }
+
+    public string ProviderName { get; }
+
+    public Exception? ExceptionToThrow { get; init; }
+
+    public int PrepareCalls { get; private set; }
+
+    public int DisposeCalls { get; private set; }
+
+    public string? LastText { get; private set; }
+
+    public Task<IPreparedAnnouncementSpeech> PrepareAsync(
+        string text,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        PrepareCalls++;
+        LastText = text;
+
+        if (ExceptionToThrow is not null)
+        {
+            throw ExceptionToThrow;
+        }
+
+        return Task.FromResult<IPreparedAnnouncementSpeech>(new FakePreparedSpeech(
+            new SpeechPlaybackResult(SpeechPlaybackStatus.Completed)));
+    }
+
+    public void Dispose()
+    {
+        DisposeCalls++;
     }
 }
 
@@ -1441,6 +1735,12 @@ internal sealed class FakeRadioOpportunityHost : IRadioOpportunityHost
 
     public int AnnouncementCalls { get; private set; }
 
+    public int PreparedDisposeCalls => _speech.DisposeCalls;
+
+    public List<string> Events { get; } = [];
+
+    public Action? OnPrepare { get; set; }
+
     public TimeSpan? MaximumSpeechDuration { get; private set; }
 
     public DateTimeOffset? AnnouncementObservedAt { get; private set; }
@@ -1462,6 +1762,8 @@ internal sealed class FakeRadioOpportunityHost : IRadioOpportunityHost
     {
         cancellationToken.ThrowIfCancellationRequested();
         PrepareCalls++;
+        Events.Add("prepare");
+        OnPrepare?.Invoke();
         return Task.FromResult<IPreparedAnnouncementSpeech>(_speech);
     }
 
@@ -1472,6 +1774,7 @@ internal sealed class FakeRadioOpportunityHost : IRadioOpportunityHost
     {
         cancellationToken.ThrowIfCancellationRequested();
         AnnouncementCalls++;
+        Events.Add("announce");
         MaximumSpeechDuration = maximumSpeechDuration;
         AnnouncementObservedAt = Clock?.Now;
         return Task.FromResult(new AnnouncementSequenceResult(

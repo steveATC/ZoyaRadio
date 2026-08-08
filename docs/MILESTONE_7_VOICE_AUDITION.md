@@ -1,6 +1,6 @@
 # Milestone 7 Stage B - voice audition
 
-This stage compares local Kokoro voices before changing Zoya Radio. It has **not** replaced the working Windows voice and does not control Firefox or music.
+This document preserves the completed comparison that preceded integration. Steve selected `af_nicole`, with `af_heart` as runner-up.
 
 ## What to do now
 
@@ -20,7 +20,7 @@ This stage compares local Kokoro voices before changing Zoya Radio. It has **not
 
 4. Optionally play `06-unicode-af-heart.wav`. It contains exact Cyrillic text. Russian is not a documented Kokoro language, so poor pronunciation or skipped words are useful observations, not an automatic failure.
 
-5. Tell the Work chat the exact voice name you prefer, for example: `I choose bf_emma.` Also mention any runner-up and anything that sounded wrong.
+5. Selection result: Steve chose `af_nicole`; `af_heart` was his runner-up.
 
 Do not judge from the file number alone; the next integration stage will use the exact voice identifier you choose.
 
@@ -68,6 +68,6 @@ The audio and model are reversible local files. `artifacts\voice-audition\` may 
 
 Licenses: KokoroSharp is MIT; the Kokoro model and voices are Apache-2.0; the bundled eSpeak NG phonemizer is GPLv3. This stage is a private local audition, not a distribution decision.
 
-## Current gate
+## Selection result
 
-Stop here until Steve chooses a voice. Stage C integration, fallback behavior, real Firefox pause/speak/resume testing, and any later milestone have not begun.
+The Stage B gate passed: `af_nicole` is integrated as the preferred CPU voice. Continue with [MILESTONE_7_TEST.md](MILESTONE_7_TEST.md) for Stage C manual acceptance. Milestone 8 has not begun.

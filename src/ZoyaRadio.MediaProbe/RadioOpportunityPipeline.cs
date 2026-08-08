@@ -206,19 +206,6 @@ internal sealed class RadioOpportunityPipeline
                 cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
 
-            TimeSpan currentAge = _clock.Now - opportunity.Context.CurrentTrackStartedAt;
-            TimeSpan remainingAge = _configuration.MinimumTrackAgeBeforeSpeech - currentAge;
-            if (remainingAge > TimeSpan.Zero)
-            {
-                _log.Write(
-                    $"MINIMUM TRACK AGE: waiting {remainingAge.TotalSeconds:0.0} more second(s) before playback revalidation.");
-                await _clock.DelayAsync(remainingAge, cancellationToken);
-            }
-            else
-            {
-                _log.Write("MINIMUM TRACK AGE: already satisfied after comment generation.");
-            }
-
             RadioOpportunitySnapshot beforePreparation = await _host.ReadSnapshotAsync(
                 opportunity.Id,
                 cancellationToken);
@@ -227,7 +214,7 @@ internal sealed class RadioOpportunityPipeline
                 beforePreparation,
                 _clock.Now,
                 _configuration.MinimumTrackAgeBeforeSpeech,
-                requireMinimumAge: true);
+                requireMinimumAge: false);
 
             if (!preparationSafety.CanProceed)
             {
@@ -239,6 +226,19 @@ internal sealed class RadioOpportunityPipeline
                 selection.Text,
                 cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
+
+            TimeSpan currentAge = _clock.Now - opportunity.Context.CurrentTrackStartedAt;
+            TimeSpan remainingAge = _configuration.MinimumTrackAgeBeforeSpeech - currentAge;
+            if (remainingAge > TimeSpan.Zero)
+            {
+                _log.Write(
+                    $"MINIMUM TRACK AGE: neural audio is ready; waiting {remainingAge.TotalSeconds:0.0} more second(s) before playback revalidation.");
+                await _clock.DelayAsync(remainingAge, cancellationToken);
+            }
+            else
+            {
+                _log.Write("MINIMUM TRACK AGE: already satisfied after comment and speech preparation.");
+            }
 
             RadioOpportunitySnapshot beforePause = await _host.ReadSnapshotAsync(
                 opportunity.Id,

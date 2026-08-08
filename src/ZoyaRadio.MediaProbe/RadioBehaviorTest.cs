@@ -24,7 +24,7 @@ internal sealed class RadioBehaviorTest
     public RadioBehaviorTest(
         GlobalSystemMediaTransportControlsSessionManager manager,
         LocalLog log,
-        WindowsSpeechService speechService,
+        IAnnouncementSpeechService speechService,
         ILocalCommentGenerator generator,
         AiCommentConfiguration aiConfiguration,
         HostPersonaConfiguration persona,

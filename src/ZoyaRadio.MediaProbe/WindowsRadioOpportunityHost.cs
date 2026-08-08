@@ -7,14 +7,14 @@ internal sealed class WindowsRadioOpportunityHost : IRadioOpportunityHost
     private readonly Func<GlobalSystemMediaTransportControlsSession?> _selectedSessionProvider;
     private readonly Func<RadioRuntimeState> _runtimeStateProvider;
     private readonly RadioSessionAccess _sessionAccess;
-    private readonly WindowsSpeechService _speechService;
+    private readonly IAnnouncementSpeechService _speechService;
     private readonly IAnnouncementLog _log;
 
     public WindowsRadioOpportunityHost(
         Func<GlobalSystemMediaTransportControlsSession?> selectedSessionProvider,
         Func<RadioRuntimeState> runtimeStateProvider,
         RadioSessionAccess sessionAccess,
-        WindowsSpeechService speechService,
+        IAnnouncementSpeechService speechService,
         IAnnouncementLog log)
     {
         _selectedSessionProvider = selectedSessionProvider;
@@ -60,15 +60,7 @@ internal sealed class WindowsRadioOpportunityHost : IRadioOpportunityHost
         string text,
         CancellationToken cancellationToken)
     {
-        IPreparedAnnouncementSpeech prepared = await _speechService.PrepareAsync(text);
-
-        if (cancellationToken.IsCancellationRequested)
-        {
-            prepared.Dispose();
-            cancellationToken.ThrowIfCancellationRequested();
-        }
-
-        return prepared;
+        return await _speechService.PrepareAsync(text, cancellationToken);
     }
 
     public async Task<AnnouncementSequenceResult> RunAnnouncementAsync(

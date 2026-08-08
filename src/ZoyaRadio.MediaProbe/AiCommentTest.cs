@@ -13,7 +13,7 @@ internal sealed class AiCommentTest
 {
     private readonly GlobalSystemMediaTransportControlsSessionManager _manager;
     private readonly LocalLog _log;
-    private readonly WindowsSpeechService? _speechService;
+    private readonly IAnnouncementSpeechService? _speechService;
     private readonly ILocalCommentGenerator _generator;
     private readonly AiCommentConfiguration _configuration;
     private readonly HostPersonaConfiguration _persona;
@@ -21,7 +21,7 @@ internal sealed class AiCommentTest
     public AiCommentTest(
         GlobalSystemMediaTransportControlsSessionManager manager,
         LocalLog log,
-        WindowsSpeechService? speechService,
+        IAnnouncementSpeechService? speechService,
         ILocalCommentGenerator generator,
         AiCommentConfiguration configuration,
         HostPersonaConfiguration? persona = null)
@@ -200,7 +200,7 @@ internal sealed class AiCommentTest
             try
             {
                 _log.Write("Preparing the confirmed Unicode comment with the selected local voice...");
-                preparedSpeech = await _speechService.PrepareAsync(selection.Text);
+                preparedSpeech = await _speechService.PrepareAsync(selection.Text, cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
             }
             catch (OperationCanceledException)

@@ -2,18 +2,20 @@
 
 ## Current milestone
 
-**Milestone 7 - better local voice, Stage B audition**
+**Milestone 7 - better local voice, Stage C integration**
 
-The CPU-only audition is ready for Steve to hear, but Milestone 7 is **AWAITING VOICE SELECTION AND LATER MANUAL ACCEPTANCE**.
+Implementation is **READY FOR STEVE'S MANUAL ACCEPTANCE**, but Milestone 7 is not yet passed.
 
+- Steve selected Kokoro `af_nicole` as Zoya's normal voice and `af_heart` as runner-up. He found Nicole clearly preferable and described the Cyrillic sample as natural-sounding, while correctly noting that he cannot verify Russian pronunciation.
+- The application now prefers `KokoroSharp.CPU` 0.8.0 with `af_nicole`; the existing Windows voice remains the automatic preparation fallback and can be forced with `--windows-tts`.
+- AI generation and Ollama unload remain first. Nicole's in-memory WAV is then synthesized while Firefox remains Playing. The model is disposed before the final age/session/track/Playing/Silent Mode recheck and targeted pause.
+- Missing model, unavailable neural initialization, and neural synthesis failure fall back to Windows TTS before pause. Cancellation abandons the prepared comment rather than starting fallback work.
+- Playback failure after pause, speech timeout, or Ctrl+C uses the existing protected same-session resume path. No global media key, alternate session, or toggle fallback was added.
+- Prepared WAV data lives only in a disposable in-memory stream. No temporary speech files accumulate.
+- The selected-voice diagnostic prepared three 15-40-word comments in 2.641, 2.154, and 1.809 seconds. Audio durations were 11.275, 13.575, and 10.850 seconds.
+- Model load measured 0.785 seconds cold and 0.558/0.555 seconds on the next preparations. Peak working set was about 764.3 MiB; after disposal it settled near 333.3 MiB. CPU mode requested 0 MiB VRAM.
+- Automated verification currently reports 80 passed and 0 failed. No audible speech or real Firefox playback control was used automatically.
 - Milestone 6 remains deliberately deferred; no Milestone 6 or Milestone 8 work was added.
-- `run-voice-audition.cmd` is a separate diagnostic. It creates WAV files only and contains no Firefox, media-session, playback-control, Ollama, or automatic-radio path.
-- Five feminine Kokoro voices were rendered with the same English audition sentence: `af_heart`, `af_bella`, `af_nicole`, `bf_emma`, and `af_sarah`.
-- A separate `af_heart` Cyrillic robustness sample preserved the exact Unicode text in the UTF-8 report and produced audio. Russian is not a documented Kokoro language, so pronunciation or omissions require Steve's listening review.
-- All six samples completed. The cold first sample took 3.475 seconds; warm samples took 0.939-1.404 seconds for 8.125-12.450 seconds of audio.
-- Model load took 0.673 seconds. Working set measured 24.5 MiB before load and 486.2 MiB after load. The audition process was not listed by `nvidia-smi`, as expected for CPU-only inference.
-- The engine was disposed after synthesis and the process exited. Kokoro is not yet wired into Zoya Radio; the existing Windows speech path remains unchanged.
-- Samples and the UTF-8 report are in ignored `artifacts/voice-audition/20260807-235846-809/`.
 
 ## Completed milestones
 
@@ -71,9 +73,10 @@ The CPU-only audition is ready for Steve to hear, but Milestone 7 is **AWAITING 
 - The automated `--once` run under the non-interactive Codex sandbox account was denied access to the Windows media-session manager. Steve's manual test confirmed the normal signed-in desktop account works correctly.
 - Real playback-control calls remain excluded from automated test runs. Steve's Milestone 1 manual acceptance supplied that evidence.
 - PowerShell may cosmetically display Cyrillic metadata as question marks. The UTF-8 logs preserve the original Unicode, and the announcement sentence is built directly from the in-memory Unicode title and artist.
-- The current en-US Microsoft David voice speaks the English parts of an announcement but may skip Cyrillic title and artist text. Multilingual TTS remains outside Milestone 5.
+- The fallback en-US Microsoft David voice may skip Cyrillic title and artist text. Multilingual transliteration remains outside Milestone 7.
 - Kokoro's documented language list does not include Russian. The Milestone 7 Cyrillic sample preserves the characters, but its audible pronunciation or omissions are a manual observation rather than claimed language support.
-- Kokoro voice quality is subjective. Stage B deliberately does not select or integrate a voice until Steve listens to the five comparable samples.
+- Nicole's quality won the audition, but real automatic-radio sound, timing, and recovery still require Steve's manual desktop test.
+- Repeated CPU preparation disposes the ONNX model each time, but the long-running .NET/native process retained roughly 333 MiB working set after three preparations. No GPU provider is loaded.
 - Mechanical validation cannot prove factual grounding or personality quality; those remain manual review concerns for AI-generated prose.
 - Milestone 5 supplies up to six recent accepted AI comments for repetition avoidance, but it intentionally performs no semantic-similarity analysis or regeneration loop.
 - Manual Milestone 4 testing found that `qwen3:4b-instruct` sometimes invented `Borrowed Umbrella` for unrelated Cyrillic metadata. This is a known model/prompt grounding defect, not Unicode corruption, and Steve deferred it rather than adding a brittle blacklist.
@@ -107,10 +110,15 @@ The CPU-only audition is ready for Steve to hear, but Milestone 7 is **AWAITING 
 - `RadioBehaviorState` performs deterministic deduplication, scheduling, silent/reset behavior, and bounded-history updates. `RadioOpportunityPipeline` serializes generation, age waiting, revalidation, speech, and recovery.
 - Automatic prompt context contains previous/current title and artist, explicitly derived exact-string observations, and recent accepted comments. No album, genre, audio description, biography, or remembered trivia is added.
 - If the intended track changes during generation or age waiting, the cancellation token abandons that interruption and the state chooses a fresh future interval. There is no missed-comment queue.
-- The known local Ollama model, endpoint, 20-second generation timeout, `keep_alive: 0`, 15-40-word validation, exact `FALLBACK`, Windows voice, and same-session recovery mechanisms remain unchanged.
-- Milestone 7 Stage B is isolated in `src/ZoyaRadio.VoiceAudition`. It uses `KokoroSharp.CPU` 0.8.0, Kokoro 82M v1.0 FP32 ONNX, and Microsoft ONNX Runtime 1.22.0 without requesting a CUDA provider.
+- The known local Ollama model, endpoint, 20-second generation timeout, `keep_alive: 0`, 15-40-word validation, exact `FALLBACK`, and same-session recovery mechanisms remain unchanged. Windows TTS is retained as the speech fallback.
+- Milestone 7 keeps the audition in `src/ZoyaRadio.VoiceAudition` and adds a modular `IAnnouncementSpeechService` boundary to the radio project. `KokoroSharp.CPU` 0.8.0 is preferred; Windows TTS is retained as fallback.
+- `NeuralSpeechConfiguration.Default` selects `af_nicole`, 24 kHz mono output, normal speed, a 20-second preparation timeout, and the repository-local model. Changing the voice later is a single readable configuration edit.
+- Each neural preparation explicitly loads the FP32 model from disk, performs CPU inference, validates nonempty finite audio, encodes a WAV in memory, and disposes the model before any pause request. Cancellation waits for in-flight CPU inference to finish safely and discards the result.
+- `--windows-tts` bypasses neural initialization. `--simulate-neural-tts-failure` safely exercises Windows fallback, and `--measure-neural-tts` prepares three comments without sound or media control.
+- Automatic radio ordering is comment generation, Ollama unload, neural preparation, minimum-age wait if needed, final safety recheck, targeted pause, prepared playback, and protected same-session resume.
 - The model is stored at ignored `.tools/kokoro/kokoro.onnx`: 325,532,387 bytes (310.5 MiB), SHA-256 `7D5DF8ECF7D4B1878015A32686053FD0EEBE2BC377234608764CC0EF3636A6C5`.
-- The restored audition package closure occupies about 559.69 MiB in the ignored NuGet cache; the model, cache, build output, and generated samples together occupy about 1.20 GiB at this checkpoint, within the approved project-local footprint.
+- The restored package closure occupies about 559.69 MiB in the ignored NuGet cache; the model, package cache, and one built application output require about 1.20 GiB, with additional ignored audition build output if both projects are built.
 - KokoroSharp is MIT licensed; the Kokoro model and voices are Apache-2.0; the bundled eSpeak NG phonemization component is GPLv3. Distribution remains a later review, not part of this private audition.
 - `.tools/`, `.packages/`, `bin/`, `obj/`, and `artifacts/` were already excluded from Git, so the model, native runtime, generated WAV files, and reports cannot be committed accidentally.
+- The performance evidence is in ignored `logs/neural-tts-diagnostic-20260808-001817-018.txt`.
 - Build tooling is project-local: Microsoft .NET SDK 8.0.423 and Microsoft's `Microsoft.Windows.SDK.NET.Ref` targeting pack. Neither requires administrator privileges.

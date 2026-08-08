@@ -1,6 +1,6 @@
 # Zoya Radio
 
-Milestones 0 through 5 have passed Steve's manual tests. Milestone 6 is deliberately deferred. Milestone 7 Stage B has produced local Kokoro voice samples and is waiting for Steve to choose a voice before any radio integration begins.
+Milestones 0 through 5 have passed Steve's manual tests. Milestone 6 is deliberately deferred. Milestone 7 now prefers the local Kokoro `af_nicole` voice and is awaiting Steve's real Firefox/radio acceptance test.
 
 The original media probe is **read only**. It lists and watches Windows media sessions, but it cannot pause, play, skip, change volume, or otherwise control playback. It does not inspect Firefox, webpage content, URLs, cookies, history, or Google account information.
 
@@ -29,7 +29,7 @@ Use this shorter check when you only want to list the sessions that exist right 
 
 ## Logs
 
-Each run creates a timestamped text file in the repository's `logs` folder. Read-only runs use `media-probe-*.txt`, control-test runs use `playback-control-test-*.txt`, spoken tests use `spoken-announcement-test-*.txt`, AI-comment tests use `ai-comment-test-*.txt`, and automatic behavior runs use `radio-behavior-test-*.txt`. The console and log contain the same useful diagnostics. These files remain on this computer, are excluded from Git, and may be deleted whenever they are no longer needed.
+Each run creates a timestamped text file in the repository's `logs` folder. Read-only runs use `media-probe-*.txt`, control-test runs use `playback-control-test-*.txt`, spoken tests use `spoken-announcement-test-*.txt`, AI-comment tests use `ai-comment-test-*.txt`, automatic behavior runs use `radio-behavior-test-*.txt`, and neural resource checks use `neural-tts-diagnostic-*.txt`. The console and log contain the same useful diagnostics. These files remain on this computer, are excluded from Git, and may be deleted whenever they are no longer needed.
 
 The completed Milestone 0 procedure is preserved in [docs/MILESTONE_0_TEST.md](docs/MILESTONE_0_TEST.md).
 
@@ -45,13 +45,19 @@ Only an explicit `y` or `yes` confirms the test; Enter and every other answer me
 
 ## Run the explicit spoken-announcement test
 
-This separate Milestone 2 test uses Microsoft's local Windows speech system and the ordinary default installed voice. It announces the exact title and artist supplied by the selected `firefox.exe` media session. It does not use the internet, AI, YouTube APIs, browser data, or guessed album information.
+This separate test now prefers the selected local Kokoro `af_nicole` neural voice and automatically falls back to the existing Windows voice if neural preparation fails. It announces the exact title and artist supplied by the selected `firefox.exe` media session. It does not use an online speech service, YouTube APIs, browser data, or guessed album information.
 
 ```powershell
 .\run-spoken-announcement-test.cmd
 ```
 
-It validates and lists the installed voices before any playback command, requires Firefox to be Playing, shows the proposed sentence, and defaults to no at the confirmation prompt. If confirmed, it rechecks the same session and metadata, pauses that Firefox session, speaks once, and restores that same session in protected cleanup.
+It validates local speech before any playback command, requires Firefox to be Playing, shows the proposed sentence, and defaults to no at the confirmation prompt. If confirmed, it prepares Nicole's audio while music still plays, rechecks the same session and metadata, pauses that Firefox session, speaks once, and restores that same session in protected cleanup.
+
+To force the old Windows voice for troubleshooting:
+
+```powershell
+.\run-spoken-announcement-test.cmd --windows-tts
+```
 
 The deliberate recovery check has its own launcher and never speaks:
 
@@ -96,7 +102,7 @@ While armed:
 - press **C** to clear the small in-memory recent-track/comment history;
 - press **Ctrl+C** to stop safely.
 
-The current track must be at least eight seconds old before Zoya may pause it. AI generation happens while music remains Playing. Immediately before pause, the program rechecks that exactly the original `firefox.exe` session, expected track, Playing state, age guard, armed state, and Silent Mode are all safe. A changed track cancels the pending interruption instead of creating catch-up chatter.
+The current track must be at least eight seconds old before Zoya may pause it. AI generation and Nicole's neural speech preparation both happen while music remains Playing. Immediately before pause, the program rechecks that exactly the original `firefox.exe` session, expected track, Playing state, age guard, armed state, and Silent Mode are all safe. A changed track cancels the pending interruption instead of creating catch-up chatter.
 
 Recent behavioral history is deliberately temporary: at most 10 tracks and 6 accepted AI comments, discarded when the application closes. Diagnostic text logs are separate and are not deleted by **C**.
 
@@ -108,19 +114,23 @@ The zero-GPU automatic mode keeps the same 2-5 scheduling and fixed announcement
 
 The completed Milestone 5 procedure is preserved in [docs/MILESTONE_5_TEST.md](docs/MILESTONE_5_TEST.md).
 
-## Compare the Milestone 7 voice samples
+## Milestone 7 local neural voice
 
-The separate voice-audition tool uses the approved CPU-only Kokoro model to create WAV files. It does **not** play them automatically, inspect Firefox, control music, call Ollama, or change the working Windows speech fallback.
+Steve selected `af_nicole`; `af_heart` was the runner-up. Nicole is now the normal local speech provider, running on the CPU. The model loads only while preparing one announcement and is disposed before Firefox is paused. Prepared WAV audio stays in memory and is disposed after use, so temporary audio files do not accumulate.
 
-The current samples are under `artifacts\voice-audition\20260807-235846-809`. Open that folder in File Explorer and double-click files `01` through `05` to compare the voices. Follow [docs/MILESTONE_7_VOICE_AUDITION.md](docs/MILESTONE_7_VOICE_AUDITION.md) and tell the Work chat which exact voice name you prefer.
-
-To create a fresh set later:
+If Nicole cannot initialize or synthesize, Zoya automatically prepares the same text with Microsoft Windows TTS before pausing music. If playback itself fails after pause, the protected same-Firefox-session resume path runs immediately. Force the safe fallback test with:
 
 ```powershell
-.\run-voice-audition.cmd
+.\run-neural-tts-fallback-test.cmd
 ```
 
-The approved model and packages are project-local, require no administrator access, and remain excluded from Git. Milestone 7 has not been integrated into the radio yet; that work waits for Steve's voice choice.
+The safe resource diagnostic creates three in-memory Nicole preparations but plays nothing and controls no media:
+
+```powershell
+.\run-neural-tts-diagnostic.cmd
+```
+
+The approved model and packages are project-local, require no administrator access, and remain excluded from Git. See [docs/MILESTONE_7_TEST.md](docs/MILESTONE_7_TEST.md) for the manual acceptance test and [docs/MILESTONE_7_VOICE_AUDITION.md](docs/MILESTONE_7_VOICE_AUDITION.md) for the original samples. Milestone 7 is not passed until Steve verifies real automatic announcements and recovery.
 
 ## Developer build
 
@@ -134,4 +144,4 @@ From the repository root:
 .\.dotnet\dotnet.exe build .\src\ZoyaRadio.VoiceAudition\ZoyaRadio.VoiceAudition.csproj --configuration Release
 ```
 
-The radio project uses Microsoft's supported `Windows.Media.Control`, `Windows.Media.SpeechSynthesis`, and `Windows.Media.Playback` APIs plus Ollama's loopback-only local HTTP API. The separate Milestone 7 audition project adds the approved `KokoroSharp.CPU` 0.8.0 package and CPU ONNX runtime locally. No cloud speech service or API key is used.
+The radio project uses Microsoft's supported `Windows.Media.Control`, `Windows.Media.SpeechSynthesis`, and `Windows.Media.Playback` APIs, Ollama's loopback-only local HTTP API, and the approved `KokoroSharp.CPU` 0.8.0 package with CPU ONNX Runtime. No cloud speech service or API key is used.

@@ -6,12 +6,12 @@ internal sealed class SpokenAnnouncementTest
 {
     private readonly GlobalSystemMediaTransportControlsSessionManager _manager;
     private readonly LocalLog _log;
-    private readonly WindowsSpeechService _speechService;
+    private readonly IAnnouncementSpeechService _speechService;
 
     public SpokenAnnouncementTest(
         GlobalSystemMediaTransportControlsSessionManager manager,
         LocalLog log,
-        WindowsSpeechService speechService)
+        IAnnouncementSpeechService speechService)
     {
         _manager = manager;
         _log = log;
@@ -131,7 +131,7 @@ internal sealed class SpokenAnnouncementTest
                 try
                 {
                     _log.Write("Preparing the confirmed Unicode announcement with the selected local voice...");
-                    preparedSpeech = await _speechService.PrepareAsync(sentence);
+                    preparedSpeech = await _speechService.PrepareAsync(sentence, cancellationToken);
                     cancellationToken.ThrowIfCancellationRequested();
                 }
                 catch (OperationCanceledException)
