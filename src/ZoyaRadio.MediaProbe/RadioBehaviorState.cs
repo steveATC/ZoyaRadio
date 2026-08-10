@@ -274,6 +274,20 @@ internal sealed class RadioBehaviorState
         return true;
     }
 
+    public bool RebindCurrentTrack(MediaSnapshot media, DateTimeOffset observedAt)
+    {
+        EnsureUsableTrack(media);
+        bool invalidated = _pendingOpportunity is not null;
+        _pendingOpportunity = null;
+        _preparationReady = false;
+        _deliveryTransitionObserved = false;
+        _currentTrack = media;
+        _currentTrackStartedAt = observedAt;
+        _history.AddTrack(media);
+        ChooseFreshSchedule();
+        return invalidated;
+    }
+
     public bool ResolveOpportunity(
         long opportunityId,
         bool announcementCompleted,

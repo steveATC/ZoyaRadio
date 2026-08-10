@@ -157,6 +157,7 @@ internal sealed class WindowsRadioOpportunityHost : IRadioOpportunityHost, ITran
                 }
             },
             simulatePostDuckFailure,
-            cancellationToken);
+            cancellationToken,
+            speechStartDeadline);
     }
 }

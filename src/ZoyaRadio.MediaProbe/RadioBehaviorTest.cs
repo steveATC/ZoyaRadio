@@ -46,7 +46,7 @@ internal sealed class RadioBehaviorTest
 
         var aiService = new AiCommentService(generator, aiConfiguration, log, persona);
         var commentProvider = new LocalTransitionCommentProvider(aiService);
-        var transitionDucker = new WindowsTransitionAudioDucker(log);
+        var transitionDucker = new WindowsTransitionAudioDucker(log, clock: _clock);
         var opportunityHost = new WindowsRadioOpportunityHost(
             () => _selectedSession,
             GetRuntimeState,
@@ -299,7 +299,7 @@ internal sealed class RadioBehaviorTest
     {
         try
         {
-            await HandleMediaPropertiesChangedAsync();
+            await HandleMediaPropertiesChangedAsync(sender);
         }
         catch (Exception exception)
         {
@@ -307,7 +307,8 @@ internal sealed class RadioBehaviorTest
         }
     }
 
-    private async Task HandleMediaPropertiesChangedAsync()
+    private async Task HandleMediaPropertiesChangedAsync(
+        GlobalSystemMediaTransportControlsSession eventSession)
     {
         await _mediaEventGate.WaitAsync();
         RadioPreparationOpportunity? preparation = null;
@@ -315,8 +316,9 @@ internal sealed class RadioBehaviorTest
 
         try
         {
-            if (_selectedSession is null)
+            if (_selectedSession is null || !ReferenceEquals(eventSession, _selectedSession))
             {
+                _log.Write("STALE MEDIA EVENT IGNORED: it came from a Firefox GSMTC object that is no longer selected.");
                 return;
             }
 
@@ -377,56 +379,193 @@ internal sealed class RadioBehaviorTest
         }
     }
 
-    private void OnSessionsChanged(
+    private async void OnSessionsChanged(
         GlobalSystemMediaTransportControlsSessionManager sender,
         SessionsChangedEventArgs args)
     {
         try
         {
-            bool sessionListReadSucceeded = _sessionAccess.TryReadExactFirefoxMatches(
-                out IReadOnlyList<GlobalSystemMediaTransportControlsSession> matches);
-            bool stillExactTarget = matches.Count == 1
-                && _selectedSession is not null
-                && ReferenceEquals(matches[0], _selectedSession);
-
-            if (sessionListReadSucceeded && stillExactTarget)
-            {
-                return;
-            }
-
-            bool cancelled;
-            lock (_stateLock)
-            {
-                cancelled = _state.CancelPendingOpportunityAndReschedule();
-            }
-
-            _log.Write(
-                sessionListReadSucceeded
-                    ? $"SESSION SAFETY: expected one original firefox.exe session; Windows now reports {matches.Count} exact match(es)."
-                    : "SESSION SAFETY: the Windows media-session list could not be validated.");
-            _log.Write("No automatic control will target a replacement or ambiguous session. Restart the test after fixing sessions.");
-
-            if (cancelled)
-            {
-                CancelPendingPipeline("the selected Firefox session became missing or ambiguous");
-                WriteNextSchedule();
-            }
+            await HandleSessionsChangedAsync();
         }
         catch (Exception exception)
         {
             _log.Warning("Could not validate a Windows session-list change", exception);
-            bool cancelled;
-            lock (_stateLock)
+            InvalidatePendingForSessionSafety(
+                "the Windows media-session list could not be validated");
+        }
+    }
+
+    private async Task HandleSessionsChangedAsync()
+    {
+        await _mediaEventGate.WaitAsync();
+
+        try
+        {
+            RadioRuntimeState runtime = GetRuntimeState();
+            if (!runtime.Armed || _selectedSession is null)
             {
-                cancelled = _state.CancelPendingOpportunityAndReschedule();
+                return;
             }
 
-            if (cancelled)
+            bool sessionListReadSucceeded = _sessionAccess.TryReadExactFirefoxMatches(
+                out IReadOnlyList<GlobalSystemMediaTransportControlsSession> matches);
+            FirefoxMediaSessionChange<GlobalSystemMediaTransportControlsSession> change =
+                FirefoxMediaSessionLifecycle.Evaluate(
+                    sessionListReadSucceeded,
+                    _selectedSession,
+                    matches);
+
+            switch (change.Status)
             {
-                CancelPendingPipeline("the Windows media-session list could not be validated");
+                case FirefoxMediaSessionChangeStatus.OriginalSessionStillValid:
+                    _log.Write(
+                        "FIREFOX GSMTC SESSION: ORIGINAL SESSION STILL VALID; " +
+                        "unrelated application-session changes were ignored.");
+                    return;
+                case FirefoxMediaSessionChangeStatus.SessionListUnavailable:
+                    _log.Write("FIREFOX GSMTC SESSION: the media-session list is unavailable.");
+                    InvalidatePendingForSessionSafety("the Windows media-session list is unavailable");
+                    return;
+                case FirefoxMediaSessionChangeStatus.NoFirefoxCandidate:
+                    _log.Write("FIREFOX GSMTC CANDIDATES: ZERO exact firefox.exe sessions. Staying silent.");
+                    InvalidatePendingForSessionSafety("zero Firefox media-session candidates are available");
+                    return;
+                case FirefoxMediaSessionChangeStatus.AmbiguousFirefoxCandidates:
+                    _log.Write(
+                        $"FIREFOX GSMTC CANDIDATES: MULTIPLE/AMBIGUOUS " +
+                        $"({change.MatchingFirefoxSessionCount} exact firefox.exe sessions). Staying silent.");
+                    InvalidatePendingForSessionSafety("multiple Firefox media-session candidates are ambiguous");
+                    return;
+                case FirefoxMediaSessionChangeStatus.ReplacementCandidate:
+                    await TryRebindReplacementSessionAsync(change.Replacement!);
+                    return;
+                default:
+                    throw new InvalidOperationException("Unknown Firefox media-session lifecycle decision.");
             }
         }
+        finally
+        {
+            _mediaEventGate.Release();
+        }
+    }
 
+    private async Task TryRebindReplacementSessionAsync(
+        GlobalSystemMediaTransportControlsSession replacementCandidate)
+    {
+        _log.Write(
+            "FIREFOX GSMTC SESSION REPLACED: exactly one new firefox.exe object is available. " +
+            "Cancelling and discarding pending material before validation/rebinding.");
+        await FirefoxSessionRebindSafety.DiscardPendingBeforeRebindingAsync(
+            () => InvalidatePendingForSessionSafety("the Firefox GSMTC session object was replaced"),
+            WaitForPipelineAsync);
+
+        if (!_sessionAccess.TryReadExactFirefoxMatches(
+                out IReadOnlyList<GlobalSystemMediaTransportControlsSession> refreshedMatches))
+        {
+            _log.Write("FIREFOX GSMTC REACQUISITION REFUSED: the refreshed session list was unavailable.");
+            return;
+        }
+
+        if (refreshedMatches.Count == 0)
+        {
+            _log.Write("FIREFOX GSMTC REACQUISITION REFUSED: ZERO Firefox candidates remain.");
+            return;
+        }
+
+        if (refreshedMatches.Count > 1)
+        {
+            _log.Write(
+                $"FIREFOX GSMTC REACQUISITION REFUSED: MULTIPLE/AMBIGUOUS candidates " +
+                $"({refreshedMatches.Count}) remain.");
+            return;
+        }
+
+        GlobalSystemMediaTransportControlsSession refreshedCandidate = refreshedMatches[0];
+        if (!ReferenceEquals(refreshedCandidate, replacementCandidate))
+        {
+            _log.Write(
+                "FIREFOX GSMTC REACQUISITION REFUSED: the replacement changed again during validation.");
+            return;
+        }
+
+        RadioSessionDetails replacement = await _sessionAccess.ReadSessionDetailsAsync(refreshedCandidate);
+        if (!replacement.SourceReadSucceeded
+            || !string.Equals(
+                replacement.SourceId,
+                FirefoxSessionSelector.VerifiedSourceId,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            _log.Write("FIREFOX GSMTC REACQUISITION REFUSED: the replacement source identifier is unreadable or wrong.");
+            return;
+        }
+
+        if (!replacement.MediaReadSucceeded || !AnnouncementText.TryBuild(replacement.Media, out _))
+        {
+            _log.Write("FIREFOX GSMTC REACQUISITION REFUSED: the replacement lacks a usable title or artist.");
+            return;
+        }
+
+        if (!replacement.PlaybackReadSucceeded
+            || !PlaybackControlRules.CanStart(replacement.PlaybackStatus))
+        {
+            _log.Write(
+                $"FIREFOX GSMTC REACQUISITION REFUSED: the replacement is " +
+                $"{RadioSessionAccess.DisplayStatus(replacement.PlaybackStatus)}, not Playing.");
+            return;
+        }
+
+        GlobalSystemMediaTransportControlsSession previous = _selectedSession!;
+
+        try
+        {
+            refreshedCandidate.MediaPropertiesChanged += OnMediaPropertiesChanged;
+        }
+        catch (Exception exception)
+        {
+            _log.Warning("Could not subscribe to the replacement Firefox media session", exception);
+            return;
+        }
+
+        _selectedSession = refreshedCandidate;
+
+        try
+        {
+            previous.MediaPropertiesChanged -= OnMediaPropertiesChanged;
+        }
+        catch (Exception exception)
+        {
+            _log.Warning("Could not remove the stale Firefox media-property observer", exception);
+        }
+
+        lock (_stateLock)
+        {
+            _state.RebindCurrentTrack(replacement.Media, _clock.Now);
+        }
+
+        _log.Write("FIREFOX GSMTC SESSION REACQUIRED: PASS - exactly one validated Playing firefox.exe session is selected.");
+        _log.Write(
+            $"Reacquired track: {MediaSnapshot.Display(replacement.Media.Title)} - " +
+            $"{MediaSnapshot.Display(replacement.Media.Artist)}");
+        _log.Write("Pending material was discarded. A fresh transition interval begins now.");
+        WriteNextSchedule();
+    }
+
+    private void InvalidatePendingForSessionSafety(string reason)
+    {
+        bool invalidated;
+
+        lock (_stateLock)
+        {
+            invalidated = _state.CancelPendingOpportunityAndReschedule();
+        }
+
+        CancelPendingPipeline(reason);
+
+        if (invalidated)
+        {
+            _log.Write("PENDING MATERIAL DISCARDED BEFORE SESSION REBINDING.");
+            WriteNextSchedule();
+        }
     }
 
     private void StartPreparation(RadioPreparationOpportunity opportunity)

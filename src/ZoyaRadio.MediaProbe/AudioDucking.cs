@@ -44,17 +44,20 @@ internal enum AudioSessionSelectionStatus
 internal sealed record AudioSessionSelection(
     AudioSessionSelectionStatus Status,
     IAudioSessionVolumeTarget? Target,
-    IReadOnlyList<AudioSessionDescriptor> FirefoxCandidates);
+    IReadOnlyList<AudioSessionDescriptor> FirefoxCandidates,
+    IReadOnlyList<AudioSessionDescriptor> AllFirefoxSessions);
 
 internal static class AudioSessionSelector
 {
     public static AudioSessionSelection SelectFirefox(
         IEnumerable<AudioSessionDescriptor> sessions)
     {
-        AudioSessionDescriptor[] candidates = sessions
+        AudioSessionDescriptor[] firefoxSessions = sessions
+            .Where(session => IsFirefoxProcessName(session.Target.ProcessName))
+            .ToArray();
+        AudioSessionDescriptor[] candidates = firefoxSessions
             .Where(session =>
-                session.InitialState.Activity == AudioSessionActivity.Active
-                && IsFirefoxProcessName(session.Target.ProcessName))
+                session.InitialState.Activity == AudioSessionActivity.Active)
             .ToArray();
 
         return candidates.Length switch
@@ -62,15 +65,18 @@ internal static class AudioSessionSelector
             0 => new AudioSessionSelection(
                 AudioSessionSelectionStatus.NoFirefoxCandidate,
                 null,
-                candidates),
+                candidates,
+                firefoxSessions),
             1 => new AudioSessionSelection(
                 AudioSessionSelectionStatus.Selected,
                 candidates[0].Target,
-                candidates),
+                candidates,
+                firefoxSessions),
             _ => new AudioSessionSelection(
                 AudioSessionSelectionStatus.Ambiguous,
                 null,
-                candidates),
+                candidates,
+                firefoxSessions),
         };
     }
 

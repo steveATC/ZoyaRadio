@@ -97,6 +97,11 @@ var tests = new (string Name, Func<Task> Run)[]
     ("radio maximum speech duration uses protected recovery", RadioSpeechLimitUsesProtectedRecovery),
     ("radio pipeline passes configured speech limit", RadioPipelinePassesSpeechLimit),
     ("transition schedule prepares Track A one transition ahead", () => RunSynchronous(TransitionSchedulePreparesOneAhead)),
+    ("Chrome session changes preserve the original Firefox binding", () => RunSynchronous(ChromeDoesNotReplaceFirefoxMediaBinding)),
+    ("one replacement Firefox media session is recognized", () => RunSynchronous(FirefoxMediaReplacementIsRecognized)),
+    ("unsafe Firefox media-session replacement candidates are refused", () => RunSynchronous(FirefoxMediaRebindRefusesUnsafeCandidates)),
+    ("pending material is discarded before Firefox rebinding", FirefoxRebindWaitsForPendingDiscard),
+    ("Firefox rebinding starts a fresh transition interval", () => RunSynchronous(SessionRebindResetsPendingOpportunity)),
     ("unfinished preparation misses its transition without catch-up", () => RunSynchronous(UnfinishedTransitionPreparationIsAbandoned)),
     ("transition prompt contains Track A and no speculative Track B", () => RunSynchronous(TransitionPromptContainsTrackAOnly)),
     ("AI and Nicole preparation finish before transition delivery", TransitionPreparationPrecedesDelivery),
@@ -110,6 +115,8 @@ var tests = new (string Name, Func<Task> Run)[]
     ("ambiguous transition media target causes silence", TransitionAmbiguousTargetCausesSilence),
     ("ambiguous Core Audio target causes no automatic duck or speech", TransitionAmbiguousAudioTargetCausesSilence),
     ("automatic ducking selects Firefox and leaves Chrome unchanged", TransitionDuckingLeavesChromeUnchanged),
+    ("transient inactive Firefox Core Audio target is retried safely", TransitionAudioTargetRetriesTransientInactiveFirefox),
+    ("inactive Firefox Core Audio retry is bounded by the delivery window", TransitionAudioTargetRetryIsBounded),
     ("rapid A-B-C transition invalidates stale prepared material", () => RunSynchronous(TransitionRapidSkipInvalidatesPrepared)),
     ("late transition delivery is abandoned", TransitionLateDeliveryIsAbandoned),
     ("changed Track B abandons stale prepared speech", TransitionChangedTrackBIsAbandoned),
@@ -1635,6 +1642,123 @@ static void TransitionSchedulePreparesOneAhead()
     AssertEqual("Track B", delivery.Delivery.NewTrack.Title!);
 }
 
+static void ChromeDoesNotReplaceFirefoxMediaBinding()
+{
+    var selectedFirefox = new object();
+
+    FirefoxMediaSessionChange<object> chromeAppeared = FirefoxMediaSessionLifecycle.Evaluate(
+        true,
+        selectedFirefox,
+        [selectedFirefox]);
+    FirefoxMediaSessionChange<object> chromeDisappeared = FirefoxMediaSessionLifecycle.Evaluate(
+        true,
+        selectedFirefox,
+        [selectedFirefox]);
+
+    AssertEqual(FirefoxMediaSessionChangeStatus.OriginalSessionStillValid, chromeAppeared.Status);
+    AssertEqual(FirefoxMediaSessionChangeStatus.OriginalSessionStillValid, chromeDisappeared.Status);
+    AssertTrue(chromeAppeared.Replacement is null);
+    AssertTrue(chromeDisappeared.Replacement is null);
+}
+
+static void FirefoxMediaReplacementIsRecognized()
+{
+    var originalFirefox = new object();
+    var replacementFirefox = new object();
+
+    FirefoxMediaSessionChange<object> change = FirefoxMediaSessionLifecycle.Evaluate(
+        true,
+        originalFirefox,
+        [replacementFirefox]);
+
+    AssertEqual(FirefoxMediaSessionChangeStatus.ReplacementCandidate, change.Status);
+    AssertSame(replacementFirefox, change.Replacement!);
+    AssertEqual(1, change.MatchingFirefoxSessionCount);
+}
+
+static void FirefoxMediaRebindRefusesUnsafeCandidates()
+{
+    var originalFirefox = new object();
+    var firstReplacement = new object();
+    var secondReplacement = new object();
+
+    FirefoxMediaSessionChange<object> unavailable = FirefoxMediaSessionLifecycle.Evaluate(
+        false,
+        originalFirefox,
+        []);
+    FirefoxMediaSessionChange<object> absent = FirefoxMediaSessionLifecycle.Evaluate(
+        true,
+        originalFirefox,
+        []);
+    FirefoxMediaSessionChange<object> ambiguous = FirefoxMediaSessionLifecycle.Evaluate(
+        true,
+        originalFirefox,
+        [firstReplacement, secondReplacement]);
+
+    AssertEqual(FirefoxMediaSessionChangeStatus.SessionListUnavailable, unavailable.Status);
+    AssertEqual(FirefoxMediaSessionChangeStatus.NoFirefoxCandidate, absent.Status);
+    AssertEqual(FirefoxMediaSessionChangeStatus.AmbiguousFirefoxCandidates, ambiguous.Status);
+    AssertTrue(unavailable.Replacement is null);
+    AssertTrue(absent.Replacement is null);
+    AssertTrue(ambiguous.Replacement is null);
+    AssertEqual(2, ambiguous.MatchingFirefoxSessionCount);
+}
+
+static async Task FirefoxRebindWaitsForPendingDiscard()
+{
+    var events = new List<string>();
+    var pendingCompletion = new TaskCompletionSource<bool>(
+        TaskCreationOptions.RunContinuationsAsynchronously);
+
+    Task discard = FirefoxSessionRebindSafety.DiscardPendingBeforeRebindingAsync(
+        () => events.Add("cancel-and-discard"),
+        async () =>
+        {
+            events.Add("wait-for-pipeline");
+            await pendingCompletion.Task;
+            events.Add("pipeline-drained");
+        });
+
+    AssertFalse(discard.IsCompleted);
+    AssertEqual(2, events.Count);
+    AssertEqual("cancel-and-discard", events[0]);
+    AssertEqual("wait-for-pipeline", events[1]);
+
+    pendingCompletion.SetResult(true);
+    await discard;
+    events.Add("rebind-allowed");
+
+    AssertEqual(4, events.Count);
+    AssertEqual("pipeline-drained", events[2]);
+    AssertEqual("rebind-allowed", events[3]);
+}
+
+static void SessionRebindResetsPendingOpportunity()
+{
+    var targets = new FakeTransitionTargetSource(2, 5);
+    var state = new RadioBehaviorState(RadioBehaviorConfiguration.Default, targets);
+    DateTimeOffset now = DateTimeOffset.Parse("2026-08-09T12:00:00Z");
+    state.Arm(Track("Initial", "Artist 0"), now);
+    RadioTrackObservation preparation = state.ObserveTrack(
+        Track("Prepared", "Artist A"),
+        now.AddSeconds(10));
+    AssertTrue(preparation.PreparationOpportunity is not null);
+    AssertTrue(state.MarkPreparationReady(preparation.PreparationOpportunity!.Id));
+
+    bool invalidated = state.RebindCurrentTrack(
+        Track("Новый трек", "Новый артист"),
+        now.AddSeconds(20));
+    RadioRuntimeState runtime = state.GetRuntimeState();
+
+    AssertTrue(invalidated);
+    AssertTrue(runtime.PendingOpportunityId is null);
+    AssertEqual(0, state.TransitionCounter);
+    AssertEqual(5, state.ScheduledThreshold);
+    AssertEqual("Новый трек", runtime.CurrentTrack.Title!);
+    AssertEqual("Новый артист", runtime.CurrentTrack.Artist!);
+    AssertEqual(now.AddSeconds(20), runtime.CurrentTrackStartedAt);
+}
+
 static void UnfinishedTransitionPreparationIsAbandoned()
 {
     var state = new RadioBehaviorState(
@@ -1953,6 +2077,111 @@ static async Task TransitionDuckingLeavesChromeUnchanged()
     AssertEqual(0, chrome.SetMuteCalls);
 }
 
+static async Task TransitionAudioTargetRetriesTransientInactiveFirefox()
+{
+    DateTimeOffset now = DateTimeOffset.Parse("2026-08-09T12:00:00Z");
+    var clock = new FakeRadioClock(now);
+    var inactiveFirefox = new FakeAudioSessionTarget(
+        "firefox",
+        20,
+        "FIREFOX-INACTIVE",
+        0.5f,
+        activity: AudioSessionActivity.Inactive);
+    var firstChrome = new FakeAudioSessionTarget("chrome", 30, "CHROME-01", 0.8f);
+    var recoveredFirefox = new FakeAudioSessionTarget(
+        "firefox.exe",
+        20,
+        "FIREFOX-RECOVERED",
+        0.6f);
+    var secondChrome = new FakeAudioSessionTarget("chrome", 30, "CHROME-02", 0.8f);
+    var provider = new SequencedAudioSessionEnumerationProvider(
+        () => FakeAudioEnumeration(inactiveFirefox, firstChrome),
+        () => FakeAudioEnumeration(recoveredFirefox, secondChrome));
+    var ducker = new WindowsTransitionAudioDucker(
+        new FakeLog(),
+        FastAudioDuckingConfiguration(),
+        provider,
+        clock);
+    int actionCalls = 0;
+
+    TransitionDuckingResult result = await ducker.RunAsync(
+        _ =>
+        {
+            actionCalls++;
+            return Task.CompletedTask;
+        },
+        false,
+        CancellationToken.None,
+        now.AddSeconds(2));
+
+    AssertEqual(TransitionDuckingStatus.Completed, result.Status);
+    AssertEqual(2, provider.EnumerationCalls);
+    AssertEqual(1, clock.Delays.Count);
+    AssertEqual(TimeSpan.FromMilliseconds(100), clock.Delays[0]);
+    AssertEqual(1, actionCalls);
+    AssertEqual(0, inactiveFirefox.SetVolumeCalls);
+    AssertApproximately(0.6f, recoveredFirefox.VolumeScalar);
+    AssertTrue(recoveredFirefox.SetVolumeCalls > 0);
+    AssertApproximately(0.8f, firstChrome.VolumeScalar);
+    AssertApproximately(0.8f, secondChrome.VolumeScalar);
+    AssertEqual(0, firstChrome.SetVolumeCalls);
+    AssertEqual(0, secondChrome.SetVolumeCalls);
+}
+
+static async Task TransitionAudioTargetRetryIsBounded()
+{
+    DateTimeOffset now = DateTimeOffset.Parse("2026-08-09T12:00:00Z");
+    var clock = new FakeRadioClock(now);
+    var inactiveTargets = new List<FakeAudioSessionTarget>();
+    var unrelatedTargets = new List<FakeAudioSessionTarget>();
+    var provider = new SequencedAudioSessionEnumerationProvider(
+        () =>
+        {
+            var inactiveFirefox = new FakeAudioSessionTarget(
+                "firefox",
+                20,
+                $"FIREFOX-INACTIVE-{inactiveTargets.Count + 1}",
+                0.5f,
+                activity: AudioSessionActivity.Inactive);
+            var chrome = new FakeAudioSessionTarget(
+                "chrome",
+                30,
+                $"CHROME-{unrelatedTargets.Count + 1}",
+                0.8f);
+            inactiveTargets.Add(inactiveFirefox);
+            unrelatedTargets.Add(chrome);
+            return FakeAudioEnumeration(inactiveFirefox, chrome);
+        });
+    var ducker = new WindowsTransitionAudioDucker(
+        new FakeLog(),
+        FastAudioDuckingConfiguration(),
+        provider,
+        clock);
+    int actionCalls = 0;
+
+    TransitionDuckingResult result = await ducker.RunAsync(
+        _ =>
+        {
+            actionCalls++;
+            return Task.CompletedTask;
+        },
+        false,
+        CancellationToken.None,
+        now.AddMilliseconds(350));
+
+    AssertEqual(TransitionDuckingStatus.Refused, result.Status);
+    AssertEqual(4, provider.EnumerationCalls);
+    AssertEqual(3, clock.Delays.Count);
+    AssertEqual(
+        TimeSpan.FromMilliseconds(250),
+        clock.Delays.Aggregate(TimeSpan.Zero, (sum, delay) => sum + delay));
+    AssertEqual(0, actionCalls);
+    AssertTrue(inactiveTargets.All(
+        target => target.SetVolumeCalls == 0 && target.SetMuteCalls == 0));
+    AssertTrue(unrelatedTargets.All(
+        target => target.SetVolumeCalls == 0 && target.SetMuteCalls == 0));
+}
+
 static void TransitionRapidSkipInvalidatesPrepared()
 {
     var state = new RadioBehaviorState(
@@ -2257,6 +2486,14 @@ static AudioDuckingConfiguration FastAudioDuckingConfiguration()
 static AudioSessionDescriptor AudioDescriptor(FakeAudioSessionTarget target)
 {
     return new AudioSessionDescriptor(target, target.ReadState());
+}
+
+static AudioSessionEnumeration FakeAudioEnumeration(
+    params FakeAudioSessionTarget[] targets)
+{
+    return new AudioSessionEnumeration(
+        "FAKE-ENDPOINT",
+        targets.Select(AudioDescriptor).ToArray());
 }
 
 static Task RunSynchronous(Action action)
@@ -2744,6 +2981,39 @@ internal sealed class FakeAudioSessionEnumerationProvider : IAudioSessionEnumera
     public AudioSessionEnumeration Enumerate()
     {
         return new AudioSessionEnumeration("FAKE-ENDPOINT", _sessions);
+    }
+}
+
+internal sealed class SequencedAudioSessionEnumerationProvider : IAudioSessionEnumerationProvider
+{
+    private readonly Queue<Func<AudioSessionEnumeration>> _enumerations;
+    private Func<AudioSessionEnumeration> _lastEnumeration;
+
+    public SequencedAudioSessionEnumerationProvider(
+        params Func<AudioSessionEnumeration>[] enumerations)
+    {
+        if (enumerations.Length == 0)
+        {
+            throw new ArgumentException(
+                "At least one fake enumeration is required.",
+                nameof(enumerations));
+        }
+
+        _enumerations = new Queue<Func<AudioSessionEnumeration>>(enumerations);
+        _lastEnumeration = enumerations[^1];
+    }
+
+    public int EnumerationCalls { get; private set; }
+
+    public AudioSessionEnumeration Enumerate()
+    {
+        EnumerationCalls++;
+        if (_enumerations.Count > 0)
+        {
+            _lastEnumeration = _enumerations.Dequeue();
+        }
+
+        return _lastEnumeration();
     }
 }
 

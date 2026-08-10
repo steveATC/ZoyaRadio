@@ -18,7 +18,8 @@ internal interface ITransitionAudioDucker
     Task<TransitionDuckingResult> RunAsync(
         Func<CancellationToken, Task> protectedAction,
         bool simulatePostDuckFailure,
-        CancellationToken cancellationToken);
+        CancellationToken cancellationToken,
+        DateTimeOffset? targetAcquisitionDeadline = null);
 }
 
 internal interface IAudioSessionEnumerationProvider
@@ -43,67 +44,119 @@ internal sealed class WindowsAudioSessionEnumerationProvider : IAudioSessionEnum
 
 internal sealed class WindowsTransitionAudioDucker : ITransitionAudioDucker
 {
+    private static readonly TimeSpan RetryInterval = TimeSpan.FromMilliseconds(100);
+    private static readonly TimeSpan SpeechStartSafetyMargin = TimeSpan.FromMilliseconds(100);
     private readonly IAnnouncementLog _log;
     private readonly AudioDuckingConfiguration _configuration;
     private readonly IAudioSessionEnumerationProvider _enumerationProvider;
+    private readonly IRadioClock _clock;
 
     public WindowsTransitionAudioDucker(
         IAnnouncementLog log,
         AudioDuckingConfiguration? configuration = null,
-        IAudioSessionEnumerationProvider? enumerationProvider = null)
+        IAudioSessionEnumerationProvider? enumerationProvider = null,
+        IRadioClock? clock = null)
     {
         _log = log;
         _configuration = configuration ?? AudioDuckingConfiguration.Diagnostic;
         _configuration.Validate();
         _enumerationProvider = enumerationProvider ?? new WindowsAudioSessionEnumerationProvider(log);
+        _clock = clock ?? new SystemRadioClock();
     }
 
     public async Task<TransitionDuckingResult> RunAsync(
         Func<CancellationToken, Task> protectedAction,
         bool simulatePostDuckFailure,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        DateTimeOffset? targetAcquisitionDeadline = null)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        AudioSessionEnumeration enumeration;
+        DateTimeOffset? finalSelectionTime = targetAcquisitionDeadline
+            - _configuration.RampDuration
+            - SpeechStartSafetyMargin;
+        int attempt = 0;
 
-        try
+        while (true)
         {
-            _log.Write("DELIVERY AUDIO TARGET: re-enumerating the current default-output Core Audio sessions.");
-            enumeration = _enumerationProvider.Enumerate();
-        }
-        catch (Exception exception)
-        {
-            _log.Warning("The Firefox audio target could not be enumerated; staying silent", exception);
-            return new TransitionDuckingResult(
-                TransitionDuckingStatus.Refused,
-                "the Windows audio-session list was unavailable",
-                null);
-        }
+            cancellationToken.ThrowIfCancellationRequested();
+            attempt++;
+            AudioSessionEnumeration enumeration;
 
-        try
-        {
-            AudioSessionSelection selection = AudioSessionSelector.SelectFirefox(enumeration.Sessions);
-
-            if (selection.Status == AudioSessionSelectionStatus.NoFirefoxCandidate)
+            try
             {
-                _log.Write("DELIVERY ABANDONED: no active Firefox Core Audio candidate exists. No duck or speech began.");
+                _log.Write(
+                    $"DELIVERY AUDIO TARGET: enumerating current Core Audio sessions (attempt {attempt}).");
+                enumeration = _enumerationProvider.Enumerate();
+            }
+            catch (Exception exception)
+            {
+                _log.Warning("The Firefox audio target could not be enumerated; staying silent", exception);
                 return new TransitionDuckingResult(
                     TransitionDuckingStatus.Refused,
-                    "no active Firefox Core Audio candidate existed",
+                    "the Windows audio-session list was unavailable",
                     null);
+            }
+
+            AudioSessionSelection selection = AudioSessionSelector.SelectFirefox(enumeration.Sessions);
+
+            if (selection.Status == AudioSessionSelectionStatus.Selected)
+            {
+                return await RunSelectedAsync(
+                    selection.Target!,
+                    enumeration,
+                    protectedAction,
+                    simulatePostDuckFailure,
+                    cancellationToken);
             }
 
             if (selection.Status == AudioSessionSelectionStatus.Ambiguous)
             {
                 _log.Write(
-                    $"DELIVERY ABANDONED: {selection.FirefoxCandidates.Count} active Firefox Core Audio candidates are ambiguous. No duck or speech began.");
+                    $"DELIVERY ABANDONED: MULTIPLE/AMBIGUOUS FIREFOX CORE AUDIO CANDIDATES " +
+                    $"({selection.FirefoxCandidates.Count} active exact Firefox sessions). No duck or speech began.");
+                DisposeEnumeration(enumeration);
                 return new TransitionDuckingResult(
                     TransitionDuckingStatus.Refused,
                     "the active Firefox Core Audio target was ambiguous",
                     null);
             }
 
-            IAudioSessionVolumeTarget target = selection.Target!;
+            string unavailableDescription = selection.AllFirefoxSessions.Count == 0
+                ? "ZERO FIREFOX CORE AUDIO SESSIONS were present"
+                : $"ZERO ACTIVE FIREFOX CORE AUDIO CANDIDATES were present; " +
+                  $"{selection.AllFirefoxSessions.Count} exact Firefox session(s) were inactive or unavailable";
+            _log.Write($"DELIVERY AUDIO TARGET NOT READY: {unavailableDescription} on attempt {attempt}.");
+            DisposeEnumeration(enumeration);
+
+            if (finalSelectionTime is null || _clock.Now >= finalSelectionTime.Value)
+            {
+                _log.Write(
+                    "DELIVERY ABANDONED: no active Firefox Core Audio candidate became available " +
+                    "inside the existing transition window. No duck or speech began.");
+                return new TransitionDuckingResult(
+                    TransitionDuckingStatus.Refused,
+                    "no active Firefox Core Audio candidate became available inside the transition window",
+                    null);
+            }
+
+            TimeSpan remaining = finalSelectionTime.Value - _clock.Now;
+            TimeSpan delay = remaining < RetryInterval ? remaining : RetryInterval;
+            _log.Write(
+                $"DELIVERY AUDIO RETRY: waiting {delay.TotalMilliseconds:0} ms within the existing " +
+                "two-second transition window; Chrome and unrelated sessions remain ineligible.");
+            await _clock.DelayAsync(delay, cancellationToken);
+        }
+    }
+
+    private async Task<TransitionDuckingResult> RunSelectedAsync(
+        IAudioSessionVolumeTarget target,
+        AudioSessionEnumeration enumeration,
+        Func<CancellationToken, Task> protectedAction,
+        bool simulatePostDuckFailure,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
             AudioSessionVolumeState deliveryState = target.ReadState();
             string? unsuitableReason = AudioDuckingSafety.GetUnsuitableReason(deliveryState, _configuration);
             if (unsuitableReason is not null)
@@ -159,10 +212,15 @@ internal sealed class WindowsTransitionAudioDucker : ITransitionAudioDucker
         }
         finally
         {
-            foreach (AudioSessionDescriptor session in enumeration.Sessions)
-            {
-                session.Target.Dispose();
-            }
+            DisposeEnumeration(enumeration);
+        }
+    }
+
+    private static void DisposeEnumeration(AudioSessionEnumeration enumeration)
+    {
+        foreach (AudioSessionDescriptor session in enumeration.Sessions)
+        {
+            session.Target.Dispose();
         }
     }
 }
