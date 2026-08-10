@@ -67,6 +67,20 @@ These decisions summarize accepted project rules and rationale already evidenced
 
 ## Tooling and dependencies
 
-- The application remains a small .NET console project; no GUI, tray app, installer, or packaging architecture has been approved.
+- The current accepted application remains a small .NET console project. The M8 contract approves a future WinForms control application and bounded private-alpha packaging only through the separately authorized gates below; neither is implemented yet.
 - The Windows SDK APIs, loopback Ollama client, and KokoroSharp.CPU are the currently accepted implementation dependencies.
 - Project-local SDK, package cache, models, generated audio, builds, and logs remain excluded from Git.
+
+## Approved Milestone 8 boundaries
+
+- **Staged authorization is mandatory.** M8A and M8B require separate explicit implementation requests. M8B cannot begin until M8A is implemented, verified, manually accepted by Steve, and recorded in Git.
+- **M8A uses WinForms and same-process hosting.** The approved control application uses one UI-independent runtime controller or facade and one authoritative asynchronous lifecycle and cleanup path. Existing console diagnostics remain frontends to the same accepted runtime.
+- **M8 does not redesign radio behavior.** Existing scheduling, transition timing, safe-silence decisions, Firefox-only targeting, exact restoration, local-first privacy, and bounded ephemeral state remain controlling.
+- **M8B's primary distribution is portable.** The approved route is a versioned, unsigned, self-contained Windows x64 ZIP for private-alpha testing, with application-relative assets, LocalAppData logs, hashes, a manifest, notices, clean-machine evidence, and manual side-by-side replacement and rollback.
+- **Firefox and Ollama remain separate.** Neither installer is bundled. Zoya may direct a tester to the official Ollama source, and may start an installed Ollama application only after explicit tester action.
+- **Qwen setup requires informed consent.** Invoking `ollama pull qwen3:4b-instruct` requires size disclosure, a free-space check, explicit consent, visible progress, and cancellation. Third-party terms are never accepted automatically.
+- **eSpeak exclusion is a release gate.** The Nicole/en-US candidate must exclude eSpeak and pass representative and clean-machine tests. If eSpeak proves necessary, distribution pauses or uses the explicitly described Windows-TTS-only fallback until an approved compliance solution exists.
+- **Windows TTS is a deliberate fallback route.** It omits the Kokoro model, Nicole voice, ONNX native closure, and eSpeak; it must be disclosed as a different voice experience and meet the same runtime-safety and clean-machine requirements.
+- **M8 excludes broader distribution machinery.** No traditional installer, Store package, bootstrapper, automatic third-party installation, code signing, public release, automatic updater, tray/background service, or general future-scale packaging framework is approved.
+
+The complete scope, non-goals, gates, evidence requirements, and unresolved risks are governed by [MILESTONE_8_CONTRACT.md](MILESTONE_8_CONTRACT.md).

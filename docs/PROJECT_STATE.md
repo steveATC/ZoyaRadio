@@ -5,11 +5,11 @@
 | Field | Current value |
 | --- | --- |
 | Branch | `master` |
-| Latest accepted commit | `63662342a374b323b639325f360ae7c17ace1432` |
+| Latest accepted implementation commit | `63662342a374b323b639325f360ae7c17ace1432` |
 | Current passed milestone | Milestone 7.5B |
 | Manual acceptance date | 2026-08-10 |
 | Latest automated result | 124 passed, 0 failed |
-| Next gate | Milestone 8 is planned and unstarted |
+| Next gate | M8A is contracted but unstarted; implementation requires a separate explicit request |
 | Deferred milestone | Milestone 6 |
 
 The local Git repository is authoritative. See [PROJECT_INDEX.md](PROJECT_INDEX.md) for the documentation authority and snapshot rules.
@@ -27,6 +27,14 @@ The local Git repository is authoritative. See [PROJECT_INDEX.md](PROJECT_INDEX.
 - Recent state remains process-local and bounded to 10 tracks and 6 accepted AI comments. There is no persistent listening history or catch-up queue.
 
 Full implemented behavior is in [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.md).
+
+## Milestone 8 contract status
+
+- Steve approved the bounded [Milestone 8 contract](MILESTONE_8_CONTRACT.md) on August 10, 2026.
+- M8 is approved/contracted but unstarted. Contract approval did not implement or start M8.
+- M8A, the small WinForms control-application gate, is next but still requires a separate explicit implementation request.
+- M8B, the private-alpha distribution gate, remains blocked until M8A is implemented, verified, manually accepted by Steve, recorded in Git, and separately authorized.
+- No post-M8 proposal is approved by the M8 contract.
 
 ## Latest verification
 
@@ -47,7 +55,7 @@ Full implemented behavior is in [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.m
 
 ## Immediate blockers and deferred observations
 
-- There is no active M7.5B blocker. Milestone 8 has no approved detailed scope and must not start without a bounded request.
+- There is no active M7.5B blocker. M8 has an approved bounded contract but remains unstarted; M8A implementation requires a separate explicit request.
 - The earlier 20:49 observer stall remains intermittent, unresolved, and unreproduced by the accepted Firefox-plus-Chrome run.
 - Wrapper-refresh diagnostics are excessively repetitive; this is a deferred non-blocking logging-quality issue.
 - Other accepted limitations and deferred improvements are maintained in [KNOWN_ISSUES.md](KNOWN_ISSUES.md).

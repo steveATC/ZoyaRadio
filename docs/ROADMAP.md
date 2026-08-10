@@ -16,9 +16,9 @@ This document records accepted milestone status and approved direction. It does 
 | 7 - Better local voice | Passed | Kokoro `af_nicole` accepted as primary CPU voice; `af_heart` runner-up; Windows speech retained as fallback. |
 | 7.5A - Isolated Firefox ducking | Passed | Proportional application-session ducking and exact restoration verified without affecting Chrome or master volume. |
 | 7.5B - Transition-aware delivery | Passed | One-transition-ahead preparation, ducked delivery over playing music, wrapper-churn continuity, Chrome isolation, and clean restoration accepted on August 10, 2026. |
-| 8 | Planned and unstarted | No Milestone 8 implementation or detailed scope has been approved in this repository. |
+| 8 | Approved/contracted but unstarted | Two sequential gates are approved: M8A control application, then M8B private-alpha distribution. Each requires separate implementation authorization. |
 
-The latest accepted implementation/documentation snapshot is commit `63662342a374b323b639325f360ae7c17ace1432`, with 124 automated tests passed and 0 failed.
+The latest accepted implementation snapshot is commit `63662342a374b323b639325f360ae7c17ace1432`, with 124 automated tests passed and 0 failed. Later documentation-only commits do not replace that implementation snapshot or make the historical test result a new run.
 
 ## Milestone 7.5B repair provenance
 
@@ -52,11 +52,18 @@ Milestone-specific evidence and preserved regression instructions remain in the 
 
 ## Approved near-term direction
 
-Milestone 8 is the next named gate, but it remains planned and unstarted. Before implementation, Steve must supply or approve a bounded Milestone 8 request defining its goal, non-goals, safety rules, acceptance tests, and allowed dependencies. Until then:
+Steve approved the bounded [Milestone 8 contract](MILESTONE_8_CONTRACT.md) on August 10, 2026. M8 is approved/contracted but unstarted and has two sequential authorization gates:
 
-- no Milestone 8 architecture is approved;
-- no source, configuration, prompt, or runtime behavior should be changed on its behalf;
-- research and brainstorming remain inputs for review, not roadmap commitments.
+1. **M8A - Control application:** a small WinForms frontend, same-process hosting of the accepted runtime, a UI-independent controller, one authoritative asynchronous lifecycle, safe controls and status, LocalAppData logs, preserved console diagnostics, and fake-driven controller/UI-state tests.
+2. **M8B - Private-alpha distribution:** a versioned unsigned self-contained Windows x64 portable ZIP for approximately 2-3 invited testers, subject to M8A acceptance, a separate authorization, eSpeak exclusion/compliance evidence, clean-machine testing, and final manual acceptance.
+
+M8A is the next implementation gate, but it still requires a separate explicit implementation request. M8B remains blocked until M8A is implemented, verified, manually accepted by Steve, recorded in Git, and separately authorized. Until then:
+
+- no M8 source, project, package, configuration, prompt, test, publish, or runtime change is authorized by the contract alone;
+- M7.5B remains the latest accepted implementation;
+- automated success cannot pass either gate without the required manual evidence;
+- research and brainstorming remain review inputs and cannot add scope to the contract;
+- post-M8 proposals remain unapproved.
 
 ## Deferred and future boundaries
 

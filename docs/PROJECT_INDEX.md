@@ -8,11 +8,11 @@ This is the front door to the canonical Zoya Radio documentation. The local Git 
 | --- | --- |
 | Snapshot date | 2026-08-10 |
 | Repository branch | `master` |
-| Latest accepted commit | `63662342a374b323b639325f360ae7c17ace1432` |
+| Latest accepted implementation commit | `63662342a374b323b639325f360ae7c17ace1432` |
 | Documentation reorganization baseline | `d5594e7ee16be1f11afc732186fa16ae8c5cc1c9` |
 | Current passed milestone | Milestone 7.5B |
 | Latest automated result | 124 passed, 0 failed |
-| Next gate | Milestone 8 is planned and unstarted |
+| Next gate | M8A is contracted but unstarted; implementation requires a separate explicit request |
 | Snapshot ID | `zoya-radio-2026-08-10-m7.5b-63662342` |
 
 Update this table whenever an accepted implementation commit becomes the new source snapshot.
@@ -25,6 +25,7 @@ Update this table whenever an accepted implementation commit becomes the new sou
 - [ROADMAP.md](ROADMAP.md) - completed milestones and approved near-term direction.
 - [DECISIONS.md](DECISIONS.md) - durable accepted product and engineering decisions.
 - [KNOWN_ISSUES.md](KNOWN_ISSUES.md) - unresolved defects, accepted limitations, and deferred improvements.
+- [MILESTONE_8_CONTRACT.md](MILESTONE_8_CONTRACT.md) - approved M8 scope, sequential gates, non-goals, and acceptance requirements; implementation is unstarted.
 - [RESEARCH_INDEX.md](RESEARCH_INDEX.md) - research inventory and the boundary between evidence and recommendations.
 
 ## ChatGPT Project-source availability
@@ -54,6 +55,7 @@ The intake preserves what the Design / Brainstorming conversation proposed. It d
 **Canonical in Git but repository-only in the current shared snapshot:**
 
 - [README.md](../README.md)
+- [Milestone 8 contract](MILESTONE_8_CONTRACT.md)
 - Existing `MILESTONE_*_TEST.md`, voice-audition, and other milestone acceptance records
 
 Repository-only does not mean non-authoritative. README and the milestone records remain canonical Git documentation. Project chats should use the seven synchronized canonical documents as their shared navigation/current-state layer, the synchronized research reports as mirrored evidence, and the intake only as supplemental unapproved proposal history. The local Git repository remains authoritative whenever a Project-source copy differs from it. Do not upload or duplicate repository-only records merely to simplify this boundary.
@@ -68,6 +70,7 @@ Repository-only does not mean non-authoritative. README and the milestone record
 | Completed milestones and approved next work | [ROADMAP.md](ROADMAP.md) |
 | Durable decisions and accepted rationale | [DECISIONS.md](DECISIONS.md) |
 | Defects, limitations, unresolved observations, and deferred quality work | [KNOWN_ISSUES.md](KNOWN_ISSUES.md) |
+| Approved Milestone 8 scope, gates, non-goals, and acceptance requirements | [MILESTONE_8_CONTRACT.md](MILESTONE_8_CONTRACT.md) |
 | External research provenance and status | [RESEARCH_INDEX.md](RESEARCH_INDEX.md) |
 | What the Design / Brainstorming conversation proposed | [POST_M8_INTAKE.md](proposals/POST_M8_INTAKE.md), as a non-authoritative historical intake only |
 | Milestone-specific manual evidence and regression procedures | Existing `MILESTONE_*_TEST.md` records |
@@ -100,3 +103,4 @@ Repository-only does not mean non-authoritative. README and the milestone record
 - [Milestone 7](MILESTONE_7_TEST.md)
 - [Milestone 7.5A](MILESTONE_7_5A_TEST.md)
 - [Milestone 7.5B](MILESTONE_7_5B_TEST.md)
+- [Milestone 8 contract](MILESTONE_8_CONTRACT.md) - approved/contracted but unstarted
