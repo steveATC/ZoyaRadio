@@ -97,9 +97,12 @@ var tests = new (string Name, Func<Task> Run)[]
     ("radio maximum speech duration uses protected recovery", RadioSpeechLimitUsesProtectedRecovery),
     ("radio pipeline passes configured speech limit", RadioPipelinePassesSpeechLimit),
     ("transition schedule prepares Track A one transition ahead", () => RunSynchronous(TransitionSchedulePreparesOneAhead)),
-    ("Chrome session changes preserve the original Firefox binding", () => RunSynchronous(ChromeDoesNotReplaceFirefoxMediaBinding)),
-    ("one replacement Firefox media session is recognized", () => RunSynchronous(FirefoxMediaReplacementIsRecognized)),
-    ("unsafe Firefox media-session replacement candidates are refused", () => RunSynchronous(FirefoxMediaRebindRefusesUnsafeCandidates)),
+    ("unrelated GSMTC collection changes preserve selected Firefox work", () => RunSynchronous(ChromeCollectionChangesPreserveSelectedFirefoxWork)),
+    ("refreshed wrapper preserves same logical Firefox session", () => RunSynchronous(RefreshedFirefoxWrapperPreservesLogicalContinuity)),
+    ("Chrome-driven wrapper churn preserves pending schedule", () => RunSynchronous(ChromeWrapperChurnPreservesPendingSchedule)),
+    ("invalid selected Firefox requires protected reacquisition", () => RunSynchronous(InvalidFirefoxSelectionRequiresReacquisition)),
+    ("different logical Firefox session requires protected reacquisition", () => RunSynchronous(DifferentFirefoxSessionRequiresReacquisition)),
+    ("unsafe Firefox media-session candidates are refused", () => RunSynchronous(FirefoxMediaRebindRefusesUnsafeCandidates)),
     ("pending material is discarded before Firefox rebinding", FirefoxRebindWaitsForPendingDiscard),
     ("Firefox rebinding starts a fresh transition interval", () => RunSynchronous(SessionRebindResetsPendingOpportunity)),
     ("unfinished preparation misses its transition without catch-up", () => RunSynchronous(UnfinishedTransitionPreparationIsAbandoned)),
@@ -1642,68 +1645,193 @@ static void TransitionSchedulePreparesOneAhead()
     AssertEqual("Track B", delivery.Delivery.NewTrack.Title!);
 }
 
-static void ChromeDoesNotReplaceFirefoxMediaBinding()
+static void ChromeCollectionChangesPreserveSelectedFirefoxWork()
 {
-    var selectedFirefox = new object();
-
-    FirefoxMediaSessionChange<object> chromeAppeared = FirefoxMediaSessionLifecycle.Evaluate(
+    var selectedWrapper = new object();
+    FirefoxSessionContinuityEvidence selected = EligibleFirefoxEvidence(
+        "Superman",
+        "Goldfinger");
+    FirefoxMediaSessionChange<object> collection = FirefoxMediaSessionLifecycle.Evaluate<object>(
         true,
-        selectedFirefox,
-        [selectedFirefox]);
-    FirefoxMediaSessionChange<object> chromeDisappeared = FirefoxMediaSessionLifecycle.Evaluate(
-        true,
-        selectedFirefox,
-        [selectedFirefox]);
+        [selectedWrapper]);
 
-    AssertEqual(FirefoxMediaSessionChangeStatus.OriginalSessionStillValid, chromeAppeared.Status);
-    AssertEqual(FirefoxMediaSessionChangeStatus.OriginalSessionStillValid, chromeDisappeared.Status);
-    AssertTrue(chromeAppeared.Replacement is null);
-    AssertTrue(chromeDisappeared.Replacement is null);
+    FirefoxSessionContinuityDecision chromeAppeared = FirefoxSessionContinuity.Evaluate(
+        true,
+        selected,
+        selected);
+    FirefoxSessionContinuityDecision chromeMetadataChanged = FirefoxSessionContinuity.Evaluate(
+        true,
+        selected,
+        selected);
+    FirefoxSessionContinuityDecision chromeDisappeared = FirefoxSessionContinuity.Evaluate(
+        true,
+        selected,
+        selected);
+
+    AssertEqual(FirefoxMediaSessionChangeStatus.SingleFirefoxCandidate, collection.Status);
+    AssertSame(selectedWrapper, collection.Candidate!);
+    AssertEqual(FirefoxSessionContinuityStatus.SelectedWrapperStillValid, chromeAppeared.Status);
+    AssertEqual(FirefoxSessionContinuityStatus.SelectedWrapperStillValid, chromeMetadataChanged.Status);
+    AssertEqual(FirefoxSessionContinuityStatus.SelectedWrapperStillValid, chromeDisappeared.Status);
+    AssertTrue(chromeAppeared.PreservesPendingAndActiveWork);
+    AssertTrue(chromeMetadataChanged.PreservesPendingAndActiveWork);
+    AssertTrue(chromeDisappeared.PreservesPendingAndActiveWork);
+    AssertFalse(chromeAppeared.ShouldRefreshWrapper);
 }
 
-static void FirefoxMediaReplacementIsRecognized()
+static void RefreshedFirefoxWrapperPreservesLogicalContinuity()
 {
-    var originalFirefox = new object();
-    var replacementFirefox = new object();
-
-    FirefoxMediaSessionChange<object> change = FirefoxMediaSessionLifecycle.Evaluate(
+    var selectedWrapper = new object();
+    var refreshedWrapper = new object();
+    FirefoxSessionContinuityEvidence selected = EligibleFirefoxEvidence(
+        "Superman",
+        "Goldfinger");
+    FirefoxSessionContinuityEvidence refreshed = EligibleFirefoxEvidence(
+        "  superman  ",
+        "GOLDFINGER");
+    FirefoxMediaSessionChange<object> collection = FirefoxMediaSessionLifecycle.Evaluate<object>(
         true,
-        originalFirefox,
-        [replacementFirefox]);
+        [refreshedWrapper]);
 
-    AssertEqual(FirefoxMediaSessionChangeStatus.ReplacementCandidate, change.Status);
-    AssertSame(replacementFirefox, change.Replacement!);
-    AssertEqual(1, change.MatchingFirefoxSessionCount);
+    FirefoxSessionContinuityDecision decision = FirefoxSessionContinuity.Evaluate(
+        ReferenceEquals(selectedWrapper, refreshedWrapper),
+        selected,
+        refreshed);
+    FirefoxSessionContinuityDecision candidateNotReady = FirefoxSessionContinuity.Evaluate(
+        false,
+        selected,
+        refreshed with { IsPlaying = false });
+
+    AssertEqual(FirefoxMediaSessionChangeStatus.SingleFirefoxCandidate, collection.Status);
+    AssertSame(refreshedWrapper, collection.Candidate!);
+    AssertEqual(
+        FirefoxSessionContinuityStatus.RefreshedWrapperSameLogicalSession,
+        decision.Status);
+    AssertTrue(decision.PreservesPendingAndActiveWork);
+    AssertTrue(decision.ShouldRefreshWrapper);
+    AssertEqual(
+        FirefoxSessionContinuityStatus.SelectedWrapperRetainedBecauseCandidateIsIneligible,
+        candidateNotReady.Status);
+    AssertTrue(candidateNotReady.PreservesPendingAndActiveWork);
+    AssertFalse(candidateNotReady.ShouldRefreshWrapper);
+}
+
+static void ChromeWrapperChurnPreservesPendingSchedule()
+{
+    var state = new RadioBehaviorState(
+        RadioBehaviorConfiguration.Default,
+        new FakeTransitionTargetSource(3));
+    DateTimeOffset now = DateTimeOffset.Parse("2026-08-10T12:00:00Z");
+    state.Arm(Track("Initial", "Artist 0"), now);
+    state.ObserveTrack(Track("Track A1", "Artist 1"), now.AddSeconds(10));
+    RadioTrackObservation preparation = state.ObserveTrack(
+        Track("Track A", "Artist A"),
+        now.AddSeconds(20));
+    AssertTrue(preparation.PreparationOpportunity is not null);
+    AssertTrue(state.MarkPreparationReady(preparation.PreparationOpportunity!.Id));
+
+    RadioRuntimeState before = state.GetRuntimeState();
+    int counterBefore = state.TransitionCounter;
+    int scheduleBefore = state.ScheduledThreshold;
+    FirefoxSessionContinuityEvidence evidence = EligibleFirefoxEvidence(
+        before.CurrentTrack.Title!,
+        before.CurrentTrack.Artist!);
+
+    for (int index = 0; index < 4; index++)
+    {
+        FirefoxSessionContinuityDecision wrapperChurn = FirefoxSessionContinuity.Evaluate(
+            false,
+            evidence,
+            evidence);
+        AssertTrue(wrapperChurn.PreservesPendingAndActiveWork);
+        AssertTrue(wrapperChurn.ShouldRefreshWrapper);
+    }
+
+    RadioRuntimeState after = state.GetRuntimeState();
+    AssertEqual(before.PendingOpportunityId, after.PendingOpportunityId);
+    AssertEqual(before.CurrentTrack, after.CurrentTrack);
+    AssertEqual(before.CurrentTrackStartedAt, after.CurrentTrackStartedAt);
+    AssertEqual(counterBefore, state.TransitionCounter);
+    AssertEqual(scheduleBefore, state.ScheduledThreshold);
+}
+
+static void InvalidFirefoxSelectionRequiresReacquisition()
+{
+    FirefoxSessionContinuityEvidence eligible = EligibleFirefoxEvidence(
+        "Don't Cry",
+        "Guns N' Roses");
+    var paused = eligible with { IsPlaying = false };
+    var unreadable = new FirefoxSessionContinuityEvidence(
+        false,
+        false,
+        false,
+        MediaSnapshot.Empty);
+
+    FirefoxSessionContinuityDecision pausedDecision = FirefoxSessionContinuity.Evaluate(
+        false,
+        paused,
+        eligible);
+    FirefoxSessionContinuityDecision unreadableDecision = FirefoxSessionContinuity.Evaluate(
+        false,
+        unreadable,
+        eligible);
+
+    AssertEqual(
+        FirefoxSessionContinuityStatus.ReacquisitionRequired,
+        pausedDecision.Status);
+    AssertEqual(
+        FirefoxSessionContinuityStatus.ReacquisitionRequired,
+        unreadableDecision.Status);
+    AssertFalse(pausedDecision.PreservesPendingAndActiveWork);
+    AssertFalse(unreadableDecision.PreservesPendingAndActiveWork);
+}
+
+static void DifferentFirefoxSessionRequiresReacquisition()
+{
+    FirefoxSessionContinuityEvidence selected = EligibleFirefoxEvidence(
+        "Don't Cry",
+        "Guns N' Roses");
+    FirefoxSessionContinuityEvidence different = EligibleFirefoxEvidence(
+        "Sons of Plunder",
+        "Disturbed");
+
+    FirefoxSessionContinuityDecision decision = FirefoxSessionContinuity.Evaluate(
+        false,
+        selected,
+        different);
+
+    AssertEqual(
+        FirefoxSessionContinuityStatus.ReacquisitionRequired,
+        decision.Status);
+    AssertFalse(decision.PreservesPendingAndActiveWork);
+    AssertFalse(decision.ShouldRefreshWrapper);
 }
 
 static void FirefoxMediaRebindRefusesUnsafeCandidates()
 {
-    var originalFirefox = new object();
-    var firstReplacement = new object();
-    var secondReplacement = new object();
+    var onlyCandidate = new object();
+    var firstCandidate = new object();
+    var secondCandidate = new object();
 
-    FirefoxMediaSessionChange<object> unavailable = FirefoxMediaSessionLifecycle.Evaluate(
-        false,
-        originalFirefox,
-        []);
-    FirefoxMediaSessionChange<object> absent = FirefoxMediaSessionLifecycle.Evaluate(
-        true,
-        originalFirefox,
-        []);
-    FirefoxMediaSessionChange<object> ambiguous = FirefoxMediaSessionLifecycle.Evaluate(
-        true,
-        originalFirefox,
-        [firstReplacement, secondReplacement]);
+    FirefoxMediaSessionChange<object> unavailable =
+        FirefoxMediaSessionLifecycle.Evaluate<object>(false, []);
+    FirefoxMediaSessionChange<object> absent =
+        FirefoxMediaSessionLifecycle.Evaluate<object>(true, []);
+    FirefoxMediaSessionChange<object> single =
+        FirefoxMediaSessionLifecycle.Evaluate<object>(true, [onlyCandidate]);
+    FirefoxMediaSessionChange<object> ambiguous =
+        FirefoxMediaSessionLifecycle.Evaluate<object>(true, [firstCandidate, secondCandidate]);
 
     AssertEqual(FirefoxMediaSessionChangeStatus.SessionListUnavailable, unavailable.Status);
     AssertEqual(FirefoxMediaSessionChangeStatus.NoFirefoxCandidate, absent.Status);
+    AssertEqual(FirefoxMediaSessionChangeStatus.SingleFirefoxCandidate, single.Status);
     AssertEqual(FirefoxMediaSessionChangeStatus.AmbiguousFirefoxCandidates, ambiguous.Status);
-    AssertTrue(unavailable.Replacement is null);
-    AssertTrue(absent.Replacement is null);
-    AssertTrue(ambiguous.Replacement is null);
+    AssertTrue(unavailable.Candidate is null);
+    AssertTrue(absent.Candidate is null);
+    AssertSame(onlyCandidate, single.Candidate!);
+    AssertTrue(ambiguous.Candidate is null);
     AssertEqual(2, ambiguous.MatchingFirefoxSessionCount);
 }
-
 static async Task FirefoxRebindWaitsForPendingDiscard()
 {
     var events = new List<string>();
@@ -2413,6 +2541,21 @@ static PreparedTransitionOpportunity FakePreparedTransition(
 static MediaSnapshot Track(string title, string artist)
 {
     return new MediaSnapshot(title, artist, null);
+}
+
+static FirefoxSessionContinuityEvidence EligibleFirefoxEvidence(
+    string title,
+    string artist)
+{
+    return FirefoxSessionContinuityEvidence.FromDetails(
+        new RadioSessionDetails(
+            null!,
+            FirefoxSessionSelector.VerifiedSourceId,
+            true,
+            Track(title, artist),
+            true,
+            GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing,
+            true));
 }
 
 static RadioCommentOpportunity TestRadioOpportunity(DateTimeOffset currentTrackStartedAt)

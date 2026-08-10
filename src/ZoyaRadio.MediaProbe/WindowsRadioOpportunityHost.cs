@@ -39,13 +39,26 @@ internal sealed class WindowsRadioOpportunityHost : IRadioOpportunityHost, ITran
         bool sessionListReadSucceeded = _sessionAccess.TryReadExactFirefoxMatches(
             out IReadOnlyList<GlobalSystemMediaTransportControlsSession> matches);
         GlobalSystemMediaTransportControlsSession? selectedSession = _selectedSessionProvider();
-        bool sameSelectedSession = matches.Count == 1
-            && selectedSession is not null
-            && ReferenceEquals(matches[0], selectedSession);
-
         RadioSessionDetails details = selectedSession is null
             ? RadioSessionDetails.Unavailable
             : await _sessionAccess.ReadSessionDetailsAsync(selectedSession);
+        bool sameSelectedSession = false;
+
+        if (sessionListReadSucceeded
+            && matches.Count == 1
+            && selectedSession is not null)
+        {
+            GlobalSystemMediaTransportControlsSession candidate = matches[0];
+            bool sameWrapper = ReferenceEquals(candidate, selectedSession);
+            RadioSessionDetails candidateDetails = sameWrapper
+                ? details
+                : await _sessionAccess.ReadSessionDetailsAsync(candidate);
+            FirefoxSessionContinuityDecision continuity = FirefoxSessionContinuity.Evaluate(
+                sameWrapper,
+                FirefoxSessionContinuityEvidence.FromDetails(details),
+                FirefoxSessionContinuityEvidence.FromDetails(candidateDetails));
+            sameSelectedSession = continuity.PreservesPendingAndActiveWork;
+        }
 
         return new RadioOpportunitySnapshot(
             runtime.Armed,

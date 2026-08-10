@@ -70,14 +70,17 @@ internal sealed class RadioSessionAccess
     public async Task<RadioSessionDetails?> RecheckStartupTargetAsync(RadioSessionDetails original)
     {
         if (!TryReadExactFirefoxMatches(out IReadOnlyList<GlobalSystemMediaTransportControlsSession> matches)
-            || matches.Count != 1
-            || !ReferenceEquals(matches[0], original.Session))
+            || matches.Count != 1)
         {
             return null;
         }
 
-        RadioSessionDetails current = await ReadSessionDetailsAsync(original.Session);
+        RadioSessionDetails current = await ReadSessionDetailsAsync(matches[0]);
         return current.SourceReadSucceeded
+            && string.Equals(
+                current.SourceId,
+                FirefoxSessionSelector.VerifiedSourceId,
+                StringComparison.OrdinalIgnoreCase)
             && current.MediaReadSucceeded
             && current.PlaybackReadSucceeded
             && PlaybackControlRules.CanStart(current.PlaybackStatus)
