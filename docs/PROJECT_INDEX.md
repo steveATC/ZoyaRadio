@@ -9,6 +9,7 @@ This is the front door to the canonical Zoya Radio documentation. The local Git 
 | Snapshot date | 2026-08-10 |
 | Repository branch | `master` |
 | Latest accepted commit | `63662342a374b323b639325f360ae7c17ace1432` |
+| Documentation reorganization baseline | `d5594e7ee16be1f11afc732186fa16ae8c5cc1c9` |
 | Current passed milestone | Milestone 7.5B |
 | Latest automated result | 124 passed, 0 failed |
 | Next gate | Milestone 8 is planned and unstarted |
@@ -28,7 +29,7 @@ Update this table whenever an accepted implementation commit becomes the new sou
 
 ## ChatGPT Project-source availability
 
-**Shared as ChatGPT Project sources in the current synchronized package:**
+**Canonical current-state/navigation documents shared as ChatGPT Project sources:**
 
 - `PROJECT_INDEX.md`
 - `PROJECT_STATE.md`
@@ -37,17 +38,25 @@ Update this table whenever an accepted implementation commit becomes the new sou
 - `DECISIONS.md`
 - `KNOWN_ISSUES.md`
 - `RESEARCH_INDEX.md`
+
+**Mirrored research evidence:**
 - [K-Rose production analysis](Zoya_Radio_K-Rose_Production_Analysis.md)
 - [K-DST production analysis](Zoya_Radio_K-DST_Production_Analysis.md)
 - [V-Rock production analysis](Zoya_Radio_V-Rock_Production_Analysis.md)
 - [RadioSanAndreas repository research](Zoya_Radio_RadioSanAndreas_Repository_Research.md)
+
+**Supplemental unapproved proposal material:**
+
+- [Post-M8 proposal intake](proposals/POST_M8_INTAKE.md)
+
+The intake preserves what the Design / Brainstorming conversation proposed. It does not govern current implementation, change `DECISIONS.md` or `ROADMAP.md`, define Milestone 8, or authorize Codex work. Every proposal remains unapproved until Steve explicitly promotes it through the project's decision and roadmap process.
 
 **Canonical in Git but repository-only in the current shared snapshot:**
 
 - [README.md](../README.md)
 - Existing `MILESTONE_*_TEST.md`, voice-audition, and other milestone acceptance records
 
-Repository-only does not mean non-authoritative. README and the milestone records remain canonical Git documentation. Project chats should use the seven synchronized canonical documents as their shared navigation/current-state layer and the synchronized research reports as mirrored evidence. The local Git repository remains authoritative whenever a Project-source copy differs from it. Do not upload or duplicate repository-only records merely to simplify this boundary.
+Repository-only does not mean non-authoritative. README and the milestone records remain canonical Git documentation. Project chats should use the seven synchronized canonical documents as their shared navigation/current-state layer, the synchronized research reports as mirrored evidence, and the intake only as supplemental unapproved proposal history. The local Git repository remains authoritative whenever a Project-source copy differs from it. Do not upload or duplicate repository-only records merely to simplify this boundary.
 
 ## Authority map
 
@@ -60,6 +69,7 @@ Repository-only does not mean non-authoritative. README and the milestone record
 | Durable decisions and accepted rationale | [DECISIONS.md](DECISIONS.md) |
 | Defects, limitations, unresolved observations, and deferred quality work | [KNOWN_ISSUES.md](KNOWN_ISSUES.md) |
 | External research provenance and status | [RESEARCH_INDEX.md](RESEARCH_INDEX.md) |
+| What the Design / Brainstorming conversation proposed | [POST_M8_INTAKE.md](proposals/POST_M8_INTAKE.md), as a non-authoritative historical intake only |
 | Milestone-specific manual evidence and regression procedures | Existing `MILESTONE_*_TEST.md` records |
 
 ## Information classes
@@ -72,7 +82,7 @@ Repository-only does not mean non-authoritative. README and the milestone record
 
 ## Snapshot and historical-record rules
 
-- Synchronize only the files listed under **Shared as ChatGPT Project sources** as one dated snapshot.
+- Synchronize only the files classified above as canonical current-state/navigation documents, mirrored research evidence, or supplemental proposal material, according to their stated authority boundaries.
 - Keep the commit hash and snapshot date visible so stale exports are easy to identify.
 - Never merge research recommendations or brainstorming into `CURRENT_ARCHITECTURE.md`.
 - Milestone test documents are preserved historical acceptance and regression records. Some retain wording written before later manual acceptance; current milestone status is governed by `PROJECT_STATE.md` and `ROADMAP.md`.
