@@ -1,6 +1,20 @@
 # Milestone 7.5B manual acceptance - transition-aware delivery
 
-Milestone 7.5B is implemented but is **not passed** until Steve completes these real-desktop checks. The normal path prepares a Track-A comment while music plays, then ducks Firefox and speaks over Track B. It must never hard-pause the song.
+Milestone 7.5B **PASSED Steve's real-desktop manual acceptance on August 10, 2026**. The normal path prepares a Track-A comment while music plays, then ducks Firefox and speaks over Track B. It never hard-pauses the song.
+
+## Accepted desktop evidence
+
+The focused Firefox-plus-Chrome run is recorded locally in `logs\radio-behavior-test-20260810-131308-866.txt`.
+
+- Firefox transitions remained observable while Chrome/YouTube activity caused global GSMTC churn.
+- Fifty-nine harmless Firefox wrapper refresh diagnostics were classified as the same logical session. They did not cancel AI generation, Nicole synthesis, prepared material, active speech, or the current scheduling interval; no false replacement or reacquisition was logged.
+- Two prepared announcements completed successfully, including wrapper refreshes during both active announcements.
+- Firefox Core Audio PID 11568 / session `7D62879DB482` was the sole duck target. Both deliveries captured 100%, ducked to 25%, and restored exactly to 100%.
+- Chrome was not ducked or controlled, normal delivery did not pause Firefox, and Ctrl+C produced a clean shutdown.
+- The earlier 20:49 observer stall was not reproduced. It remains an intermittent known observation rather than a confirmed fixed defect.
+- Wrapper-refresh diagnostics are excessively repetitive. That is a non-blocking deferred logging-quality issue; logging behavior was deliberately unchanged for acceptance.
+
+The checks below remain as the regression procedure for future changes.
 
 Before starting, play YouTube Music in Firefox. Open the `ZoyaRadio` folder in File Explorer, click its address bar, type `powershell`, and press Enter.
 

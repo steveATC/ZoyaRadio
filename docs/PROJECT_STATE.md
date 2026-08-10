@@ -4,7 +4,7 @@
 
 **Milestone 7.5B - transition-aware automatic delivery**
 
-Implementation is **READY FOR STEVE'S MANUAL ACCEPTANCE**. Milestone 7.5A passed; the complete Milestone 7.5 is not passed until Steve completes the real transition tests. Milestone 8 has not started.
+Milestone 7.5B **PASSED Steve's manual acceptance on August 10, 2026**. Milestone 8 is planned but has not started.
 
 - The existing 2-5-transition schedule now creates one Track-A preparation opportunity one genuine transition before delivery is due.
 - Once Track A is at least eight seconds old, local AI generation and Nicole/Windows-fallback speech preparation occur while Firefox remains Playing. Only one prepared opportunity is held in memory.
@@ -15,7 +15,7 @@ Implementation is **READY FOR STEVE'S MANUAL ACCEPTANCE**. Milestone 7.5A passed
 - If preparation misses the transition, Track B changes again, the delivery window expires, Silent Mode activates, or any safety check fails, the material is discarded with no late catch-up comment.
 - `--no-ai` still bypasses Ollama. Qwen unloading, Nicole's CPU-only preparation/disposal, Windows TTS fallback, Unicode metadata, and the 25-second speech bound are unchanged.
 - `--simulate-transition-failure` deliberately fails the first scheduled delivery after duck verification and exercises the real exact-volume restoration path.
-- Automated verification reports 114 passed and 0 failed. All tests use fakes for automatic delivery; no automated run produced sound, changed real volume, or controlled playback.
+- Automated verification reports 124 passed and 0 failed. All tests use fakes for automatic delivery; no automated run produced sound, changed real volume, or controlled playback.
 
 ## Completed milestones
 
@@ -82,6 +82,14 @@ Implementation is **READY FOR STEVE'S MANUAL ACCEPTANCE**. Milestone 7.5A passed
 - Windows aggregates multiple audible Firefox tabs on Steve's PC, so they duck together. This application-level isolation is accepted for Phase 1; tab-level isolation is not required.
 - YouTube Music's in-page volume control is a separate gain stage and remains untouched.
 
+**Milestone 7.5B - PASSED manual acceptance on Steve's Windows PC on August 10, 2026.**
+
+- Firefox track transitions remained observable while Chrome/YouTube activity caused repeated global GSMTC churn.
+- Recreated Firefox wrapper objects were recognized as the same logical Firefox session. Preparation, Nicole synthesis, prepared material, active speech, and the current 2-5-transition interval continued without false replacement or reacquisition.
+- Two prepared announcements completed while wrapper refreshes continued during active speech.
+- Both deliveries selected only Firefox Core Audio PID 11568 / session `7D62879DB482`, captured 100%, ducked proportionally to 25%, and restored exactly to 100%.
+- Chrome remained isolated, normal delivery never paused Firefox, and Ctrl+C shut the application down cleanly.
+
 ## Known issues and limits
 
 - Windows or Firefox may omit album information. The probe displays `<not provided>` and does not treat that as an error.
@@ -101,6 +109,8 @@ Implementation is **READY FOR STEVE'S MANUAL ACCEPTANCE**. Milestone 7.5A passed
 - Steve's performance run measured 4.262 seconds wall-clock, 2.191 seconds Ollama total duration, 1.999 seconds model load, 2.68 GiB loaded size/VRAM, and context length 2048. The selected-model unload verification passed. These are measurements from that run, not estimates.
 - Core Audio isolation is application-level on Steve's PC. Multiple audible Firefox tabs duck together; this is accepted for Phase 1 and is not a Milestone 7.5B defect.
 - The two-second transition window is intentionally conservative. Slow or busy-machine opportunities may be abandoned; silence is preferred to a late interruption.
+- An earlier observer stall at 20:49 remains an intermittent known observation. It was not reproduced by the focused Firefox-plus-Chrome acceptance run and is not declared fixed.
+- Harmless Firefox wrapper churn currently produces excessive repeated diagnostic lines. This is a non-blocking logging-quality issue deferred beyond Milestone 7.5B; logging behavior was not changed for acceptance.
 
 ## Important decisions and evidence
 
@@ -147,3 +157,5 @@ Implementation is **READY FOR STEVE'S MANUAL ACCEPTANCE**. Milestone 7.5A passed
 - `TransitionRadioPipeline` separates preparation from delivery. `RadioBehaviorState.MarkPreparationReady` makes readiness atomic with scheduling, so a transition arriving before completed preparation discards the opportunity rather than allowing a late race.
 - `WindowsTransitionAudioDucker` re-enumerates the delivery-time Core Audio sessions, requires exactly one active exact Firefox process match, then runs speech inside `AudioDuckingSequence`'s protected restoration scope. It never selects Chrome or manipulates endpoint/master volume.
 - Track B changing while speech is active cancels the same opportunity; the speech cancellation flows through protected restoration before cleanup. Failed, late, unsafe, and rapid-skip opportunities are intentionally logged as abandoned rather than queued.
+- The Firefox/Chrome recovery repair treats a new GSMTC wrapper as continuity only when exactly one eligible Playing `firefox.exe` candidate has the same normalized title and artist. Unsafe or genuinely changed candidates still trigger protected cancellation before reacquisition, and transient Firefox Core Audio discovery remains bounded by the existing two-second delivery window.
+- A power outage interrupted the repair and left only `tests/ZoyaRadio.MediaProbe.Tests/Program.cs` as an all-zero file. That file alone was restored exactly from checkpoint `e0bb294`; the six surviving repair files were preserved, focused recovery tests were recreated, repository integrity was rechecked, and the final suite passed 124/124.

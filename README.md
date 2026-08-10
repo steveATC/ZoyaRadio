@@ -1,6 +1,6 @@
 # Zoya Radio
 
-Milestones 0 through 5, Milestone 7, and Milestone 7.5A have passed Steve's manual tests. Milestone 6 is deliberately deferred. Milestone 7.5B transition delivery is implemented and awaiting Steve's manual acceptance. Milestone 8 has not started.
+Milestones 0 through 5, Milestone 7, and Milestone 7.5A through 7.5B have passed Steve's manual tests. Milestone 6 is deliberately deferred. Milestone 8 is planned but has not started.
 
 The original media probe is **read only**. It lists and watches Windows media sessions, but it cannot pause, play, skip, change volume, or otherwise control playback. It does not inspect Firefox, webpage content, URLs, cookies, history, or Google account information.
 
@@ -92,6 +92,8 @@ Generate-only and measurement modes never speak or control playback. No-AI mode 
 
 Milestone 7.5B watches genuine deduplicated Firefox track changes and schedules one automatic comment at a new random interval of 2-5 transitions. One transition before delivery, it prepares a comment about Track A and synthesizes Nicole's audio while Track A keeps playing. When Track B appears, a valid prepared comment has a strict two-second window to begin: Firefox is smoothly ducked to 25% of its current application-session volume, Nicole speaks over the still-playing music, and the exact volume/mute state captured at delivery time is restored.
 
+Milestone 7.5B passed Steve's focused Firefox-plus-Chrome desktop retest on August 10, 2026. Repeated harmless Firefox GSMTC wrapper refreshes did not interrupt preparation or active speech; both accepted deliveries used the same Firefox Core Audio target, restored 100% -> 25% -> 100% exactly, left Chrome untouched, kept observing track changes, and shut down cleanly.
+
 The test asks once before arming and defaults to **NO**. Normal automatic delivery does **not** pause or resume Firefox. Unsafe, unfinished, stale, late, ambiguous, or rapidly skipped opportunities produce silence instead of a catch-up comment.
 
 ```powershell
@@ -120,7 +122,7 @@ The deliberate first-delivery recovery check is:
 .\run-radio-behavior-test.cmd --simulate-transition-failure
 ```
 
-It deliberately fails after Firefox is ducked and must still restore the captured volume. Follow [docs/MILESTONE_7_5B_TEST.md](docs/MILESTONE_7_5B_TEST.md) for the current manual acceptance procedure. The completed Milestone 5 procedure remains preserved in [docs/MILESTONE_5_TEST.md](docs/MILESTONE_5_TEST.md).
+It deliberately fails after Firefox is ducked and must still restore the captured volume. The completed acceptance evidence and preserved regression procedure are in [docs/MILESTONE_7_5B_TEST.md](docs/MILESTONE_7_5B_TEST.md). The completed Milestone 5 procedure remains preserved in [docs/MILESTONE_5_TEST.md](docs/MILESTONE_5_TEST.md).
 
 ## Milestone 7 local neural voice
 
