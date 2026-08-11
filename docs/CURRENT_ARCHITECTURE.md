@@ -1,16 +1,16 @@
 # Current architecture
 
-This document describes only the implementation present at accepted commit `63662342a374b323b639325f360ae7c17ace1432`. Future ideas and research recommendations are excluded.
+This document describes only the implementation present at accepted commit `41b7824201c5c163a0fe0752bd4b3e70c68b9bdc`. Future ideas and research recommendations are excluded.
 
 ## Platform and local dependencies
 
-- C# console applications targeting `.NET 8` and `net8.0-windows10.0.19041.0`; the supported Windows API baseline is Windows 10 version 1809 (`10.0.17763.0`).
+- C#/.NET 8 Windows applications targeting `net8.0-windows10.0.19041.0`: an accepted WinForms control frontend plus preserved console diagnostics. The supported Windows API baseline is Windows 10 version 1809 (`10.0.17763.0`).
 - Windows GSMTC through `Windows.Media.Control` for media-session discovery, metadata, playback state, and event observation.
 - Windows Core Audio session APIs for per-application Firefox volume capture, proportional ducking, and exact restoration.
 - Ollama's loopback HTTP API at `http://localhost:11434/api/` with `qwen3:4b-instruct` for short local comments.
 - KokoroSharp.CPU 0.8.0 with the local Kokoro model and `af_nicole` as the preferred voice.
 - Windows `SpeechSynthesizer`/`MediaPlayer` as the local speech fallback.
-- Timestamped UTF-8 logs under ignored `logs/`; no telemetry or cloud provider.
+- Timestamped UTF-8 shared-runtime logs under `%LOCALAPPDATA%\Zoya Radio\logs`; explicit diagnostic logs remain under the ignored repository `logs/` folder. There is no telemetry or cloud provider.
 
 The project-local Microsoft .NET SDK 8.0.423 is in ignored `.dotnet/`. Microsoft's Windows SDK reference pack and other restored packages are in ignored `.packages/`, and the approved Kokoro model is in ignored `.tools/kokoro/`. None requires administrator privileges.
 
@@ -30,6 +30,7 @@ The project-local Microsoft .NET SDK 8.0.423 is in ignored `.dotnet/`. Microsoft
 
 | Launcher | Current responsibility |
 | --- | --- |
+| `run-zoya-radio-control.cmd` | Launch the accepted WinForms frontend over the shared automatic-radio runtime and controller. |
 | `run-media-probe.cmd` | Enumerate and observe all GSMTC sessions; `--once` takes a snapshot and exits. |
 | `run-playback-control-test.cmd` | Explicitly confirm and test targeted Firefox pause/resume. |
 | `run-spoken-announcement-test.cmd` | Explicitly confirm one prepared title/artist announcement with protected same-session recovery. |
@@ -43,6 +44,8 @@ The project-local Microsoft .NET SDK 8.0.423 is in ignored `.dotnet/`. Microsoft
 
 | Component | Responsibility |
 | --- | --- |
+| `RadioRuntimeController` | Own the authoritative asynchronous Start/Stop lifecycle, immutable status snapshots, stale-update suppression, and protected cleanup boundary shared by frontends. |
+| `RadioControlForm` | Present controls and deterministic read-only runtime state; it does not infer playback facts or own radio behavior. |
 | `MediaSessionWatcher` and `SessionObserver` | Request GSMTC, enumerate sessions, subscribe to session/media/playback changes, and refetch changed metadata. |
 | `MediaSnapshot` | Hold title, artist, and optional album without inventing absent fields. |
 | `RadioSessionAccess` | Read and validate the selected Firefox session and its current metadata/playback state. |
@@ -53,7 +56,16 @@ The project-local Microsoft .NET SDK 8.0.423 is in ignored `.dotnet/`. Microsoft
 | `KokoroSpeechService`, `WindowsSpeechService`, and `SpeechServiceSelection` | Prepare Nicole audio locally and select Windows speech fallback when required. |
 | `WindowsAudioSessionCatalog` and `AudioSessionSelector` | Enumerate the default multimedia render endpoint and select exactly one active Firefox application session. |
 | `WindowsTransitionAudioDucker` and `AudioDuckingSequence` | Revalidate the delivery-time audio target, duck only that session, run prepared speech, and restore the exact captured state in protected cleanup. |
-| `LocalLog` | Write readable local timestamped UTF-8 diagnostics. |
+| `LocalLog` and `LocalAppDataLogFolderProvider` | Write readable timestamped UTF-8 diagnostics and resolve the accepted shared-runtime log folder under LocalAppData. |
+
+## Control application and lifecycle
+
+- `ZoyaRadio.ControlApp` is a same-process WinForms frontend over the accepted automatic-radio runtime. It does not contain a second scheduling, targeting, speech, or ducking implementation.
+- `RadioRuntimeController` exposes one authoritative asynchronous lifecycle. Start is idempotent, Stop is safely awaited, window close waits for the same cleanup path, and stale callbacks from an ended generation are suppressed.
+- The Form remains thin. It exposes Start, Stop, Silent Mode, Clear History, Open Logs Folder, title, artist, Firefox target status, ordinary status, and read-only Radio activity derived from immutable runtime snapshots/events.
+- Radio activity reports deterministic work such as the transition countdown, stability wait, local generation, Nicole preparation, prepared waiting, target/audio validation, ducking, speech, restoration, safe abandonment, target loss, stopping, and faults. Harmless Firefox wrapper refreshes remain detailed-log-only rather than churning the GUI state.
+- Stop, window close, cancellation, and faults retain the accepted restoration ownership. The frontend cannot close past protected cleanup or retarget another media/audio session.
+- Shared-runtime logs are written under `%LOCALAPPDATA%\Zoya Radio\logs`, and the button opens that folder. Existing console launchers remain usable diagnostic frontends to the same runtime.
 
 ## Observation and explicit diagnostic behavior
 
@@ -81,6 +93,7 @@ Normal automatic delivery contains no GSMTC pause, play, or toggle command. `Try
 ## Firefox identity and Chrome isolation
 
 - GSMTC matching uses the verified exact source identifier `firefox.exe`; zero or multiple candidates are unsafe.
+- The accepted identity boundary is Firefox application-level media ownership, not a browser tab or page. Ordinary YouTube may become the observed session when it holds Firefox media ownership; Zoya does not inspect the page or distinguish it from YouTube Music.
 - Windows may replace a GSMTC wrapper object during unrelated global session churn. A different wrapper is treated as the same logical Firefox session only when exactly one eligible Firefox candidate remains Playing with the same normalized title and artist.
 - Harmless wrapper refreshes move observation to the new wrapper without cancelling generation, synthesis, prepared material, active speech, or the current schedule.
 - Invalid, missing, ambiguous, or genuinely different Firefox candidates trigger protected cancellation before any reacquisition. A fresh interval begins only after safe recovery.
@@ -116,7 +129,7 @@ Normal automatic delivery contains no GSMTC pause, play, or toggle command. `Try
 
 ## Current boundaries
 
-The implementation has no browser scraping, cookies, account access, unofficial YouTube API, cloud AI/TTS, telemetry, GUI, tray icon, global media keys, endpoint/master-volume manipulation, persistent listening-history database, track-position tracking, duration tracking, or Milestone 8 behavior.
+The implementation has no browser scraping, cookies, account access, unofficial YouTube API, cloud AI/TTS, telemetry, tray icon, global media keys, endpoint/master-volume manipulation, persistent listening-history database, track-position tracking, duration tracking, installer, publish/package output, clean-machine distribution evidence, or M8B behavior. Milestone 8 as a whole is not passed.
 
 ## Windows API basis
 

@@ -1,10 +1,41 @@
-# Milestone 8A manual desktop test
+# Milestone 8A manual acceptance - Windows control application
 
 ## Status
 
-Milestone 8A is an implementation candidate. Automated verification is complete, but Steve's real Windows desktop acceptance is still required. Do not mark M8A passed from this document alone. Milestone 7.5B remains the latest accepted implementation, and Milestone 8B remains blocked and unstarted.
+Steve manually accepted Milestone 8A on August 11, 2026. The accepted implementation is commit `41b7824201c5c163a0fe0752bd4b3e70c68b9bdc`; the original candidate was `f123ddd9de484de590ba596abf812314b265390c`, and `41b7824` supplied the accepted activity-status correction. The accepted automated result is 162 passed and 0 failed.
 
-## Before starting
+Milestone 8 as a whole is **not passed**. Milestone 8B is the next gate, remains unstarted, and requires a separate explicit implementation request.
+
+## Accepted checkpoint
+
+- Original implementation candidate: `f123ddd9de484de590ba596abf812314b265390c`
+- Activity correction and accepted implementation: `41b7824201c5c163a0fe0752bd4b3e70c68b9bdc`
+- Accepted automated suite: 162 passed, 0 failed
+- Accepted Release builds: production, test, and WinForms control projects each completed with 0 warnings and 0 errors
+- Formatting and complete-diff verification: passed
+- This acceptance-record update did not rerun builds or automated tests; it records the already accepted evidence.
+
+## Accepted desktop evidence
+
+- The WinForms application launched without administrator privileges. Start, Stop, Silent Mode, Clear History, and Open Logs Folder worked.
+- Current title, artist, Firefox targeting state, and radio activity were readable without a PowerShell console.
+- Activity reported the transition countdown, stability wait, local generation, Nicole preparation, prepared state, delivery, restoration, and resumed observation.
+- Stop and window close awaited the authoritative protected cleanup path.
+- Firefox ducking captured and restored the exact application-session volume and mute state. Chrome and Windows master volume remained untouched.
+- Missing, stale, or unsafe targeting remained silent.
+- Preserved console diagnostics remained usable.
+- Firefox media ownership remains application-level: ordinary YouTube can become the tracked `firefox.exe` media session when it owns Firefox media. Zoya does not inspect pages or distinguish browser tabs.
+
+## Accepted log evidence
+
+- `radio-behavior-20260811-091603-715.txt` records three complete deliveries inside the two-second transition window, each with exact Firefox restoration from 100% to 25% and back to 100%, unmuted; it also records clean shutdown and no automatic pause/resume command.
+- `radio-behavior-20260811-095014-238.txt` records the visible control-window sequence through a transition, the eight-second stability wait, local generation, Nicole preparation, and prepared material waiting for delivery. It does not establish a completed delivery or shutdown.
+
+The procedure below is retained as the accepted regression procedure.
+
+## Preserved regression procedure
+
+### Before starting
 
 1. Open YouTube Music in Firefox and start a song.
 2. Close any older Zoya Radio window or console run.
@@ -18,7 +49,7 @@ Milestone 8A is an implementation candidate. Automated verification is complete,
 
 The application should open without administrator privileges. It must not pause, resume, or toggle Firefox during normal automatic delivery.
 
-## Test A - startup, status, and repeated Start
+### Test A - startup, status, and repeated Start
 
 1. Confirm the window shows the current title, artist, a readable Firefox targeting state, and a **Radio activity** line.
 2. Click **Start** once.
@@ -32,7 +63,7 @@ The application should open without administrator privileges. It must not pause,
 
 Detailed timestamped logs are still available through **Open Logs Folder**, but the normal scheduling/preparation check should now be visible directly in the window.
 
-## Test B - Silent Mode and Clear History
+### Test B - Silent Mode and Clear History
 
 1. While running, turn **Silent Mode** on before a scheduled delivery if practical.
 2. Confirm Radio activity says Silent Mode, observation can continue, and no pending or stale announcement plays.
@@ -40,7 +71,7 @@ Detailed timestamped logs are still available through **Open Logs Folder**, but 
 4. Click **Clear History**.
 5. Confirm the app stays running and logs are not deleted. This button clears only the small process-local recent-track/comment context.
 
-## Test C - Stop and protected cleanup
+### Test C - Stop and protected cleanup
 
 Repeat Stop in several representative phases when timing permits: during local AI generation, Nicole preparation, target acquisition, Firefox ducking, speech, and restoration. For each attempt:
 
@@ -52,7 +83,7 @@ Repeat Stop in several representative phases when timing permits: during local A
 
 It is fine if the short timing windows make a particular phase difficult to catch. Report which phase could not be exercised rather than pretending it passed.
 
-## Test D - safe window close
+### Test D - safe window close
 
 1. Start the app again.
 2. Close the window during ordinary observation.
@@ -62,14 +93,14 @@ It is fine if the short timing windows make a particular phase difficult to catc
 
 If the app warns that Firefox volume may be uncertain, restore Firefox manually and keep the log for review.
 
-## Test E - target safety and isolation
+### Test E - target safety and isolation
 
 1. If convenient, play media in Chrome while Firefox music remains active.
 2. Confirm Zoya continues to target only Firefox and never ducks or controls Chrome.
 3. If Firefox is missing, not Playing, or Windows exposes an ambiguous Firefox target, confirm the app reports the condition and remains safely silent.
 4. Confirm normal delivery never changes Windows master volume and never issues Firefox pause, play, resume, or toggle commands.
 
-## Test F - logs and preserved console diagnostics
+### Test F - logs and preserved console diagnostics
 
 1. Click **Open Logs Folder** and confirm File Explorer opens:
 
@@ -92,7 +123,7 @@ If the app warns that Firefox volume may be uncertain, restore Firefox manually 
 
 Press **Ctrl+C** to stop the console run safely. Other explicit diagnostics do not need to be rerun unless troubleshooting requires them.
 
-## What to bring back to the Work chat
+### What to bring back to the Work chat
 
 Provide:
 
@@ -104,4 +135,4 @@ Provide:
 - any unreadable status, delay, duplicate action, freeze, unexpected pause, stale announcement, or crash;
 - the exact time of any failure and what you clicked immediately before it.
 
-Successful desktop evidence is required before M8A can be marked passed. Do not begin Milestone 8B from this test.
+This procedure supplied the accepted M8A desktop evidence. It does not authorize Milestone 8B; M8B requires a separate explicit implementation request.

@@ -1,5 +1,7 @@
 # Milestone 8 contract - control application and private-alpha distribution
 
+> Current checkpoint (August 11, 2026): M8A has since been implemented and manually accepted at `41b7824201c5c163a0fe0752bd4b3e70c68b9bdc`, with 162 automated tests passed and 0 failed. M8B is next but remains unstarted and requires a separate explicit implementation request; M8 as a whole is not passed. The approval-time status language below is retained as historical contract context.
+
 ## 1. Status and authority
 
 Steve approved this bounded Milestone 8 contract on August 10, 2026. Milestone 8 is **approved/contracted but unstarted**. This document defines the work that may be authorized within M8; it does not authorize implementation by itself.

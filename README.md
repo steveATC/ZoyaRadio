@@ -1,8 +1,8 @@
 # Zoya Radio
 
-Zoya Radio is a private, local-first Windows console application that observes YouTube Music in Firefox, prepares short locally generated comments, speaks with the accepted Nicole voice, and can deliver prepared comments over proportionally ducked Firefox audio.
+Zoya Radio is a private, local-first Windows application with an accepted WinForms control frontend and preserved console diagnostics. It observes Firefox media, prepares short locally generated comments, speaks with the accepted Nicole voice, and can deliver prepared comments over proportionally ducked Firefox audio.
 
-Milestones 0 through 5, Milestone 7, and Milestones 7.5A-7.5B have passed Steve's manual tests. Milestone 6 is deliberately deferred. The Milestone 8A control-application candidate is implemented and has passed automated verification, but still awaits Steve's manual acceptance; Milestone 8B remains blocked and unstarted. The latest accepted commit is still `63662342a374b323b639325f360ae7c17ace1432` with 124 automated tests passed and 0 failed.
+Milestones 0 through 5, Milestone 7, Milestones 7.5A-7.5B, and Milestone 8A have passed Steve's manual tests. Milestone 6 is deliberately deferred. Milestone 8 as a whole is not passed: M8B private-alpha distribution is the next gate, remains unstarted, and requires a separate explicit implementation request. The latest accepted implementation commit is `41b7824201c5c163a0fe0752bd4b3e70c68b9bdc` with 162 automated tests passed and 0 failed.
 
 Start with [docs/PROJECT_INDEX.md](docs/PROJECT_INDEX.md) for the canonical documentation map. Current status is in [docs/PROJECT_STATE.md](docs/PROJECT_STATE.md), and implemented behavior is in [docs/CURRENT_ARCHITECTURE.md](docs/CURRENT_ARCHITECTURE.md).
 
@@ -38,7 +38,7 @@ Take one snapshot and exit:
 
 Missing fields display as `<not provided>` rather than being guessed. The preserved acceptance procedure is [docs/MILESTONE_0_TEST.md](docs/MILESTONE_0_TEST.md).
 
-## Milestone 8A control application candidate
+## Milestone 8A control application
 
 Start the development control application:
 
@@ -48,7 +48,7 @@ Start the development control application:
 
 The window provides Start, safely awaited Stop, Silent Mode, Clear History, and Open Logs Folder controls. It displays the current title, artist, concise runtime status, Firefox targeting state, and a read-only **Radio activity** line. That activity line shows the transition countdown and preparation/delivery phase, so normal testing does not require a second PowerShell window tailing the log. Closing the window waits for the same protected cleanup path used by Stop.
 
-This is a candidate for Steve's desktop acceptance, not an accepted or packaged release. See [docs/MILESTONE_8A_TEST.md](docs/MILESTONE_8A_TEST.md) before testing it. Milestone 8B packaging has not begun.
+Steve accepted this development control application on August 11, 2026. See [docs/MILESTONE_8A_TEST.md](docs/MILESTONE_8A_TEST.md) for the accepted evidence and preserved regression procedure. It is not a packaged release; Milestone 8B packaging has not begun and is not authorized by the M8A acceptance.
 
 ## Transition-aware automatic radio
 

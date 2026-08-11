@@ -16,9 +16,12 @@ This document records accepted milestone status and approved direction. It does 
 | 7 - Better local voice | Passed | Kokoro `af_nicole` accepted as primary CPU voice; `af_heart` runner-up; Windows speech retained as fallback. |
 | 7.5A - Isolated Firefox ducking | Passed | Proportional application-session ducking and exact restoration verified without affecting Chrome or master volume. |
 | 7.5B - Transition-aware delivery | Passed | One-transition-ahead preparation, ducked delivery over playing music, wrapper-churn continuity, Chrome isolation, and clean restoration accepted on August 10, 2026. |
-| 8 | M8A candidate awaiting manual acceptance | The control-application candidate has completed automated verification. M8B private-alpha distribution remains blocked and unstarted. |
+| 8A - Control application | Passed | Shared controller/runtime, WinForms frontend, read-only activity status, LocalAppData logs, safe controls, and protected shutdown accepted on August 11, 2026. |
+| 8B - Private-alpha distribution | Next gate - unstarted | Requires a separate explicit implementation request; no packaging, publishing, or clean-machine work has begun. |
 
-The latest accepted implementation snapshot is commit `63662342a374b323b639325f360ae7c17ace1432`, with 124 automated tests passed and 0 failed. Later documentation-only commits do not replace that implementation snapshot or make the historical test result a new run.
+Milestone 8 as a whole is not passed or complete. It requires M8B implementation, verification, clean-machine evidence, final manual acceptance, and a recorded accepted checkpoint.
+
+The latest accepted implementation snapshot is commit `41b7824201c5c163a0fe0752bd4b3e70c68b9bdc`, with 162 automated tests passed and 0 failed. Later documentation-only commits do not replace that implementation snapshot or make the historical test result a new run.
 
 ## Milestone 7.5B repair provenance
 
@@ -26,6 +29,12 @@ The latest accepted implementation snapshot is commit `63662342a374b323b639325f3
 - `cdca733` repaired Firefox GSMTC/Core Audio recovery, and `4870cd8` preserved logical work across harmless GSMTC wrapper churn.
 - A power outage left only `tests/ZoyaRadio.MediaProbe.Tests/Program.cs` as an all-zero file. That file alone was restored exactly from `e0bb294`; six surviving repair files were preserved, focused tests were recreated, and repository integrity was rechecked.
 - `63662342` recorded Steve's accepted Firefox-plus-Chrome evidence. The final automated suite passed 124/124.
+
+## Milestone 8A provenance
+
+- `f123ddd9de484de590ba596abf812314b265390c` implemented the original control-application candidate.
+- `41b7824201c5c163a0fe0752bd4b3e70c68b9bdc` added the deterministic Radio-activity presentation and is the accepted implementation snapshot.
+- Steve accepted M8A on August 11, 2026 after the 162-test suite, clean Release builds, and renewed real-desktop testing.
 
 ## Completed capability arc
 
@@ -35,6 +44,7 @@ The latest accepted implementation snapshot is commit `63662342a374b323b639325f3
 - **Host delivery:** accepted Zoya persona, Nicole CPU speech, and Windows speech fallback.
 - **Automatic behavior:** bounded ephemeral history, inclusive 2-5 transition scheduling, Silent Mode, stale-work abandonment, and no catch-up queue.
 - **Transition presentation:** one-transition-ahead generation/synthesis, strict delivery revalidation, Firefox-only proportional ducking, exact restoration, and safe continuity through harmless GSMTC wrapper churn.
+- **Control application:** same-process WinForms frontend, UI-independent controller, one authoritative lifecycle, deterministic read-only activity/status, LocalAppData logs, and preserved console diagnostics.
 
 ## Accepted manual evidence summary
 
@@ -47,6 +57,7 @@ The latest accepted implementation snapshot is commit `63662342a374b323b639325f3
 - Milestone 7 accepted Nicole as the primary local voice and Windows TTS as fallback; Cyrillic sounded natural to Steve, but Russian accuracy was not claimed.
 - Milestone 7.5A verified 50.0% -> 12.5% -> 50.0% proportional restoration, normal/Ctrl+C/simulated-failure cleanup, a natural ramp, and Chrome/master-volume isolation.
 - Milestone 7.5B verified two prepared deliveries through Chrome-driven GSMTC churn, exact 100% -> 25% -> 100% restoration, continued transition observation, Chrome isolation, and clean shutdown.
+- Milestone 8A accepted the WinForms control application, readable Radio activity, safe Stop/window-close cleanup, Firefox-only duck/restoration, Chrome/master isolation, target refusal, LocalAppData logs, and preserved console diagnostics.
 
 Milestone-specific evidence and preserved regression instructions remain in the existing `MILESTONE_*_TEST.md` documents.
 
@@ -57,11 +68,11 @@ Steve approved the bounded [Milestone 8 contract](MILESTONE_8_CONTRACT.md) on Au
 1. **M8A - Control application:** a small WinForms frontend, same-process hosting of the accepted runtime, a UI-independent controller, one authoritative asynchronous lifecycle, safe controls and status, LocalAppData logs, preserved console diagnostics, and fake-driven controller/UI-state tests.
 2. **M8B - Private-alpha distribution:** a versioned unsigned self-contained Windows x64 portable ZIP for approximately 2-3 invited testers, subject to M8A acceptance, a separate authorization, eSpeak exclusion/compliance evidence, clean-machine testing, and final manual acceptance.
 
-Steve separately authorized M8A implementation. The candidate now awaits the real-desktop acceptance in [MILESTONE_8A_TEST.md](MILESTONE_8A_TEST.md). M8B remains blocked until M8A is manually accepted by Steve, recorded as accepted in Git, and separately authorized. Until then:
+Steve accepted M8A and its result is recorded in Git. M8B is therefore the next eligible gate, but it remains unstarted and unauthorized until Steve supplies a separate explicit implementation request. Milestone 8 as a whole remains incomplete. Until that separate request:
 
 - no M8B package, configuration, publish, distribution, or runtime work is authorized;
-- M7.5B remains the latest accepted implementation;
-- automated success cannot pass either gate without the required manual evidence;
+- `41b7824201c5c163a0fe0752bd4b3e70c68b9bdc` remains the latest accepted implementation;
+- automated success cannot pass M8B or Milestone 8 as a whole without the required manual evidence;
 - research and brainstorming remain review inputs and cannot add scope to the contract;
 - post-M8 proposals remain unapproved.
 

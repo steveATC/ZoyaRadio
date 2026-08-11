@@ -5,11 +5,11 @@
 | Field | Current value |
 | --- | --- |
 | Branch | `master` |
-| Latest accepted implementation commit | `63662342a374b323b639325f360ae7c17ace1432` |
-| Current passed milestone | Milestone 7.5B |
-| Manual acceptance date | 2026-08-10 |
-| Latest automated result | 124 passed, 0 failed |
-| Next gate | M8A implementation candidate awaits Steve's manual desktop acceptance; M8B remains blocked |
+| Latest accepted implementation commit | `41b7824201c5c163a0fe0752bd4b3e70c68b9bdc` |
+| Current passed milestone | Milestone 8A |
+| Manual acceptance date | 2026-08-11 |
+| Latest automated result | 162 passed, 0 failed |
+| Next gate | M8B is unstarted and requires a separate explicit implementation request; Milestone 8 as a whole is not passed |
 | Deferred milestone | Milestone 6 |
 
 The local Git repository is authoritative. See [PROJECT_INDEX.md](PROJECT_INDEX.md) for the documentation authority and snapshot rules.
@@ -17,6 +17,7 @@ The local Git repository is authoritative. See [PROJECT_INDEX.md](PROJECT_INDEX.
 ## Current operational state
 
 - The original Windows media-session watcher remains read only.
+- The accepted WinForms frontend hosts the same radio runtime in-process through a UI-independent controller. It provides Start, safely awaited Stop, Silent Mode, Clear History, current metadata/target status, read-only Radio activity, and LocalAppData log access while preserving console diagnostics.
 - The verified target is exactly one eligible, Playing `firefox.exe` GSMTC session. Missing or ambiguous targeting produces silence.
 - Automatic radio behavior schedules one comment every 2-5 genuine transitions. It prepares Track-A local AI text and Nicole audio one transition early while Firefox keeps playing.
 - At Track B, the application revalidates the logical Firefox media target and exactly one active Firefox Core Audio session inside a two-second delivery window.
@@ -28,16 +29,15 @@ The local Git repository is authoritative. See [PROJECT_INDEX.md](PROJECT_INDEX.
 
 Full implemented behavior is in [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.md).
 
-## Milestone 8 candidate status
+## Milestone 8 gate status
 
 - Steve approved the bounded [Milestone 8 contract](MILESTONE_8_CONTRACT.md) on August 10, 2026.
-- Steve then explicitly authorized M8A implementation. The small WinForms control-application candidate is implemented and its automated verification is complete.
-- The candidate now exposes deterministic read-only **Radio activity** state for scheduling, preparation, delivery, safety, stopping, and fault phases. Harmless Firefox wrapper refreshes remain detailed-log-only and do not churn this GUI state.
-- M8A is **not passed or accepted** until Steve completes the real-desktop procedure in [MILESTONE_8A_TEST.md](MILESTONE_8A_TEST.md).
-- M8B, the private-alpha distribution gate, remains blocked until M8A is implemented, verified, manually accepted by Steve, recorded in Git, and separately authorized.
+- The original M8A candidate was implemented at `f123ddd9de484de590ba596abf812314b265390c`; the accepted Radio-activity correction and latest accepted implementation snapshot are `41b7824201c5c163a0fe0752bd4b3e70c68b9bdc`.
+- Steve manually accepted M8A on August 11, 2026. The accepted evidence and preserved regression procedure are in [MILESTONE_8A_TEST.md](MILESTONE_8A_TEST.md).
+- Milestone 8 as a whole is **not passed or complete**. M8B private-alpha distribution is the next gate, remains unstarted, and requires a separate explicit implementation request.
 - No post-M8 proposal is approved by the M8 contract.
 
-## M8A candidate verification
+## M8A accepted verification
 
 - Existing console/runtime Release build: passed with 0 warnings and 0 errors.
 - M8A WinForms Release build: passed with 0 warnings and 0 errors.
@@ -45,7 +45,17 @@ Full implemented behavior is in [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.m
 - Complete automated suite: 162 passed, 0 failed, including all 124 previously accepted regression tests plus 38 M8A controller/UI-boundary and activity-status tests.
 - Shared runtime, WinForms, and test-project formatting verification: passed. `git diff --check` also passed.
 - Automatic tests use fakes and did not open the GUI or Explorer, produce speech, contact Ollama, control desktop playback, or change real volume.
-- The accepted-snapshot result remains the historical 124 passed, 0 failed recorded above; the 162-test candidate run does not accept M8A.
+- This documentation-only acceptance record did not rerun builds or tests; the results above are the verified evidence associated with accepted implementation commit `41b7824`.
+
+## M8A manual acceptance evidence
+
+- The WinForms application launched successfully. Start, Stop, Silent Mode, Clear History, Open Logs Folder, current title/artist, and readable Firefox target status behaved correctly.
+- Radio activity was visible without PowerShell and showed transition observation/countdown, the stability wait, local generation, Nicole preparation, prepared waiting, delivery, restoration, and ordinary observation.
+- Stop and window close awaited protected cleanup. Firefox-only proportional ducking and exact scalar/mute restoration passed; Chrome and Windows master volume remained untouched, and normal delivery issued no pause/resume command.
+- Missing or unsafe targeting remained silent, and the existing console diagnostics remained usable.
+- Firefox targeting is intentionally application-level: ordinary YouTube in Firefox may become the observed media session when it holds Firefox media ownership. Zoya does not inspect pages or distinguish YouTube Music from ordinary YouTube.
+- `radio-behavior-20260811-091603-715.txt` recorded three complete automatic deliveries, speech starting inside the two-second window, exact 100% -> 25% -> 100% Firefox restoration with the original unmuted state, clean shutdown, and no automatic playback pause/resume.
+- `radio-behavior-20260811-095014-238.txt` recorded the corrected visible sequence through transition, eight-second stability wait, generation, Nicole preparation, and prepared waiting. It ended before a completed delivery or shutdown, so neither is claimed from that log.
 
 ## Milestone 7.5B acceptance evidence
 
@@ -58,7 +68,7 @@ Full implemented behavior is in [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.m
 
 ## Immediate blockers and deferred observations
 
-- There is no active M7.5B blocker. M8A now requires Steve's manual desktop acceptance; M8B remains blocked and unstarted.
+- M8A is accepted. M8B is the next gate but remains unstarted and unauthorized until Steve supplies a separate explicit implementation request.
 - The earlier 20:49 observer stall remains intermittent, unresolved, and unreproduced by the accepted Firefox-plus-Chrome run.
 - Wrapper-refresh diagnostics are excessively repetitive; this is a deferred non-blocking logging-quality issue.
 - Other accepted limitations and deferred improvements are maintained in [KNOWN_ISSUES.md](KNOWN_ISSUES.md).

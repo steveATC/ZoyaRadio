@@ -58,25 +58,34 @@ These decisions summarize accepted project rules and rationale already evidenced
 
 - Core Audio isolation is at the Firefox application-session level on Steve's PC. Multiple audible Firefox tabs may duck together.
 - This application-level boundary is accepted for Phase 1. Chrome and Windows master volume remaining untouched are mandatory; browser-tab isolation is not a current requirement.
+- GSMTC ownership is also Firefox application-level, not page-level. Ordinary YouTube may become the tracked Firefox media session when it owns Firefox media; Zoya does not inspect pages or distinguish it from YouTube Music.
 
 ## State and logging
 
 - Recent listening context is deliberately ephemeral and bounded to 10 tracks and 6 accepted AI comments.
-- Clearing state affects only in-memory context; timestamped UTF-8 diagnostics remain local until Steve deletes them.
+- Clearing state affects only in-memory context; timestamped UTF-8 diagnostics remain local until Steve deletes them. Shared-runtime logs use `%LOCALAPPDATA%\Zoya Radio\logs`; explicit diagnostic logs retain their repository-local location.
 - Logs may contain media source, title, artist, optional album, state, timing, selected local model/voice, targeting, duck/restoration, and readable errors. They do not contain browser URLs, credentials, tokens, cookies, or unrelated process command lines.
+
+## Accepted control application
+
+- M8A is accepted at implementation commit `41b7824201c5c163a0fe0752bd4b3e70c68b9bdc` after Steve's August 11, 2026 desktop test and the associated 162-test automated result.
+- WinForms is a thin same-process frontend over the accepted radio runtime. It does not own factual playback state, scheduling, targeting, generation, speech, or restoration policy.
+- `RadioRuntimeController` owns one authoritative asynchronous Start/Stop lifecycle and cleanup path. Stop and window close await protected cleanup; stale status after shutdown cannot revive the UI.
+- Immutable status/activity snapshots or events are the presentation boundary. Radio activity is read only and reports deterministic runtime work; harmless wrapper refreshes remain detailed-log-only.
+- Existing console launchers remain diagnostic frontends to the same runtime rather than a separate implementation.
 
 ## Tooling and dependencies
 
-- The current accepted application remains a small .NET console project. The M8 contract approves a future WinForms control application and bounded private-alpha packaging only through the separately authorized gates below; neither is implemented yet.
+- The accepted application now includes the small .NET WinForms control frontend and the preserved console diagnostics. M8B private-alpha packaging remains unstarted and requires a separate explicit implementation request.
 - The Windows SDK APIs, loopback Ollama client, and KokoroSharp.CPU are the currently accepted implementation dependencies.
 - Project-local SDK, package cache, models, generated audio, builds, and logs remain excluded from Git.
 
 ## Approved Milestone 8 boundaries
 
-- **Staged authorization is mandatory.** M8A and M8B require separate explicit implementation requests. M8B cannot begin until M8A is implemented, verified, manually accepted by Steve, and recorded in Git.
-- **M8A uses WinForms and same-process hosting.** The approved control application uses one UI-independent runtime controller or facade and one authoritative asynchronous lifecycle and cleanup path. Existing console diagnostics remain frontends to the same accepted runtime.
+- **Staged authorization is mandatory.** M8A fulfilled its separately authorized gate and is accepted. M8B remains unstarted and cannot begin without its own explicit implementation request. M8 as a whole is not passed.
+- **M8A uses WinForms and same-process hosting.** The accepted control application uses one UI-independent runtime controller or facade and one authoritative asynchronous lifecycle and cleanup path. Existing console diagnostics remain frontends to the same accepted runtime.
 - **M8 does not redesign radio behavior.** Existing scheduling, transition timing, safe-silence decisions, Firefox-only targeting, exact restoration, local-first privacy, and bounded ephemeral state remain controlling.
-- **M8B's primary distribution is portable.** The approved route is a versioned, unsigned, self-contained Windows x64 ZIP for private-alpha testing, with application-relative assets, LocalAppData logs, hashes, a manifest, notices, clean-machine evidence, and manual side-by-side replacement and rollback.
+- **M8B's contracted primary distribution is portable.** If separately authorized, the approved route is a versioned, unsigned, self-contained Windows x64 ZIP for private-alpha testing, with application-relative assets, LocalAppData logs, hashes, a manifest, notices, clean-machine evidence, and manual side-by-side replacement and rollback.
 - **Firefox and Ollama remain separate.** Neither installer is bundled. Zoya may direct a tester to the official Ollama source, and may start an installed Ollama application only after explicit tester action.
 - **Qwen setup requires informed consent.** Invoking `ollama pull qwen3:4b-instruct` requires size disclosure, a free-space check, explicit consent, visible progress, and cancellation. Third-party terms are never accepted automatically.
 - **eSpeak exclusion is a release gate.** The Nicole/en-US candidate must exclude eSpeak and pass representative and clean-machine tests. If eSpeak proves necessary, distribution pauses or uses the explicitly described Windows-TTS-only fallback until an approved compliance solution exists.
