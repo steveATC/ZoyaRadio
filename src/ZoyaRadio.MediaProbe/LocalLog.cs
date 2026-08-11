@@ -17,10 +17,9 @@ internal sealed class LocalLog : IDisposable, IAnnouncementLog
 
     public string FilePath { get; }
 
-    public static LocalLog Create(string filePrefix = "media-probe")
+    public static LocalLog Create(string filePrefix = "media-probe", string? logDirectory = null)
     {
-        string repositoryRoot = FindRepositoryRoot();
-        string logDirectory = Path.Combine(repositoryRoot, "logs");
+        logDirectory ??= Path.Combine(FindRepositoryRoot(), "logs");
         Directory.CreateDirectory(logDirectory);
 
         string timestamp = DateTimeOffset.Now.ToString("yyyyMMdd-HHmmss-fff", CultureInfo.InvariantCulture);

@@ -2,7 +2,7 @@
 
 Zoya Radio is a private, local-first Windows console application that observes YouTube Music in Firefox, prepares short locally generated comments, speaks with the accepted Nicole voice, and can deliver prepared comments over proportionally ducked Firefox audio.
 
-Milestones 0 through 5, Milestone 7, and Milestones 7.5A-7.5B have passed Steve's manual tests. Milestone 6 is deliberately deferred. Milestone 8 is planned but unstarted. The latest accepted commit is `63662342a374b323b639325f360ae7c17ace1432` with 124 automated tests passed and 0 failed.
+Milestones 0 through 5, Milestone 7, and Milestones 7.5A-7.5B have passed Steve's manual tests. Milestone 6 is deliberately deferred. The Milestone 8A control-application candidate is implemented and has passed automated verification, but still awaits Steve's manual acceptance; Milestone 8B remains blocked and unstarted. The latest accepted commit is still `63662342a374b323b639325f360ae7c17ace1432` with 124 automated tests passed and 0 failed.
 
 Start with [docs/PROJECT_INDEX.md](docs/PROJECT_INDEX.md) for the canonical documentation map. Current status is in [docs/PROJECT_STATE.md](docs/PROJECT_STATE.md), and implemented behavior is in [docs/CURRENT_ARCHITECTURE.md](docs/CURRENT_ARCHITECTURE.md).
 
@@ -37,6 +37,18 @@ Take one snapshot and exit:
 ```
 
 Missing fields display as `<not provided>` rather than being guessed. The preserved acceptance procedure is [docs/MILESTONE_0_TEST.md](docs/MILESTONE_0_TEST.md).
+
+## Milestone 8A control application candidate
+
+Start the development control application:
+
+```powershell
+.\run-zoya-radio-control.cmd
+```
+
+The window provides Start, safely awaited Stop, Silent Mode, Clear History, and Open Logs Folder controls. It displays the current title, artist, concise runtime status, and Firefox targeting state. Closing the window waits for the same protected cleanup path used by Stop.
+
+This is a candidate for Steve's desktop acceptance, not an accepted or packaged release. See [docs/MILESTONE_8A_TEST.md](docs/MILESTONE_8A_TEST.md) before testing it. Milestone 8B packaging has not begun.
 
 ## Transition-aware automatic radio
 
@@ -165,7 +177,15 @@ Steve selected Kokoro `af_nicole` as primary and `af_heart` as runner-up. See [d
 
 ## Logs
 
-Every run writes a timestamped UTF-8 text file under `logs\`. Common names are:
+The Milestone 8A control application and automatic radio runtime write timestamped UTF-8 logs under:
+
+```text
+%LOCALAPPDATA%\Zoya Radio\logs
+```
+
+The control app's **Open Logs Folder** button opens that directory. The automatic radio console uses the same runtime-log location. Other diagnostic modes continue writing under this repository's `logs\` folder. Existing logs were not moved, changed, or deleted.
+
+Common names include:
 
 - `media-probe-*.txt`
 - `playback-control-test-*.txt`
@@ -184,6 +204,7 @@ The approved Microsoft .NET 8 SDK is local in `.dotnet\`, and restored packages 
 From the repository root:
 
 ```powershell
+.\.dotnet\dotnet.exe build .\src\ZoyaRadio.ControlApp\ZoyaRadio.ControlApp.csproj --configuration Release
 .\.dotnet\dotnet.exe build .\src\ZoyaRadio.MediaProbe\ZoyaRadio.MediaProbe.csproj --configuration Release
 .\.dotnet\dotnet.exe build .\tests\ZoyaRadio.MediaProbe.Tests\ZoyaRadio.MediaProbe.Tests.csproj --configuration Release
 .\.dotnet\dotnet.exe run --project .\tests\ZoyaRadio.MediaProbe.Tests\ZoyaRadio.MediaProbe.Tests.csproj --configuration Release --no-build

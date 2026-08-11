@@ -2,7 +2,7 @@ using Windows.Media.Control;
 
 namespace ZoyaRadio.MediaProbe;
 
-internal sealed class RadioBehaviorTest
+internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
 {
     private readonly GlobalSystemMediaTransportControlsSessionManager _manager;
     private readonly LocalLog _log;
@@ -11,6 +11,8 @@ internal sealed class RadioBehaviorTest
     private readonly RadioBehaviorState _state;
     private readonly RadioSessionAccess _sessionAccess;
     private readonly TransitionRadioPipeline _pipeline;
+    private readonly object _runtimeLifecycleLock = new();
+    private readonly object _statusLock = new();
     private readonly object _stateLock = new();
     private readonly object _pipelineLock = new();
     private readonly SemaphoreSlim _mediaEventGate = new(1, 1);
@@ -22,6 +24,10 @@ internal sealed class RadioBehaviorTest
     private bool _simulateNextTransitionFailure;
     private bool _mediaSubscribed;
     private bool _managerSubscribed;
+    private CancellationTokenSource? _runtimeCancellation;
+    private Task? _runtimeStopTask;
+    private bool _runtimeStarted;
+    private RadioRuntimeStatusUpdate? _lastStatus;
 
     public RadioBehaviorTest(
         GlobalSystemMediaTransportControlsSessionManager manager,
@@ -61,236 +67,6 @@ internal sealed class RadioBehaviorTest
             opportunityHost,
             _clock,
             log);
-    }
-
-    public async Task<int> RunAsync(
-        bool aiEnabled,
-        bool simulateTransitionFailure,
-        CancellationToken cancellationToken)
-    {
-        _shutdownToken = cancellationToken;
-        _simulateNextTransitionFailure = simulateTransitionFailure;
-        WriteConfiguration(aiEnabled);
-
-        RadioSessionDetails[] sessions;
-
-        try
-        {
-            sessions = await _sessionAccess.ReadAllSessionsAsync();
-        }
-        catch (Exception exception)
-        {
-            _log.Warning("Could not enumerate Windows media sessions for automatic behavior", exception);
-            _log.Write("RADIO BEHAVIOR RESULT: NOT ARMED - no AI, playback, or speech commands were issued.");
-            return 1;
-        }
-
-        IReadOnlyList<RadioSessionDetails> matches = FirefoxSessionSelector.FindExactMatches(
-            sessions,
-            details => details.SourceId);
-
-        if (matches.Count == 0)
-        {
-            _log.Write("NO FIREFOX TARGET FOUND: automatic behavior was not armed.");
-            _log.Write("Start YouTube Music playing in Firefox, then run this test again.");
-            return 1;
-        }
-
-        if (matches.Count > 1)
-        {
-            _log.Write("!!! AMBIGUOUS TARGET !!!");
-            _log.Write($"Found {matches.Count} sessions matching firefox.exe. Automatic behavior was not armed.");
-            return 1;
-        }
-
-        RadioSessionDetails initial = matches[0];
-        _sessionAccess.WriteSessionDetails("AUTOMATIC RADIO TARGET", initial);
-
-        if (!initial.MediaReadSucceeded || !AnnouncementText.TryBuild(initial.Media, out _))
-        {
-            _log.Write("METADATA SAFETY: Firefox did not provide both a usable title and artist.");
-            _log.Write("Automatic behavior was not armed and no playback or speech commands were issued.");
-            return 1;
-        }
-
-        if (!initial.PlaybackReadSucceeded || !PlaybackControlRules.CanStart(initial.PlaybackStatus))
-        {
-            _log.Write(
-                $"STARTING-STATE SAFETY: Firefox is {RadioSessionAccess.DisplayStatus(initial.PlaybackStatus)}, not Playing.");
-            _log.Write("Automatic behavior was not armed. Zoya will not start paused media.");
-            return 1;
-        }
-
-        _log.Write(
-            "Enable automatic transition delivery? This may duck Firefox and speak, but will not pause playback. [y/N]");
-        string? response;
-
-        try
-        {
-            response = await Console.In.ReadLineAsync(cancellationToken);
-        }
-        catch (OperationCanceledException)
-        {
-            _log.Write("AUTOMATIC RADIO CANCELLED before arming. No AI, playback, or speech commands were issued.");
-            return 0;
-        }
-
-        if (!PlaybackControlRules.IsAffirmative(response))
-        {
-            _log.Write("User confirmation: NO");
-            _log.Write("AUTOMATIC RADIO NOT ARMED: no AI, playback, or speech commands were issued.");
-            return 0;
-        }
-
-        _log.Write("User confirmation: YES");
-
-        RadioSessionDetails? rechecked = await _sessionAccess.RecheckStartupTargetAsync(initial);
-        if (rechecked is null)
-        {
-            _log.Write("STARTUP REVALIDATION FAILED: session, track, or playback changed while awaiting confirmation.");
-            _log.Write("Automatic behavior was not armed. Run the test again on the current track.");
-            return 1;
-        }
-
-        _selectedSession = rechecked.Session;
-        await _mediaEventGate.WaitAsync();
-        try
-        {
-            if (!TrySubscribe())
-            {
-                _log.Write("RADIO BEHAVIOR RESULT: NOT ARMED - required Windows change observers were unavailable.");
-                return 1;
-            }
-
-            lock (_stateLock)
-            {
-                _state.Arm(rechecked.Media, _clock.Now);
-            }
-        }
-        finally
-        {
-            _mediaEventGate.Release();
-        }
-
-        _log.Write("AUTOMATIC RADIO: ARMED");
-        _log.Write($"Initial track: {rechecked.Media.Title} - {rechecked.Media.Artist}");
-        _log.Write("The initial track establishes state and does not count as a transition.");
-        WriteNextSchedule();
-        _log.Write("Console controls: S = toggle Silent Mode, C = clear recent history, Ctrl+C = stop safely.");
-
-        try
-        {
-            await MonitorConsoleAsync(cancellationToken);
-        }
-        catch (OperationCanceledException)
-        {
-            _log.Write("Shutdown requested. Cancelling prepared delivery and preserving exact Firefox volume restoration.");
-        }
-        finally
-        {
-            lock (_stateLock)
-            {
-                _state.Disarm();
-            }
-
-            CancelPendingPipeline("automatic behavior is shutting down");
-            Unsubscribe();
-            await WaitForPipelineAsync();
-            DisposePreparedOpportunity();
-            await _mediaEventGate.WaitAsync();
-            _mediaEventGate.Release();
-        }
-
-        _log.Write("AUTOMATIC RADIO: STOPPED CLEANLY");
-        return 0;
-    }
-
-    private async Task MonitorConsoleAsync(CancellationToken cancellationToken)
-    {
-        bool consoleKeysAvailable = true;
-
-        while (true)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            if (consoleKeysAvailable)
-            {
-                try
-                {
-                    while (Console.KeyAvailable)
-                    {
-                        ConsoleKeyInfo key = Console.ReadKey(intercept: true);
-                        if (key.Key == ConsoleKey.S)
-                        {
-                            ToggleSilentMode();
-                        }
-                        else if (key.Key == ConsoleKey.C)
-                        {
-                            ClearRecentHistory();
-                        }
-                    }
-                }
-                catch (InvalidOperationException exception)
-                {
-                    consoleKeysAvailable = false;
-                    _log.Warning("S/C console controls are unavailable in this redirected console", exception);
-                    _log.Write("Ctrl+C shutdown remains available.");
-                }
-            }
-
-            await Task.Delay(100, cancellationToken);
-        }
-    }
-
-    private void ToggleSilentMode()
-    {
-        RadioModeChange change;
-
-        lock (_stateLock)
-        {
-            change = _state.SetSilentMode(!_state.SilentMode);
-        }
-
-        if (change.PendingOpportunityInvalidated)
-        {
-            CancelPendingPipeline("Silent Mode was enabled");
-        }
-
-        _log.Write($"SILENT MODE: {(change.SilentMode ? "ON" : "OFF")}");
-
-        if (change.SilentMode)
-        {
-            _log.Write("No new AI generation, speech preparation, automatic duck, or speech will begin.");
-        }
-        else
-        {
-            _log.Write("Missed comments were discarded. A fresh transition interval begins now.");
-            WriteNextSchedule();
-        }
-    }
-
-    private void ClearRecentHistory()
-    {
-        bool invalidated;
-
-        lock (_stateLock)
-        {
-            invalidated = _state.ClearRecentHistory();
-        }
-
-        if (invalidated)
-        {
-            CancelPendingPipeline("recent history was cleared");
-        }
-
-        _log.Write("RECENT HISTORY CLEARED: recent tracks and accepted AI comments were removed from memory.");
-        _log.Write("The current diagnostic log was not deleted or rewritten.");
-        _log.Write(
-            invalidated
-                ? "A pending comment was cancelled; if Firefox was already ducked, protected exact-volume restoration still runs."
-                : "No volume or speech command was issued by the clear-history command.");
-        WriteHistorySizes();
-        WriteNextSchedule();
     }
 
     private async void OnMediaPropertiesChanged(
@@ -347,6 +123,13 @@ internal sealed class RadioBehaviorTest
             }
 
             WriteTrackTransition(observation);
+            RadioRuntimeState runtime = GetRuntimeState();
+            PublishRuntimeStatus(
+                observation.CurrentTrack!.Title,
+                observation.CurrentTrack.Artist,
+                FirefoxTargetState.Safe,
+                runtime.SilentMode,
+                runtime.SilentMode ? "Running silently" : "Track transition observed");
 
             if (observation.PendingOpportunityInvalidated)
             {
@@ -418,16 +201,19 @@ internal sealed class RadioBehaviorTest
             {
                 case FirefoxMediaSessionChangeStatus.SessionListUnavailable:
                     _log.Write("FIREFOX GSMTC SESSION: the media-session list is unavailable.");
+                    PublishTargetStatus(FirefoxTargetState.Unavailable, "Windows media-session list unavailable");
                     InvalidatePendingForSessionSafety("the Windows media-session list is unavailable");
                     return;
                 case FirefoxMediaSessionChangeStatus.NoFirefoxCandidate:
                     _log.Write("FIREFOX GSMTC CANDIDATES: ZERO exact firefox.exe sessions. Staying silent.");
+                    PublishTargetStatus(FirefoxTargetState.Missing, "Firefox media session is missing");
                     InvalidatePendingForSessionSafety("zero Firefox media-session candidates are available");
                     return;
                 case FirefoxMediaSessionChangeStatus.AmbiguousFirefoxCandidates:
                     _log.Write(
                         $"FIREFOX GSMTC CANDIDATES: MULTIPLE/AMBIGUOUS " +
                         $"({change.MatchingFirefoxSessionCount} exact firefox.exe sessions). Staying silent.");
+                    PublishTargetStatus(FirefoxTargetState.Ambiguous, "Firefox media-session targeting is ambiguous");
                     InvalidatePendingForSessionSafety("multiple Firefox media-session candidates are ambiguous");
                     return;
                 case FirefoxMediaSessionChangeStatus.SingleFirefoxCandidate:
@@ -546,6 +332,7 @@ internal sealed class RadioBehaviorTest
         _log.Write(
             $"Continuous track: {MediaSnapshot.Display(refreshedDetails.Media.Title)} - " +
             $"{MediaSnapshot.Display(refreshedDetails.Media.Artist)}");
+        PublishTargetStatus(FirefoxTargetState.Safe, "Firefox wrapper refreshed; running continuously");
     }
 
     private async Task TryReacquireFirefoxSessionAsync(string reason)
@@ -561,12 +348,14 @@ internal sealed class RadioBehaviorTest
                 out IReadOnlyList<GlobalSystemMediaTransportControlsSession> refreshedMatches))
         {
             _log.Write("FIREFOX GSMTC REACQUISITION REFUSED: the refreshed session list was unavailable.");
+            PublishTargetStatus(FirefoxTargetState.Unavailable, "Firefox session list unavailable during recovery");
             return;
         }
 
         if (refreshedMatches.Count == 0)
         {
             _log.Write("FIREFOX GSMTC REACQUISITION REFUSED: ZERO Firefox candidates remain.");
+            PublishTargetStatus(FirefoxTargetState.Missing, "Firefox media session is missing");
             return;
         }
 
@@ -575,6 +364,7 @@ internal sealed class RadioBehaviorTest
             _log.Write(
                 $"FIREFOX GSMTC REACQUISITION REFUSED: MULTIPLE/AMBIGUOUS candidates " +
                 $"({refreshedMatches.Count}) remain.");
+            PublishTargetStatus(FirefoxTargetState.Ambiguous, "Firefox media-session targeting is ambiguous");
             return;
         }
 
@@ -587,6 +377,7 @@ internal sealed class RadioBehaviorTest
             _log.Write(
                 $"FIREFOX GSMTC REACQUISITION REFUSED: the sole candidate is " +
                 $"{DescribeSessionIneligibility(replacement)}.");
+            PublishTargetStatus(FirefoxTargetState.Unavailable, "The Firefox candidate is not safe to use");
             return;
         }
 
@@ -629,6 +420,7 @@ internal sealed class RadioBehaviorTest
             $"{MediaSnapshot.Display(replacement.Media.Artist)}");
         _log.Write("Pending material was discarded. A fresh transition interval begins now.");
         WriteNextSchedule();
+        PublishTargetStatus(FirefoxTargetState.Safe, "Firefox session safely reacquired; fresh interval started");
     }
 
     private static string DescribeSessionIneligibility(RadioSessionDetails details)

@@ -249,7 +249,10 @@ internal static class Program
                 : controlTest
                     ? "playback-control-test"
                     : "media-probe";
-            log = LocalLog.Create(logPrefix);
+            string? logDirectory = radioBehaviorTest
+                ? new LocalAppDataLogFolderProvider().GetLogFolderPath()
+                : null;
+            log = LocalLog.Create(logPrefix, logDirectory);
         }
         catch (Exception exception)
         {
