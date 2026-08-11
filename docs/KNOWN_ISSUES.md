@@ -43,6 +43,13 @@ This file separates unresolved defects from accepted platform limits and deferre
 - Kokoro's documented language list does not include Russian. Steve described the audition sample as natural-sounding but is not a Russian speaker, so pronunciation accuracy remains unverified.
 - Poor pronunciation is an accepted voice/language limitation; actual Unicode replacement or corruption would be a defect.
 
+### eSpeak-free private-alpha fallback for unusual names
+
+- The M8B candidate deliberately excludes all eSpeak files.
+- Offline package verification found that ordinary English, punctuation/numbers, and repeated Nicole preparation work without eSpeak, while one deliberately unusual/out-of-vocabulary name sample caused KokoroSharp to request the absent `espeak-ng` helper.
+- The accepted pre-delivery provider boundary safely prepared the same text with local Windows TTS before any ducking, speech, or media control. This is expected safe fallback behavior, not a claim that Nicole can pronounce every input without eSpeak.
+- Clean-machine evidence is still required before the Nicole/eSpeak-free distribution route can be accepted.
+
 ### Track ending versus manual skip
 
 - Current metadata events do not distinguish a natural track ending from a manual skip.

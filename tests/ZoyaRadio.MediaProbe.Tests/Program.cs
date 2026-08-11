@@ -167,6 +167,22 @@ var tests = new (string Name, Func<Task> Run)[]
     ("M8A stopping activity wins over late runtime activity", Milestone8AControllerTests.StoppingActivityWinsOverLateRuntimeActivity),
     ("M8A harmless wrapper refresh creates no activity noise", Milestone8AControllerTests.WrapperRefreshDoesNotCreateActivityNoise),
     ("M8A activity contract exposes no playback commands", () => RunSynchronous(Milestone8AControllerTests.ActivityContractDoesNotExposePlaybackCommands)),
+    ("M8B identity and application-relative assets", () => RunSynchronous(Milestone8BPackagingTests.IdentityAndApplicationRelativeAssets)),
+    ("M8B valid manifest and hashes", () => RunSynchronous(Milestone8BPackagingTests.ValidManifestAndHashes)),
+    ("M8B missing and corrupt critical assets", () => RunSynchronous(Milestone8BPackagingTests.MissingAndCorruptCriticalAssets)),
+    ("M8B package exclusion audit", () => RunSynchronous(Milestone8BPackagingTests.PackageExclusionAudit)),
+    ("M8B Unicode manifest content", () => RunSynchronous(Milestone8BPackagingTests.UnicodeManifestContentIsPreserved)),
+    ("M8B readiness presentation states", () => RunSynchronous(Milestone8BPackagingTests.ReadinessPresentationCoversSafeStates)),
+    ("M8B Ollama absent and stopped are read-only", Milestone8BPackagingTests.OllamaAbsentAndStoppedAreReadOnly),
+    ("M8B Ollama compatibility and Qwen identity", Milestone8BPackagingTests.OllamaCompatibilityAndQwenIdentity),
+    ("M8B Ollama unreachable and incompatible", Milestone8BPackagingTests.OllamaUnreachableAndIncompatible),
+    ("M8B model pull requires consent and disk", Milestone8BPackagingTests.ModelPullRequiresConsentAndDiskSpace),
+    ("M8B model pull progress and no terms acceptance", Milestone8BPackagingTests.ModelPullReportsProgressWithoutAcceptingTerms),
+    ("M8B model pull cancellation and interruption", Milestone8BPackagingTests.ModelPullCancellationAndInterruptionAreSafe),
+    ("M8B setup external actions are explicit", Milestone8BPackagingTests.SetupControllerUsesExplicitExternalActionsOnly),
+    ("M8B ZIP digest round-trip", () => RunSynchronous(Milestone8BPackagingTests.ZipDigestRoundTrips)),
+    ("M8B packaging script encodes distribution gates", () => RunSynchronous(Milestone8BPackagingTests.PackagingScriptEncodesDistributionGates)),
+    ("M8B tester documentation and terms are present", () => RunSynchronous(Milestone8BPackagingTests.TesterDocumentationAndTermsArePresent)),
 };
 
 int failures = 0;

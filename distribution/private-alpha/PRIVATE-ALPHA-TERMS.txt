@@ -1,0 +1,28 @@
+ZOYA RADIO PRIVATE-ALPHA TEST TERMS
+
+This is an invitation-only, unfinished, unsupported test build provided without
+warranty. It may contain defects, stop working, or behave differently across
+Windows computers. Do not redistribute the package or its contents.
+
+The executable is unsigned. Windows SmartScreen or other security software may
+display a warning. A tester may stop using the software at any time, close it,
+and delete the extracted folder.
+
+Firefox, Ollama, and qwen3:4b-instruct are separate third-party software and are
+not included. They remain subject to their own licences, terms, privacy policies,
+and support arrangements. Zoya Radio does not accept those terms for the tester.
+
+Local diagnostic logs may contain Firefox media title/artist metadata, locally
+generated comments, timestamps, targeting diagnostics, and errors. Review logs
+before sharing them. Do not send credentials, browser cookies, account tokens,
+or unrelated private information with a defect report.
+
+Deleting the extracted folder removes that portable Zoya Radio version. Logs are
+stored separately under %LOCALAPPDATA%\Zoya Radio\logs and may be deleted manually.
+
+To report a defect, provide the Zoya version, Windows version, exact reproduction
+steps, expected result, actual result, and only the relevant reviewed log excerpt.
+
+These private-alpha terms do not replace, restrict, or override any third-party
+open-source or proprietary licence included with the package. The licence review
+is engineering compliance work, not legal advice or a claim of final legal certainty.

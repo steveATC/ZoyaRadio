@@ -23,10 +23,11 @@ internal sealed class WindowsRadioRuntimeSessionFactory : IRadioRuntimeSessionFa
         try
         {
             log = LocalLog.Create("radio-behavior", _logFolderProvider.GetLogFolderPath());
-            log.Write("ZOYA RADIO - MILESTONE 8A CONTROL APPLICATION CANDIDATE");
+            log.Write("ZOYA RADIO - MILESTONE 8B PRIVATE-ALPHA CANDIDATE");
             log.Write("This frontend hosts the accepted transition-aware runtime in the same process.");
             log.Write("Normal automatic delivery never pauses playback and targets only validated Firefox audio.");
             log.Write($"Local log: {log.FilePath}");
+            PrivateAlphaPackageIntegrity.EnsureSafeStartup(AppContext.BaseDirectory, log);
 
             AiCommentConfiguration aiConfiguration = AiCommentConfiguration.Default;
             HostPersonaConfiguration persona = HostPersonaConfiguration.Default;

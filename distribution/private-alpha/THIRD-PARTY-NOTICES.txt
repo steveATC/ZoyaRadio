@@ -1,0 +1,50 @@
+ZOYA RADIO 0.8.0-alpha.1 - THIRD-PARTY INVENTORY AND PROVENANCE
+
+This file is an engineering notice inventory, not legal advice. Full texts are in
+the licenses folder. The final package manifest records every shipped file and hash.
+
+Included runtime/application dependencies
+
+- Microsoft .NET Runtime 8.0.29 and WindowsDesktop Runtime 8.0.29
+  Licence: MIT; Microsoft third-party notices included from the official NuGet
+  runtime packs Microsoft.NETCore.App.Runtime.win-x64 and
+  Microsoft.WindowsDesktop.App.Runtime.win-x64.
+- Microsoft Windows SDK .NET projection 10.0.19041.56 and CsWinRT runtime
+  Licence source: the official URL recorded by the NuGet package,
+  https://aka.ms/WinSDKLicenseURL. The authoritative Microsoft RTF is included.
+- KokoroSharp and KokoroSharp.CPU 0.8.0
+  Licence: MIT. Upstream: https://github.com/Lyrcaxis/KokoroSharp
+- MisakiSharp 1.0.0
+  Licence: Apache-2.0. Upstream: https://github.com/Lyrcaxis/MisakiSharp
+  The full common Apache-2.0 text is included as
+  licenses/Apache-2.0-Misaki-Kokoro-Model-and-Voices.txt and was verified against
+  https://raw.githubusercontent.com/Lyrcaxis/MisakiSharp/master/LICENSE.
+- Kokoro 82M v1.0 FP32 model and af_nicole voice
+  Licence: Apache-2.0. Upstream model: https://huggingface.co/hexgrad/Kokoro-82M
+  The same full Apache-2.0 text above applies. The candidate contains af_nicole only.
+- Microsoft.ML.OnnxRuntime and Managed 1.22.0
+  Licence and ThirdPartyNotices copied from the official NuGet packages.
+- NAudio component packages 2.2.1
+  Licence: MIT; upstream package licence copied from the official NuGet package.
+- NumSharp 0.30.0
+  Licence: Apache-2.0; copied from the official NuGet package.
+- OpenTK.Audio.OpenAL, OpenTK.Core, and OpenTK.Mathematics 5.0.0-pre.13
+  Licence: MIT/X11; upstream licence and third-party notice included from
+  https://github.com/opentk/opentk because these prerelease NuGet packages omit them.
+- Microsoft System compatibility packages used by the actual publish closure,
+  including System.Numerics.Tensors 9.0.5, System.Memory 4.5.5,
+  System.Runtime.CompilerServices.Unsafe 5.0.0, System.Security.AccessControl 4.7.0,
+  and System.Security.Principal.Windows 4.7.0.
+  Microsoft licence and available third-party notices are copied from the official
+  restored NuGet packages.
+
+Explicitly not included
+
+- Firefox, Ollama, qwen3:4b-instruct, eSpeak/eSpeak NG, other Kokoro voices,
+  test audio, logs, listening history, credentials, and private PDB symbols.
+
+Package-build provenance
+
+The build script copies locally restored licence/NOTICE files by exact package and
+version path, fails when a required source file is absent, and generates a hashed
+package manifest. See package-manifest.json for the source commit and file hashes.

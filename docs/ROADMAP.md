@@ -68,10 +68,9 @@ Steve approved the bounded [Milestone 8 contract](MILESTONE_8_CONTRACT.md) on Au
 1. **M8A - Control application:** a small WinForms frontend, same-process hosting of the accepted runtime, a UI-independent controller, one authoritative asynchronous lifecycle, safe controls and status, LocalAppData logs, preserved console diagnostics, and fake-driven controller/UI-state tests.
 2. **M8B - Private-alpha distribution:** a versioned unsigned self-contained Windows x64 portable ZIP for approximately 2-3 invited testers, subject to M8A acceptance, a separate authorization, eSpeak exclusion/compliance evidence, clean-machine testing, and final manual acceptance.
 
-Steve accepted M8A and its result is recorded in Git. M8B is therefore the next eligible gate, but it remains unstarted and unauthorized until Steve supplies a separate explicit implementation request. Milestone 8 as a whole remains incomplete. Until that separate request:
+Steve accepted M8A and separately authorized M8B. Candidate `0.8.0-alpha.1` is implemented and locally verified, but M8B is not passed. Milestone 8 as a whole remains incomplete. The next required evidence is clean Windows 10/11, Steve packaged-desktop, and invited private-alpha testing:
 
-- no M8B package, configuration, publish, distribution, or runtime work is authorized;
-- `41b7824201c5c163a0fe0752bd4b3e70c68b9bdc` remains the latest accepted implementation;
+- `41b7824201c5c163a0fe0752bd4b3e70c68b9bdc` remains the latest accepted implementation; the M8B candidate commit is not an acceptance checkpoint;
 - automated success cannot pass M8B or Milestone 8 as a whole without the required manual evidence;
 - research and brainstorming remain review inputs and cannot add scope to the contract;
 - post-M8 proposals remain unapproved.

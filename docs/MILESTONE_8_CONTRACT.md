@@ -1,6 +1,6 @@
 # Milestone 8 contract - control application and private-alpha distribution
 
-> Current checkpoint (August 11, 2026): M8A has since been implemented and manually accepted at `41b7824201c5c163a0fe0752bd4b3e70c68b9bdc`, with 162 automated tests passed and 0 failed. M8B is next but remains unstarted and requires a separate explicit implementation request; M8 as a whole is not passed. The approval-time status language below is retained as historical contract context.
+> Current checkpoint (August 11, 2026): M8A is manually accepted at `41b7824201c5c163a0fe0752bd4b3e70c68b9bdc`, with its accepted 162-test result. M8B was separately authorized and now has a locally verified `0.8.0-alpha.1` implementation candidate with 178 tests passed and 0 failed, but clean-machine, Steve desktop, and invited-tester evidence remain pending. M8B and M8 as a whole are not passed. The approval-time status language below is retained as historical contract context.
 
 ## 1. Status and authority
 

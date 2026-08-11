@@ -82,8 +82,10 @@ internal sealed class KokoroSpeechService : IAnnouncementSpeechService
         try
         {
             selected.Validate();
-            string repositoryRoot = RepositoryPathLocator.FindRepositoryRoot();
-            string modelPath = Path.GetFullPath(Path.Combine(repositoryRoot, selected.ModelRelativePath));
+            string modelPath = NeuralModelPathResolver.Resolve(
+                selected,
+                AppContext.BaseDirectory,
+                PrivateAlphaBuildIdentity.IsPackagedCandidate);
 
             if (!File.Exists(modelPath))
             {

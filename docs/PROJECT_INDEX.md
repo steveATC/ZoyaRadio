@@ -11,8 +11,9 @@ This is the front door to the canonical Zoya Radio documentation. The local Git 
 | Latest accepted implementation commit | `41b7824201c5c163a0fe0752bd4b3e70c68b9bdc` |
 | Documentation reorganization baseline | `d5594e7ee16be1f11afc732186fa16ae8c5cc1c9` |
 | Current passed milestone | Milestone 8A |
-| Latest automated result | 162 passed, 0 failed |
-| Next gate | M8B is unstarted and requires a separate explicit implementation request; Milestone 8 as a whole is not passed |
+| Latest accepted automated result | 162 passed, 0 failed at `41b7824` |
+| M8B candidate automated result | 178 passed, 0 failed; not an accepted snapshot |
+| Next gate | M8B clean-machine, Steve desktop, and invited-tester evidence; Milestone 8 as a whole is not passed |
 | Snapshot ID | `zoya-radio-2026-08-11-m8a-41b78242` |
 
 Update this table whenever an accepted implementation commit becomes the new source snapshot.
@@ -25,8 +26,9 @@ Update this table whenever an accepted implementation commit becomes the new sou
 - [ROADMAP.md](ROADMAP.md) - completed milestones and approved near-term direction.
 - [DECISIONS.md](DECISIONS.md) - durable accepted product and engineering decisions.
 - [KNOWN_ISSUES.md](KNOWN_ISSUES.md) - unresolved defects, accepted limitations, and deferred improvements.
-- [MILESTONE_8_CONTRACT.md](MILESTONE_8_CONTRACT.md) - approved M8 scope, sequential gates, non-goals, and acceptance requirements; M8A is accepted, while M8B remains unstarted and requires a separate explicit implementation request.
+- [MILESTONE_8_CONTRACT.md](MILESTONE_8_CONTRACT.md) - approved M8 scope, sequential gates, non-goals, and acceptance requirements; M8A is accepted and M8B is an unaccepted implementation candidate.
 - [MILESTONE_8A_TEST.md](MILESTONE_8A_TEST.md) - accepted M8A desktop evidence and preserved regression procedure.
+- [MILESTONE_8B_TEST.md](MILESTONE_8B_TEST.md) - candidate package, clean-machine, desktop, and invited-tester procedure; no M8B acceptance is claimed.
 - [RESEARCH_INDEX.md](RESEARCH_INDEX.md) - research inventory and the boundary between evidence and recommendations.
 
 ## ChatGPT Project-source availability
@@ -92,6 +94,7 @@ Repository-only does not mean non-authoritative. README and the milestone record
 - Milestone test documents are preserved historical acceptance and regression records. Some retain wording written before later manual acceptance; current milestone status is governed by `PROJECT_STATE.md` and `ROADMAP.md`.
 - The M7.5B accepted evidence is preserved in [MILESTONE_7_5B_TEST.md](MILESTONE_7_5B_TEST.md).
 - The M8A accepted evidence is preserved in [MILESTONE_8A_TEST.md](MILESTONE_8A_TEST.md).
+- The M8B candidate verification and pending manual evidence are recorded in [MILESTONE_8B_TEST.md](MILESTONE_8B_TEST.md).
 
 ## Milestone records
 
@@ -105,5 +108,6 @@ Repository-only does not mean non-authoritative. README and the milestone record
 - [Milestone 7](MILESTONE_7_TEST.md)
 - [Milestone 7.5A](MILESTONE_7_5A_TEST.md)
 - [Milestone 7.5B](MILESTONE_7_5B_TEST.md)
-- [Milestone 8 contract](MILESTONE_8_CONTRACT.md) - approved contract; M8A accepted, M8B unstarted and requiring separate explicit authorization, and M8 not passed as a whole
+- [Milestone 8 contract](MILESTONE_8_CONTRACT.md) - approved contract; M8A accepted, M8B candidate awaiting manual evidence, and M8 not passed as a whole
 - [Milestone 8A acceptance](MILESTONE_8A_TEST.md) - accepted desktop evidence plus preserved regression procedure
+- [Milestone 8B candidate](MILESTONE_8B_TEST.md) - local engineering evidence and required clean-machine/manual procedure; not accepted

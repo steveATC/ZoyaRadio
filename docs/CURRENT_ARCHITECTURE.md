@@ -1,10 +1,11 @@
 # Current architecture
 
-This document describes only the implementation present at accepted commit `41b7824201c5c163a0fe0752bd4b3e70c68b9bdc`. Future ideas and research recommendations are excluded.
+This document describes the accepted radio/runtime behavior at commit `41b7824201c5c163a0fe0752bd4b3e70c68b9bdc` plus the current M8B packaging/readiness candidate. The M8B additions are not an accepted implementation snapshot. Future ideas and research recommendations are excluded.
 
 ## Platform and local dependencies
 
-- C#/.NET 8 Windows applications targeting `net8.0-windows10.0.19041.0`: an accepted WinForms control frontend plus preserved console diagnostics. The supported Windows API baseline is Windows 10 version 1809 (`10.0.17763.0`).
+- C#/.NET 8 Windows applications targeting `net8.0-windows10.0.19041.0`: an accepted WinForms control frontend plus preserved console diagnostics. The API target remains unchanged; the M8B private-alpha package support baseline is Windows 10 22H2 x64 (build 19045) or newer.
+- M8B publishes the WinForms application as unsigned self-contained `win-x64` with Microsoft .NET/WindowsDesktop runtime 8.0.29, a manifest, hashes, private symbols outside the ZIP, and no installer.
 - Windows GSMTC through `Windows.Media.Control` for media-session discovery, metadata, playback state, and event observation.
 - Windows Core Audio session APIs for per-application Firefox volume capture, proportional ducking, and exact restoration.
 - Ollama's loopback HTTP API at `http://localhost:11434/api/` with `qwen3:4b-instruct` for short local comments.
@@ -12,7 +13,7 @@ This document describes only the implementation present at accepted commit `41b7
 - Windows `SpeechSynthesizer`/`MediaPlayer` as the local speech fallback.
 - Timestamped UTF-8 shared-runtime logs under `%LOCALAPPDATA%\Zoya Radio\logs`; explicit diagnostic logs remain under the ignored repository `logs/` folder. There is no telemetry or cloud provider.
 
-The project-local Microsoft .NET SDK 8.0.423 is in ignored `.dotnet/`. Microsoft's Windows SDK reference pack and other restored packages are in ignored `.packages/`, and the approved Kokoro model is in ignored `.tools/kokoro/`. None requires administrator privileges.
+The project-local Microsoft .NET SDK 8.0.423 is in ignored `.dotnet/`. Microsoft's Windows SDK reference pack, approved .NET/WindowsDesktop 8.0.29 Win-x64 runtime packs, and other restored packages are in ignored `.packages/`; the approved Kokoro model is in ignored `.tools/kokoro/`. These repository-local build inputs require no administrator privileges and are not committed.
 
 ## Accepted versions and local artifacts
 
@@ -20,7 +21,7 @@ The project-local Microsoft .NET SDK 8.0.423 is in ignored `.dotnet/`. Microsoft
 - Normal Ollama requests use .NET `HttpClient`, `stream: false`, `think: false`, temperature `0.7`, a 20-second generation timeout, and `keep_alive: 0`. Performance mode alone uses a temporary `30s` keep-alive and `/api/ps`, then unloads only the selected model.
 - `KokoroSharp.CPU` 0.8.0 with Microsoft ONNX Runtime 1.22.0. The FP32 model is `.tools/kokoro/kokoro.onnx`, 325,532,387 bytes (310.5 MiB), SHA-256 `7D5DF8ECF7D4B1878015A32686053FD0EEBE2BC377234608764CC0EF3636A6C5`.
 - The restored package closure is about 559.69 MiB. The model, package cache, and one built application output require about 1.20 GiB, excluding additional ignored audition build output.
-- KokoroSharp is MIT licensed; the Kokoro model and voices are Apache-2.0; the bundled eSpeak NG phonemization component is GPLv3. Distribution review remains outside the current private implementation.
+- KokoroSharp is MIT licensed; MisakiSharp and the Kokoro model/voices are Apache-2.0. Restored KokoroSharp build output contains eSpeak NG, but the M8B staging audit removes and hash-audits every eSpeak file. Ordinary Nicole/en-US preparation works without it; unusual/OOV input may safely use Windows TTS fallback before any delivery control.
 - Microsoft David, Zira, and Mark were discovered as enabled en-US Windows voices; the accepted Windows fallback prototype selected David.
 - `.tools/`, `.packages/`, `bin/`, `obj/`, `artifacts/`, generated audio, and logs are excluded from Git.
 
@@ -45,7 +46,7 @@ The project-local Microsoft .NET SDK 8.0.423 is in ignored `.dotnet/`. Microsoft
 | Component | Responsibility |
 | --- | --- |
 | `RadioRuntimeController` | Own the authoritative asynchronous Start/Stop lifecycle, immutable status snapshots, stale-update suppression, and protected cleanup boundary shared by frontends. |
-| `RadioControlForm` | Present controls and deterministic read-only runtime state; it does not infer playback facts or own radio behavior. |
+| `RadioControlForm` | Present controls, deterministic runtime state, and thin M8B readiness/setup actions; it does not infer playback facts or own radio behavior. |
 | `MediaSessionWatcher` and `SessionObserver` | Request GSMTC, enumerate sessions, subscribe to session/media/playback changes, and refetch changed metadata. |
 | `MediaSnapshot` | Hold title, artist, and optional album without inventing absent fields. |
 | `RadioSessionAccess` | Read and validate the selected Firefox session and its current metadata/playback state. |
@@ -57,6 +58,8 @@ The project-local Microsoft .NET SDK 8.0.423 is in ignored `.dotnet/`. Microsoft
 | `WindowsAudioSessionCatalog` and `AudioSessionSelector` | Enumerate the default multimedia render endpoint and select exactly one active Firefox application session. |
 | `WindowsTransitionAudioDucker` and `AudioDuckingSequence` | Revalidate the delivery-time audio target, duck only that session, run prepared speech, and restore the exact captured state in protected cleanup. |
 | `LocalLog` and `LocalAppDataLogFolderProvider` | Write readable timestamped UTF-8 diagnostics and resolve the accepted shared-runtime log folder under LocalAppData. |
+| `PrivateAlphaPackageIntegrity` and `PrivateAlphaSelfTest` | Verify the packaged manifest/hashes, refuse unsafe startup, audit prohibited content, and provide safe non-media extracted-package diagnostics. |
+| `PrivateAlphaReadinessPresenter`, `PrivateAlphaSetupController`, and `OllamaSetupClient` | Present package/Windows/disk/Firefox/Visual C++/loopback-Ollama/Qwen readiness and perform only explicit, consented local model setup. |
 
 ## Control application and lifecycle
 
@@ -66,6 +69,18 @@ The project-local Microsoft .NET SDK 8.0.423 is in ignored `.dotnet/`. Microsoft
 - Radio activity reports deterministic work such as the transition countdown, stability wait, local generation, Nicole preparation, prepared waiting, target/audio validation, ducking, speech, restoration, safe abandonment, target loss, stopping, and faults. Harmless Firefox wrapper refreshes remain detailed-log-only rather than churning the GUI state.
 - Stop, window close, cancellation, and faults retain the accepted restoration ownership. The frontend cannot close past protected cleanup or retarget another media/audio session.
 - Shared-runtime logs are written under `%LOCALAPPDATA%\Zoya Radio\logs`, and the button opens that folder. Existing console launchers remain usable diagnostic frontends to the same runtime.
+
+## M8B packaging and readiness candidate
+
+- Version `0.8.0-alpha.1` is published as a self-contained unsigned Windows x64 portable ZIP. The package resolves model/voice assets from `AppContext.BaseDirectory`, independent of the process working directory.
+- `package-manifest.json` records every staged file, size, SHA-256, critical status, version/RID, source commit, and dirty-source state. Packaged startup verifies critical assets before creating the runtime and refuses unsafe/corrupt packages rather than guessing.
+- The deterministic packaging script stages only the Win-x64 publish closure, Kokoro FP32 model, `af_nicole.npy`, tester documents, licences, and notices. It excludes PDBs from the ZIP while retaining them privately, and rejects eSpeak, extra voices, non-x64 native assets, logs, generated audio, and bundled Firefox/Ollama/Qwen content.
+- Safe self-test modes run before the GUI/media runtime. They never contact Ollama, open external applications, produce audible speech, or control desktop media/volume. The neural mode silently prepares audio in memory from the extracted candidate and verifies cancellation and Windows fallback.
+- Readiness distinguishes valid/corrupt package assets, supported Windows, disk guidance, Firefox absent/idle/active/unsafe targeting, Visual C++ availability, Ollama absent/stopped/running/unreachable/incompatible, Qwen absent/present, and ready operation.
+- Firefox and Ollama remain external. The application may open the official Ollama page only after a labelled click. It does not install or start Ollama. Obtaining `qwen3:4b-instruct` through a running local Ollama requires an explicit default-No confirmation, approximate-size disclosure, at least 8 GiB confirmed free space, streamed progress, cancellation, and a bounded two-hour operation.
+- The Ollama API remains loopback-only. Capability checks use `/api/version` and `/api/tags`; the exact Qwen name, digest, and size are shown when available. No terms are accepted automatically and no PATH, firewall, service, driver, or system configuration is changed.
+- The external Microsoft Visual C++ x64 runtime is detected, not bundled or silently installed. Missing runtime status directs testers to Microsoft's official redistributable.
+- Generated package artifacts remain ignored under `artifacts/private-alpha/`; source-controlled scripts, tests, docs, templates, and required licence/notice material reproduce the candidate.
 
 ## Observation and explicit diagnostic behavior
 

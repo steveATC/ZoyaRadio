@@ -2,7 +2,7 @@
 
 Zoya Radio is a private, local-first Windows application with an accepted WinForms control frontend and preserved console diagnostics. It observes Firefox media, prepares short locally generated comments, speaks with the accepted Nicole voice, and can deliver prepared comments over proportionally ducked Firefox audio.
 
-Milestones 0 through 5, Milestone 7, Milestones 7.5A-7.5B, and Milestone 8A have passed Steve's manual tests. Milestone 6 is deliberately deferred. Milestone 8 as a whole is not passed: M8B private-alpha distribution is the next gate, remains unstarted, and requires a separate explicit implementation request. The latest accepted implementation commit is `41b7824201c5c163a0fe0752bd4b3e70c68b9bdc` with 162 automated tests passed and 0 failed.
+Milestones 0 through 5, Milestone 7, Milestones 7.5A-7.5B, and Milestone 8A have passed Steve's manual tests. Milestone 6 is deliberately deferred. M8B now has a locally verified `0.8.0-alpha.1` private-alpha candidate with 178 automated tests passed and 0 failed, but M8B and Milestone 8 as a whole are not passed. Clean Windows 10/11, Steve desktop, and invited-tester evidence remain pending. The latest accepted implementation commit remains `41b7824201c5c163a0fe0752bd4b3e70c68b9bdc` with its accepted 162-test result.
 
 Start with [docs/PROJECT_INDEX.md](docs/PROJECT_INDEX.md) for the canonical documentation map. Current status is in [docs/PROJECT_STATE.md](docs/PROJECT_STATE.md), and implemented behavior is in [docs/CURRENT_ARCHITECTURE.md](docs/CURRENT_ARCHITECTURE.md).
 
@@ -48,7 +48,21 @@ Start the development control application:
 
 The window provides Start, safely awaited Stop, Silent Mode, Clear History, and Open Logs Folder controls. It displays the current title, artist, concise runtime status, Firefox targeting state, and a read-only **Radio activity** line. That activity line shows the transition countdown and preparation/delivery phase, so normal testing does not require a second PowerShell window tailing the log. Closing the window waits for the same protected cleanup path used by Stop.
 
-Steve accepted this development control application on August 11, 2026. See [docs/MILESTONE_8A_TEST.md](docs/MILESTONE_8A_TEST.md) for the accepted evidence and preserved regression procedure. It is not a packaged release; Milestone 8B packaging has not begun and is not authorized by the M8A acceptance.
+Steve accepted this development control application on August 11, 2026. See [docs/MILESTONE_8A_TEST.md](docs/MILESTONE_8A_TEST.md) for the accepted evidence and preserved regression procedure.
+
+## Milestone 8B private-alpha candidate
+
+The local candidate is an unsigned, portable, self-contained Windows x64 ZIP for Windows 10 22H2 or newer. Reproduce it from the repository with:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\New-PrivateAlphaCandidate.ps1
+```
+
+The generated tester files remain under the ignored `artifacts\private-alpha\0.8.0-alpha.1\` folder. The ZIP contains the application, .NET desktop runtime, Kokoro FP32 model, Nicole only, and Windows local TTS fallback. It excludes eSpeak, PDBs, Firefox, Ollama, Qwen, logs, and user data. Firefox and Ollama are separate installations; Qwen can be obtained through an installed local Ollama only after an explicit size/disk/consent prompt.
+
+The packaged window adds thin readiness actions for package integrity, Windows/disk, Firefox, Visual C++, Ollama, and `qwen3:4b-instruct`. It never silently installs or starts third-party software. Some unusual or out-of-vocabulary names may make the eSpeak-free Nicole path fall back to a local Windows voice before any ducking or speech begins.
+
+This is an implementation candidate, not an accepted release. Follow [docs/MILESTONE_8B_TEST.md](docs/MILESTONE_8B_TEST.md) and the packaged tester guide. Do not distribute it as a completed product or mark M8B passed without the required manual evidence.
 
 ## Transition-aware automatic radio
 
