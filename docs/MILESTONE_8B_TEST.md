@@ -2,18 +2,37 @@
 
 ## Status
 
-Milestone 8B has an implementation candidate, version `0.8.0-alpha.1`. It is **not passed or accepted**. Milestone 8 as a whole is also not passed.
+Steve accepted M8B package version `0.8.0-alpha.1` on August 11, 2026 as the new internal-development baseline. Milestone 8 is closed for continued internal development.
 
-Local build, fake-driven automation, package audit, safe extracted-package checks, and offline Nicole preparation are engineering evidence. They do not replace the required clean Windows 10, clean Windows 11, Steve desktop, and invited-tester evidence.
+Implementation commit `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf` is the latest accepted internal implementation. Its accepted automated result is 178 passed and 0 failed; Release builds completed with 0 warnings and 0 errors.
 
-The latest accepted implementation remains M8A commit `41b7824201c5c163a0fe0752bd4b3e70c68b9bdc`. The M8A acceptance-documentation checkpoint remains `dfe32e56455876804a87ee9fcc85b01776863581`.
+M8B's internal-development acceptance does not certify the package for clean machines or third-party distribution.
 
-## Candidate files
+## Owner packaged-desktop evidence
+
+- Steve extracted the package to `C:\Users\Steve\Desktop\ZoyaRadio-0.8.0-alpha.1-win-x64`.
+- He ran `.\ZoyaRadio.ControlApp.exe --package-self-test` and `.\ZoyaRadio.ControlApp.exe --neural-package-self-test`.
+- The WinForms executable printed no result in PowerShell and instead wrote both reports under `%LOCALAPPDATA%\Zoya Radio\logs`. That console silence is expected and is not a failure.
+- `private-alpha-self-test-20260811-173929-328.txt` records version `0.8.0-alpha.1`, target `win-x64`, execution from the extracted Desktop package, LocalAppData log resolution, full integrity verification of 515 manifest-listed files, and `SELF-TEST RESULT: PASS`.
+- `private-alpha-self-test-20260811-174209-610.txt` records full package integrity verification; offline Nicole preparation without audible playback; ordinary English; punctuation and numbers; unusual/OOV-looking names; repeated preparation/disposal; pre-cancellation; deliberate neural failure; successful Windows-TTS fallback preparation; no eSpeak loaded module; and `SELF-TEST RESULT: PASS`.
+- Steve directly confirmed readiness presentation, normal Nicole speech, automatic radio operation, Firefox-only ducking/restoration, Chrome remaining untouched, Silent Mode, Stop, safe window close, and LocalAppData logging.
+- Steve did not separately report manually recomputing the outer ZIP SHA-256 during this acceptance. The candidate build/package audit verified the outer digest; the extracted package self-test verified the internal 515-file manifest.
+
+## Evidence boundary
+
+- Genuine clean Windows 10 22H2 x64 validation: pending/deferred.
+- Genuine clean Windows 11 x64 validation: pending/deferred.
+- Invited private-alpha tester validation: pending/deferred.
+- The package remains an unsigned portable private-alpha candidate and must not be described as clean-machine certified, broadly compatible, publicly released, code-signed, SmartScreen-reputable, or validated for third-party distribution.
+- Future tester reports may require bounded compatibility or packaging repairs, but their absence no longer blocks internal development.
+
+## Accepted internal package files
 
 After running the repository packaging script, use:
 
 - ZIP: `artifacts\private-alpha\0.8.0-alpha.1\ZoyaRadio-0.8.0-alpha.1-win-x64.zip`
 - SHA-256: `artifacts\private-alpha\0.8.0-alpha.1\ZoyaRadio-0.8.0-alpha.1-win-x64.zip.sha256.txt`
+- Accepted build/audit ZIP SHA-256: `C73CD87757400D041010B108D0EA88451DCAC105257BCB6FA8582836FBD1FF5C`
 - private symbols: `artifacts\private-alpha\0.8.0-alpha.1\private-symbols\`
 - build/audit report: `artifacts\private-alpha\0.8.0-alpha.1\package-build-report.json`
 - clean-machine checklist: `distribution\private-alpha\CLEAN-MACHINE-CHECKLIST.md`
@@ -39,7 +58,7 @@ The process-only execution-policy option does not change Windows policy. The scr
 4. Do not overwrite an existing extracted copy. Every version gets a separate folder.
 5. Give the tester `TESTER-README.txt` and `PRIVATE-ALPHA-TERMS.txt` from inside the ZIP.
 
-## Clean Windows 10 22H2 test
+## Deferred clean Windows 10 22H2 test
 
 Use a genuine Windows 10 22H2 x64 machine or clean VM with no Visual Studio, .NET SDK, separate .NET runtime, Firefox media session, Ollama/Qwen, or extra Visual C++ runtime beyond the clean image.
 
@@ -62,11 +81,11 @@ Use a genuine Windows 10 22H2 x64 machine or clean VM with no Visual Studio, .NE
 17. Stop and close Zoya, verify the log under `%LOCALAPPDATA%\Zoya Radio\logs`, and record removal/rollback behavior.
 18. Fill in the evidence template. Do not mark an unchecked item passed.
 
-## Clean Windows 11 test
+## Deferred clean Windows 11 test
 
 Repeat every Windows 10 step on a genuine clean Windows 11 x64 machine. Record the exact Windows build, hardware, free space, SmartScreen/antivirus behavior, Visual C++ result, first-launch result, setup states, package hash, and runtime evidence separately. Windows 10 evidence cannot stand in for Windows 11 evidence or vice versa.
 
-## Steve's packaged desktop acceptance
+## Preserved owner packaged-desktop regression procedure
 
 Use the extracted candidate, not a development launcher.
 
@@ -103,15 +122,18 @@ Each invited tester should use the tester README, complete the appropriate clean
 
 Never send passwords, browser cookies, account tokens, unrelated personal data, or an unreviewed complete log.
 
-## Acceptance boundary
+## Current status boundary
 
-Do not mark M8B or Milestone 8 passed until:
+M8B and Milestone 8 are passed only as internal-development gates. That acceptance is based on the green engineering evidence and Steve's extracted-package desktop evidence above.
 
-- the final candidate has green local engineering verification;
-- genuine clean Windows 10 22H2 and Windows 11 evidence is complete;
-- the Nicole/eSpeak-free route works on those machines;
-- Steve's packaged real-desktop safety acceptance passes;
-- invited private-alpha testing is complete;
-- Steve explicitly accepts the result and it is recorded in Git.
+Deferred distribution validation still includes:
 
-The intermittent 20:49 observer stall remains unresolved. Excessive harmless wrapper-refresh logging remains a deferred quality issue. Neither is claimed fixed by packaging.
+- genuine clean Windows 10 22H2 x64 testing;
+- genuine clean Windows 11 x64 testing;
+- invited private-alpha tester evidence.
+
+These checks remain useful compatibility and distribution-certification evidence, but they are not blockers to continued internal feature development.
+
+The existing ZIP remains a private-alpha candidate. It is not clean-machine certified, broadly compatible, publicly released, code-signed, SmartScreen-reputable, or validated for third-party distribution.
+
+Future failures may require a bounded repair. The intermittent 20:49 observer stall remains unresolved, and excessive harmless wrapper-refresh logging remains a deferred quality issue. Neither is claimed fixed by packaging.

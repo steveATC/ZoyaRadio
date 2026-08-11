@@ -1,6 +1,6 @@
 # Current architecture
 
-This document describes the accepted radio/runtime behavior at commit `41b7824201c5c163a0fe0752bd4b3e70c68b9bdc` plus the current M8B packaging/readiness candidate. The M8B additions are not an accepted implementation snapshot. Future ideas and research recommendations are excluded.
+This document describes the accepted internal implementation at commit `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf`, including M8B packaging and readiness. Future ideas and research recommendations are excluded.
 
 ## Platform and local dependencies
 
@@ -70,9 +70,9 @@ The project-local Microsoft .NET SDK 8.0.423 is in ignored `.dotnet/`. Microsoft
 - Stop, window close, cancellation, and faults retain the accepted restoration ownership. The frontend cannot close past protected cleanup or retarget another media/audio session.
 - Shared-runtime logs are written under `%LOCALAPPDATA%\Zoya Radio\logs`, and the button opens that folder. Existing console launchers remain usable diagnostic frontends to the same runtime.
 
-## M8B packaging and readiness candidate
+## M8B packaging and readiness
 
-- Version `0.8.0-alpha.1` is published as a self-contained unsigned Windows x64 portable ZIP. The package resolves model/voice assets from `AppContext.BaseDirectory`, independent of the process working directory.
+- Version `0.8.0-alpha.1` is the accepted internal packaged baseline: a self-contained unsigned Windows x64 portable ZIP. The package resolves model/voice assets from `AppContext.BaseDirectory`, independent of the process working directory. Clean-machine and invited-tester validation remain deferred, so this is not a certified or public distribution.
 - `package-manifest.json` records every staged file, size, SHA-256, critical status, version/RID, source commit, and dirty-source state. Packaged startup verifies critical assets before creating the runtime and refuses unsafe/corrupt packages rather than guessing.
 - The deterministic packaging script stages only the Win-x64 publish closure, Kokoro FP32 model, `af_nicole.npy`, tester documents, licences, and notices. It excludes PDBs from the ZIP while retaining them privately, and rejects eSpeak, extra voices, non-x64 native assets, logs, generated audio, and bundled Firefox/Ollama/Qwen content.
 - Safe self-test modes run before the GUI/media runtime. They never contact Ollama, open external applications, produce audible speech, or control desktop media/volume. The neural mode silently prepares audio in memory from the extracted candidate and verifies cancellation and Windows fallback.
@@ -144,7 +144,7 @@ Normal automatic delivery contains no GSMTC pause, play, or toggle command. `Try
 
 ## Current boundaries
 
-The implementation has no browser scraping, cookies, account access, unofficial YouTube API, cloud AI/TTS, telemetry, tray icon, global media keys, endpoint/master-volume manipulation, persistent listening-history database, track-position tracking, duration tracking, installer, publish/package output, clean-machine distribution evidence, or M8B behavior. Milestone 8 as a whole is not passed.
+The implementation has no browser scraping, cookies, account access, unofficial YouTube API, cloud AI/TTS, telemetry, tray icon, global media keys, endpoint/master-volume manipulation, persistent listening-history database, track-position tracking, duration tracking, installer, code signing, public release, clean-machine certification, or invited-tester validation. Milestone 8 is closed only for continued internal development; compatibility and third-party distribution claims remain deferred.
 
 ## Windows API basis
 

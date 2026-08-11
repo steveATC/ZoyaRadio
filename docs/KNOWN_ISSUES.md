@@ -48,7 +48,7 @@ This file separates unresolved defects from accepted platform limits and deferre
 - The M8B candidate deliberately excludes all eSpeak files.
 - Offline package verification found that ordinary English, punctuation/numbers, and repeated Nicole preparation work without eSpeak, while one deliberately unusual/out-of-vocabulary name sample caused KokoroSharp to request the absent `espeak-ng` helper.
 - The accepted pre-delivery provider boundary safely prepared the same text with local Windows TTS before any ducking, speech, or media control. This is expected safe fallback behavior, not a claim that Nicole can pronounce every input without eSpeak.
-- Clean-machine evidence is still required before the Nicole/eSpeak-free distribution route can be accepted.
+- Steve accepted the Nicole/eSpeak-free package for internal development. Clean-machine evidence remains deferred and is still required before claiming general compatibility or distribution validation.
 
 ### Track ending versus manual skip
 
@@ -75,6 +75,14 @@ This file separates unresolved defects from accepted platform limits and deferre
 
 - Windows may expose no compatible media session, multiple `firefox.exe` GSMTC sessions, no active Firefox Core Audio session, or multiple active Firefox audio sessions.
 - The accepted response is a readable refusal and silence, not fallback targeting.
+
+### Deferred private-alpha distribution validation
+
+- Genuine clean Windows 10 22H2 x64 and clean Windows 11 x64 validation has not been performed.
+- Invited private-alpha tester feedback has not been collected and has no predictable timetable.
+- The package is unsigned; SmartScreen/antivirus behavior and reputation on other machines remain unknown.
+- A clean machine may require the separately installed Microsoft Visual C++ x64 runtime.
+- These items no longer block internal development, but the package must not be represented as clean-machine certified, broadly compatible, publicly released, or validated for third-party distribution. Later failures may require a bounded repair.
 
 ## Deferred quality improvements
 

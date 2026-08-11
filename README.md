@@ -2,7 +2,7 @@
 
 Zoya Radio is a private, local-first Windows application with an accepted WinForms control frontend and preserved console diagnostics. It observes Firefox media, prepares short locally generated comments, speaks with the accepted Nicole voice, and can deliver prepared comments over proportionally ducked Firefox audio.
 
-Milestones 0 through 5, Milestone 7, Milestones 7.5A-7.5B, and Milestone 8A have passed Steve's manual tests. Milestone 6 is deliberately deferred. M8B now has a locally verified `0.8.0-alpha.1` private-alpha candidate with 178 automated tests passed and 0 failed, but M8B and Milestone 8 as a whole are not passed. Clean Windows 10/11, Steve desktop, and invited-tester evidence remain pending. The latest accepted implementation commit remains `41b7824201c5c163a0fe0752bd4b3e70c68b9bdc` with its accepted 162-test result.
+Milestones 0 through 5, Milestone 7, Milestones 7.5A-7.5B, and Milestone 8 have passed their required internal-development acceptance. Milestone 6 is deliberately deferred. Steve accepted packaged version `0.8.0-alpha.1` on August 11, 2026, making commit `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf` the latest accepted internal implementation with 178 automated tests passed and 0 failed. Clean Windows 10/11 and invited-tester validation remain deferred distribution evidence, so the package is not a clean-machine-certified or public release.
 
 Start with [docs/PROJECT_INDEX.md](docs/PROJECT_INDEX.md) for the canonical documentation map. Current status is in [docs/PROJECT_STATE.md](docs/PROJECT_STATE.md), and implemented behavior is in [docs/CURRENT_ARCHITECTURE.md](docs/CURRENT_ARCHITECTURE.md).
 
@@ -50,7 +50,7 @@ The window provides Start, safely awaited Stop, Silent Mode, Clear History, and 
 
 Steve accepted this development control application on August 11, 2026. See [docs/MILESTONE_8A_TEST.md](docs/MILESTONE_8A_TEST.md) for the accepted evidence and preserved regression procedure.
 
-## Milestone 8B private-alpha candidate
+## Milestone 8B internal packaged baseline
 
 The local candidate is an unsigned, portable, self-contained Windows x64 ZIP for Windows 10 22H2 or newer. Reproduce it from the repository with:
 
@@ -62,7 +62,7 @@ The generated tester files remain under the ignored `artifacts\private-alpha\0.8
 
 The packaged window adds thin readiness actions for package integrity, Windows/disk, Firefox, Visual C++, Ollama, and `qwen3:4b-instruct`. It never silently installs or starts third-party software. Some unusual or out-of-vocabulary names may make the eSpeak-free Nicole path fall back to a local Windows voice before any ducking or speech begins.
 
-This is an implementation candidate, not an accepted release. Follow [docs/MILESTONE_8B_TEST.md](docs/MILESTONE_8B_TEST.md) and the packaged tester guide. Do not distribute it as a completed product or mark M8B passed without the required manual evidence.
+Steve accepted the extracted package as the internal-development baseline on August 11, 2026. Follow [docs/MILESTONE_8B_TEST.md](docs/MILESTONE_8B_TEST.md) and the packaged tester guide for the recorded evidence and deferred compatibility checks. The ZIP remains an unsigned private-alpha candidate: do not describe it as clean-machine certified, broadly compatible, publicly released, or validated for third-party distribution.
 
 ## Transition-aware automatic radio
 

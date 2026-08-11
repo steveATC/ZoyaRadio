@@ -76,19 +76,27 @@ These decisions summarize accepted project rules and rationale already evidenced
 
 ## Tooling and dependencies
 
-- The accepted application now includes the small .NET WinForms control frontend and the preserved console diagnostics. M8B private-alpha packaging remains unstarted and requires a separate explicit implementation request.
+- The accepted application includes the WinForms control frontend, preserved console diagnostics, and the self-contained `0.8.0-alpha.1` Windows x64 package/readiness implementation at `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf`.
 - The Windows SDK APIs, loopback Ollama client, and KokoroSharp.CPU are the currently accepted implementation dependencies.
 - Project-local SDK, package cache, models, generated audio, builds, and logs remain excluded from Git.
 
+## Internal acceptance and deferred distribution validation
+
+- Steve accepted M8B and closed Milestone 8 for continued internal development on August 11, 2026.
+- Clean Windows 10 22H2, clean Windows 11, and invited private-alpha testing remain useful compatibility and distribution evidence but are deliberately deferred and do not block internal feature development.
+- The accepted internal baseline must not be described as clean-machine certified, broadly compatible, publicly released, code-signed, SmartScreen-reputable, or validated for third-party distribution.
+- A later tester failure may require a bounded compatibility or packaging repair; the absence of tester feedback is not evidence of compatibility.
+- The next project action is project-management review. No post-M8 proposal, research recommendation, Milestone 6 work, or implementation scope is approved automatically.
+
 ## Approved Milestone 8 boundaries
 
-- **Staged authorization is mandatory.** M8A fulfilled its separately authorized gate and is accepted. M8B remains unstarted and cannot begin without its own explicit implementation request. M8 as a whole is not passed.
+- **The staged M8 authorizations were satisfied.** M8A and M8B were separately authorized and owner-accepted. The dated sequencing amendment closes M8 for internal development while preserving the original distribution-evidence requirements as deferred.
 - **M8A uses WinForms and same-process hosting.** The accepted control application uses one UI-independent runtime controller or facade and one authoritative asynchronous lifecycle and cleanup path. Existing console diagnostics remain frontends to the same accepted runtime.
 - **M8 does not redesign radio behavior.** Existing scheduling, transition timing, safe-silence decisions, Firefox-only targeting, exact restoration, local-first privacy, and bounded ephemeral state remain controlling.
-- **M8B's contracted primary distribution is portable.** If separately authorized, the approved route is a versioned, unsigned, self-contained Windows x64 ZIP for private-alpha testing, with application-relative assets, LocalAppData logs, hashes, a manifest, notices, clean-machine evidence, and manual side-by-side replacement and rollback.
+- **M8B's implemented package is portable.** The internal baseline is a versioned, unsigned, self-contained Windows x64 ZIP with application-relative assets, LocalAppData logs, hashes, a manifest, notices, and manual side-by-side replacement/rollback. Clean-machine evidence remains deferred before broader distribution claims.
 - **Firefox and Ollama remain separate.** Neither installer is bundled. Zoya may direct a tester to the official Ollama source, and may start an installed Ollama application only after explicit tester action.
 - **Qwen setup requires informed consent.** Invoking `ollama pull qwen3:4b-instruct` requires size disclosure, a free-space check, explicit consent, visible progress, and cancellation. Third-party terms are never accepted automatically.
-- **eSpeak exclusion is a release gate.** The Nicole/en-US candidate must exclude eSpeak and pass representative and clean-machine tests. If eSpeak proves necessary, distribution pauses or uses the explicitly described Windows-TTS-only fallback until an approved compliance solution exists.
+- **eSpeak exclusion remains a distribution gate.** The accepted internal Nicole/en-US package contains no eSpeak and passed representative owner-machine tests. Clean-machine validation remains deferred; if it reveals that eSpeak is necessary, broader distribution pauses or uses an explicitly approved fallback/compliance solution.
 - **Windows TTS is a deliberate fallback route.** It omits the Kokoro model, Nicole voice, ONNX native closure, and eSpeak; it must be disclosed as a different voice experience and meet the same runtime-safety and clean-machine requirements.
 - **M8 excludes broader distribution machinery.** No traditional installer, Store package, bootstrapper, automatic third-party installation, code signing, public release, automatic updater, tray/background service, or general future-scale packaging framework is approved.
 

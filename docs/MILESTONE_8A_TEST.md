@@ -4,7 +4,7 @@
 
 Steve manually accepted Milestone 8A on August 11, 2026. The accepted implementation is commit `41b7824201c5c163a0fe0752bd4b3e70c68b9bdc`; the original candidate was `f123ddd9de484de590ba596abf812314b265390c`, and `41b7824` supplied the accepted activity-status correction. The accepted automated result is 162 passed and 0 failed.
 
-Milestone 8 as a whole is **not passed**. Milestone 8B is the next gate, remains unstarted, and requires a separate explicit implementation request.
+Historical checkpoint: when M8A was accepted, Milestone 8 as a whole was not passed and M8B was the next unstarted gate. M8B was later separately authorized, implemented, and owner-accepted; current status is governed by [PROJECT_STATE.md](PROJECT_STATE.md).
 
 ## Accepted checkpoint
 
@@ -135,4 +135,4 @@ Provide:
 - any unreadable status, delay, duplicate action, freeze, unexpected pause, stale announcement, or crash;
 - the exact time of any failure and what you clicked immediately before it.
 
-This procedure supplied the accepted M8A desktop evidence. It does not authorize Milestone 8B; M8B requires a separate explicit implementation request.
+This procedure supplied the accepted M8A desktop evidence. At that checkpoint it did not authorize M8B; Steve later supplied a separate authorization, and the resulting acceptance is recorded in [MILESTONE_8B_TEST.md](MILESTONE_8B_TEST.md).

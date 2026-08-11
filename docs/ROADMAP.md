@@ -17,11 +17,11 @@ This document records accepted milestone status and approved direction. It does 
 | 7.5A - Isolated Firefox ducking | Passed | Proportional application-session ducking and exact restoration verified without affecting Chrome or master volume. |
 | 7.5B - Transition-aware delivery | Passed | One-transition-ahead preparation, ducked delivery over playing music, wrapper-churn continuity, Chrome isolation, and clean restoration accepted on August 10, 2026. |
 | 8A - Control application | Passed | Shared controller/runtime, WinForms frontend, read-only activity status, LocalAppData logs, safe controls, and protected shutdown accepted on August 11, 2026. |
-| 8B - Private-alpha distribution | Next gate - unstarted | Requires a separate explicit implementation request; no packaging, publishing, or clean-machine work has begun. |
+| 8B - Private-alpha distribution | Passed - internal-development gate | Version `0.8.0-alpha.1`, package integrity/neural self-tests, and Steve's packaged-desktop behavior accepted; clean-machine and invited-tester distribution validation deferred. |
 
-Milestone 8 as a whole is not passed or complete. It requires M8B implementation, verification, clean-machine evidence, final manual acceptance, and a recorded accepted checkpoint.
+Milestone 8 is closed for continued internal development after M8A and M8B owner acceptance. Clean Windows 10/11 and invited-tester evidence remain deferred compatibility/distribution gates and do not certify this package for broad or public distribution.
 
-The latest accepted implementation snapshot is commit `41b7824201c5c163a0fe0752bd4b3e70c68b9bdc`, with 162 automated tests passed and 0 failed. Later documentation-only commits do not replace that implementation snapshot or make the historical test result a new run.
+The latest accepted internal implementation snapshot is commit `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf`, with 178 automated tests passed and 0 failed. Later documentation-only commits do not replace that implementation snapshot or make the historical test result a new run.
 
 ## Milestone 7.5B repair provenance
 
@@ -33,8 +33,15 @@ The latest accepted implementation snapshot is commit `41b7824201c5c163a0fe0752b
 ## Milestone 8A provenance
 
 - `f123ddd9de484de590ba596abf812314b265390c` implemented the original control-application candidate.
-- `41b7824201c5c163a0fe0752bd4b3e70c68b9bdc` added the deterministic Radio-activity presentation and is the accepted implementation snapshot.
+- `41b7824201c5c163a0fe0752bd4b3e70c68b9bdc` added the deterministic Radio-activity presentation and is the accepted M8A implementation snapshot.
 - Steve accepted M8A on August 11, 2026 after the 162-test suite, clean Release builds, and renewed real-desktop testing.
+
+## Milestone 8B provenance
+
+- `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf` implemented the self-contained `0.8.0-alpha.1` package, integrity/readiness/setup behavior, safe self-tests, distribution audit, and 178-test result.
+- Steve accepted the extracted package on August 11, 2026 after both LocalAppData self-test reports passed and the requested packaged desktop behavior worked normally.
+- Steve amended project sequencing so clean Windows 10/11 and invited-tester validation remain deferred distribution evidence rather than blockers to internal development.
+- The package remains an unsigned private-alpha candidate, not a clean-machine-certified, broadly compatible, public, or third-party-distribution release.
 
 ## Completed capability arc
 
@@ -63,17 +70,18 @@ Milestone-specific evidence and preserved regression instructions remain in the 
 
 ## Approved near-term direction
 
-Steve approved the bounded [Milestone 8 contract](MILESTONE_8_CONTRACT.md) on August 10, 2026. M8 has two sequential authorization gates:
+Steve approved the bounded [Milestone 8 contract](MILESTONE_8_CONTRACT.md) on August 10, 2026. Its historical approval-time sequence used two authorization gates:
 
 1. **M8A - Control application:** a small WinForms frontend, same-process hosting of the accepted runtime, a UI-independent controller, one authoritative asynchronous lifecycle, safe controls and status, LocalAppData logs, preserved console diagnostics, and fake-driven controller/UI-state tests.
 2. **M8B - Private-alpha distribution:** a versioned unsigned self-contained Windows x64 portable ZIP for approximately 2-3 invited testers, subject to M8A acceptance, a separate authorization, eSpeak exclusion/compliance evidence, clean-machine testing, and final manual acceptance.
 
-Steve accepted M8A and separately authorized M8B. Candidate `0.8.0-alpha.1` is implemented and locally verified, but M8B is not passed. Milestone 8 as a whole remains incomplete. The next required evidence is clean Windows 10/11, Steve packaged-desktop, and invited private-alpha testing:
+Steve accepted M8A, separately authorized M8B, and accepted the extracted M8B package on August 11, 2026. His dated contract amendment closes Milestone 8 for continued internal development while deferring clean-machine and invited-tester distribution validation.
 
-- `41b7824201c5c163a0fe0752bd4b3e70c68b9bdc` remains the latest accepted implementation; the M8B candidate commit is not an acceptance checkpoint;
-- automated success cannot pass M8B or Milestone 8 as a whole without the required manual evidence;
-- research and brainstorming remain review inputs and cannot add scope to the contract;
-- post-M8 proposals remain unapproved.
+- The next step is project-management review of accepted architecture, [POST_M8_INTAKE.md](proposals/POST_M8_INTAKE.md), research evidence, known issues, and priorities.
+- The review must select and contract the next bounded milestone before Codex implements anything.
+- Research remains evidence only, the post-M8 intake remains unapproved proposal history, and neither automatically changes this roadmap.
+- Milestone 6 remains deferred unless Steve separately promotes it.
+- No post-M8 implementation is authorized by M8 acceptance.
 
 ## Deferred and future boundaries
 

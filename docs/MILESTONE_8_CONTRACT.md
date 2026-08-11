@@ -1,6 +1,18 @@
 # Milestone 8 contract - control application and private-alpha distribution
 
-> Current checkpoint (August 11, 2026): M8A is manually accepted at `41b7824201c5c163a0fe0752bd4b3e70c68b9bdc`, with its accepted 162-test result. M8B was separately authorized and now has a locally verified `0.8.0-alpha.1` implementation candidate with 178 tests passed and 0 failed, but clean-machine, Steve desktop, and invited-tester evidence remain pending. M8B and M8 as a whole are not passed. The approval-time status language below is retained as historical contract context.
+> Current checkpoint (August 11, 2026): M8A and M8B are owner-accepted, Milestone 8 is closed for continued internal development, and `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf` is the latest accepted internal implementation with 178 tests passed and 0 failed. Clean-machine and invited-tester distribution validation remains deferred.
+
+## August 11, 2026 owner checkpoint and sequencing amendment
+
+- M8A was accepted previously at `41b7824201c5c163a0fe0752bd4b3e70c68b9bdc`.
+- M8B was implemented at `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf` as package version `0.8.0-alpha.1`.
+- Steve accepted the extracted package on August 11, 2026 after the two package self-tests passed and the requested packaged-desktop behavior worked normally.
+- Steve deliberately changed the project gate: genuine clean Windows 10/11 and invited-tester validation remain deferred compatibility/distribution evidence rather than blockers to continued internal development.
+- The package may not be represented as clean-machine validated, broadly compatible, publicly released, code-signed, SmartScreen-reputable, or validated for third-party distribution. Later tester failures may require a bounded repair.
+- This amendment changes project sequencing only; it does not change the truth of the approval-time contract, past evidence, or deferred risks.
+- No post-M8 implementation is approved. The next action is a project-management review that must select and contract a bounded milestone before implementation.
+
+> Historical contract preservation: Sections 1-18 below retain the original approval-time scope, wording, gates, and completion conditions. Where they describe clean-machine or invited-tester evidence as blocking final M8 acceptance, this dated amendment governs the current internal-development sequence without claiming that evidence exists.
 
 ## 1. Status and authority
 

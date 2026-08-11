@@ -5,12 +5,13 @@
 | Field | Current value |
 | --- | --- |
 | Branch | `master` |
-| Latest accepted implementation commit | `41b7824201c5c163a0fe0752bd4b3e70c68b9bdc` |
-| Current passed milestone | Milestone 8A |
+| Latest accepted implementation commit | `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf` |
+| Current passed milestone | Milestone 8, closed for continued internal development |
 | Manual acceptance date | 2026-08-11 |
-| Latest accepted automated result | 162 passed, 0 failed at accepted M8A implementation `41b7824` |
-| M8B candidate automated result | 178 passed, 0 failed; candidate is not accepted |
-| Next gate | M8B clean Windows 10/11, Steve desktop, and invited-tester acceptance; Milestone 8 as a whole is not passed |
+| Latest accepted automated result | 178 passed, 0 failed at accepted internal implementation `b56c03d` |
+| Accepted internal packaged baseline | `0.8.0-alpha.1` |
+| Deferred distribution validation | Clean Windows 10/11 and invited private-alpha testing; not blockers to internal development |
+| Next project step | Project-management review must select and contract the next bounded milestone; no implementation is authorized yet |
 | Deferred milestone | Milestone 6 |
 
 The local Git repository is authoritative. See [PROJECT_INDEX.md](PROJECT_INDEX.md) for the documentation authority and snapshot rules.
@@ -26,7 +27,7 @@ The local Git repository is authoritative. See [PROJECT_INDEX.md](PROJECT_INDEX.
 - Harmless Firefox GSMTC wrapper refreshes preserve preparation, active speech, and the current schedule. Unsafe or genuinely different target states cancel protected work before any reacquisition.
 - Ollama remains loopback-only with `qwen3:4b-instruct`, deterministic validation/fallback, `--no-ai`, and normal `keep_alive: 0` unloading.
 - Kokoro `af_nicole` is the accepted primary CPU voice; `af_heart` is runner-up and Windows local TTS is fallback.
-- The M8B candidate adds a self-contained Windows x64 package, application-relative packaged assets, startup integrity checks, and thin prerequisite/readiness actions without changing the accepted radio runtime.
+- The accepted M8B internal baseline adds a self-contained Windows x64 package, application-relative packaged assets, startup integrity checks, and thin prerequisite/readiness actions without changing the accepted radio runtime.
 - Recent state remains process-local and bounded to 10 tracks and 6 accepted AI comments. There is no persistent listening history or catch-up queue.
 
 Full implemented behavior is in [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.md).
@@ -34,12 +35,13 @@ Full implemented behavior is in [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.m
 ## Milestone 8 gate status
 
 - Steve approved the bounded [Milestone 8 contract](MILESTONE_8_CONTRACT.md) on August 10, 2026.
-- The original M8A candidate was implemented at `f123ddd9de484de590ba596abf812314b265390c`; the accepted Radio-activity correction and latest accepted implementation snapshot are `41b7824201c5c163a0fe0752bd4b3e70c68b9bdc`.
+- The original M8A candidate was implemented at `f123ddd9de484de590ba596abf812314b265390c`; the accepted Radio-activity correction is `41b7824201c5c163a0fe0752bd4b3e70c68b9bdc`.
 - Steve manually accepted M8A on August 11, 2026. The accepted evidence and preserved regression procedure are in [MILESTONE_8A_TEST.md](MILESTONE_8A_TEST.md).
-- M8B candidate `0.8.0-alpha.1` is implemented and locally verified. It is **not passed or accepted**; clean-machine, Steve desktop, and invited-tester evidence remain pending. Milestone 8 as a whole is **not passed or complete**.
-- No post-M8 proposal is approved by the M8 contract.
+- Steve accepted the extracted M8B `0.8.0-alpha.1` package on August 11, 2026. M8B and Milestone 8 are closed for continued internal development at implementation commit `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf`.
+- Clean Windows 10/11 and invited-tester validation remain pending and deferred as distribution evidence. The accepted internal package is not clean-machine certified, broadly compatible, publicly released, or validated for third-party distribution.
+- No post-M8 proposal or implementation is approved by this acceptance. The next step is project-management review.
 
-## M8B candidate engineering verification
+## M8B accepted engineering verification
 
 - Release production and test-project builds pass with 0 warnings and 0 errors.
 - Complete fake-driven suite: 178 passed, 0 failed, preserving all 162 accepted M8A-era tests plus 16 focused package, integrity, readiness, Ollama/Qwen setup, documentation, and ZIP tests.
@@ -47,7 +49,17 @@ Full implemented behavior is in [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.m
 - The neural candidate contains Nicole only and no eSpeak files. Offline preparation passes for ordinary English, punctuation/numbers, repeated preparation/disposal, pre-cancellation, and deliberate Windows fallback. An unusual/OOV sample safely selects Windows TTS when KokoroSharp attempts its absent eSpeak helper.
 - PDBs are retained in ignored private-symbol output and excluded from the tester ZIP. Firefox, Ollama, Qwen, logs, generated audio, user data, and non-x64 native assets are excluded.
 - Automated and package checks produced no audible speech, contacted no real Ollama service, and controlled no browser, media session, playback, or volume.
-- Genuine clean Windows 10 22H2 and Windows 11 tests, Steve's packaged real-desktop safety test, invited testing, and final acceptance remain pending. See [MILESTONE_8B_TEST.md](MILESTONE_8B_TEST.md).
+- Genuine clean Windows 10 22H2, clean Windows 11, and invited testing remain pending/deferred distribution evidence. See [MILESTONE_8B_TEST.md](MILESTONE_8B_TEST.md).
+
+## M8B owner packaged-desktop acceptance
+
+- Steve extracted the package outside the repository to `C:\Users\Steve\Desktop\ZoyaRadio-0.8.0-alpha.1-win-x64`.
+- He ran `.\ZoyaRadio.ControlApp.exe --package-self-test` and `.\ZoyaRadio.ControlApp.exe --neural-package-self-test`. The WinForms executable wrote reports under `%LOCALAPPDATA%\Zoya Radio\logs`; no PowerShell output was expected.
+- `private-alpha-self-test-20260811-173929-328.txt` records version `0.8.0-alpha.1`, target `win-x64`, execution from the extracted Desktop package, LocalAppData log resolution, integrity verification of all 515 manifest-listed package files, and `SELF-TEST RESULT: PASS`.
+- `private-alpha-self-test-20260811-174209-610.txt` records full package integrity verification; silent offline Nicole preparation for ordinary English, punctuation/numbers, unusual/OOV-looking names, and repeated preparation/disposal; pre-cancellation; deliberate neural failure; successful Windows-TTS fallback preparation; no loaded eSpeak module; and `SELF-TEST RESULT: PASS`.
+- Steve directly confirmed readiness presentation, normal Nicole speech, automatic radio operation, Firefox-only ducking/restoration, Chrome isolation, Silent Mode, Stop, safe window close, and LocalAppData logging.
+- Steve did not separately report manually recomputing the outer ZIP hash during acceptance. The candidate build/package audit verified the published ZIP digest; his extracted-package self-test verified the internal 515-file manifest.
+- This evidence is owner packaged-desktop acceptance only. It does not establish clean Windows 10, clean Windows 11, invited-tester, broad hardware, SmartScreen-reputation, code-signing, public-release, or general-distribution validation.
 
 ## M8A accepted verification
 
@@ -78,9 +90,11 @@ Full implemented behavior is in [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.m
 - Chrome remained untouched, normal delivery did not pause Firefox, and Ctrl+C shut down cleanly.
 - The accepted local evidence is preserved in `logs\radio-behavior-test-20260810-131308-866.txt` and summarized in [MILESTONE_7_5B_TEST.md](MILESTONE_7_5B_TEST.md).
 
-## Immediate blockers and deferred observations
+## Next step and deferred observations
 
-- M8A is accepted. M8B is a locally verified implementation candidate awaiting required manual acceptance; `41b7824` remains the latest accepted implementation snapshot.
+- Milestone 8 is closed for continued internal development, and `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf` is the latest accepted internal implementation snapshot.
+- The next step is a project-management review of current architecture, the non-authoritative post-M8 intake, research evidence, known issues, and priorities. That review must select and contract a bounded milestone before implementation.
+- Clean-machine and invited-tester checks remain deferred compatibility/distribution evidence. A later defect may require a bounded repair, but missing tester feedback does not block internal development.
 - The earlier 20:49 observer stall remains intermittent, unresolved, and unreproduced by the accepted Firefox-plus-Chrome run.
 - Wrapper-refresh diagnostics are excessively repetitive; this is a deferred non-blocking logging-quality issue.
 - Other accepted limitations and deferred improvements are maintained in [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
