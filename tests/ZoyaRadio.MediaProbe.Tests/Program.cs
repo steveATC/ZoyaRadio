@@ -156,6 +156,17 @@ var tests = new (string Name, Func<Task> Run)[]
     ("M8A LocalAppData log path is stable", () => RunSynchronous(Milestone8AControllerTests.LocalAppDataLogFolderResolution)),
     ("M8A Open Logs uses a fake boundary", () => RunSynchronous(Milestone8AControllerTests.OpenFolderUsesFakeBoundary)),
     ("M8A console runtime uses the shared session boundary", () => RunSynchronous(Milestone8AControllerTests.ConsoleRuntimeUsesSharedSessionBoundary)),
+    ("M8A initial radio activity is Stopped", () => RunSynchronous(Milestone8AControllerTests.InitialActivityIsStopped)),
+    ("M8A observing countdown is readable", Milestone8AControllerTests.ObservingCountdownIsReadable),
+    ("M8A transition preparation activity sequence is deterministic", Milestone8AControllerTests.TransitionPreparationActivitySequence),
+    ("M8A transition delivery validation activity is deterministic", Milestone8AControllerTests.TransitionDeliveryActivitySequence),
+    ("M8A ducking speech and restoration activity is deterministic", Milestone8AControllerTests.DuckingSpeechAndRestorationActivitySequence),
+    ("M8A abandoned opportunities are readable", Milestone8AControllerTests.OpportunityAbandonmentIsReadable),
+    ("M8A missing Firefox target is readable", Milestone8AControllerTests.MissingFirefoxTargetIsReadable),
+    ("M8A startup refusal preserves missing Firefox activity", Milestone8AControllerTests.StartRefusalPreservesMissingFirefoxActivity),
+    ("M8A stopping activity wins over late runtime activity", Milestone8AControllerTests.StoppingActivityWinsOverLateRuntimeActivity),
+    ("M8A harmless wrapper refresh creates no activity noise", Milestone8AControllerTests.WrapperRefreshDoesNotCreateActivityNoise),
+    ("M8A activity contract exposes no playback commands", () => RunSynchronous(Milestone8AControllerTests.ActivityContractDoesNotExposePlaybackCommands)),
 };
 
 int failures = 0;

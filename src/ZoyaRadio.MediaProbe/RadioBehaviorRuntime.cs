@@ -75,7 +75,8 @@ internal sealed partial class RadioBehaviorTest
             null,
             FirefoxTargetState.NotChecked,
             silentMode: false,
-            "Checking Windows media sessions...");
+            "Checking Windows media sessions...",
+            new RadioActivitySnapshot(RadioActivityState.ValidatingFirefoxTarget));
 
         RadioSessionDetails[] sessions;
 
@@ -97,7 +98,8 @@ internal sealed partial class RadioBehaviorTest
                 null,
                 FirefoxTargetState.Unavailable,
                 silentMode: false,
-                "Windows media sessions are unavailable");
+                "Windows media sessions are unavailable",
+                new RadioActivitySnapshot(RadioActivityState.NoSafeFirefoxTarget));
             return new RadioRuntimeSessionStartResult(false, 1, "Windows media sessions are unavailable");
         }
 
@@ -114,7 +116,8 @@ internal sealed partial class RadioBehaviorTest
                 null,
                 FirefoxTargetState.Missing,
                 silentMode: false,
-                "No eligible Firefox media session was found");
+                "No eligible Firefox media session was found",
+                new RadioActivitySnapshot(RadioActivityState.NoSafeFirefoxTarget));
             return new RadioRuntimeSessionStartResult(false, 1, "No eligible Firefox media session was found");
         }
 
@@ -127,7 +130,8 @@ internal sealed partial class RadioBehaviorTest
                 null,
                 FirefoxTargetState.Ambiguous,
                 silentMode: false,
-                "More than one Firefox media session is available");
+                "More than one Firefox media session is available",
+                new RadioActivitySnapshot(RadioActivityState.NoSafeFirefoxTarget));
             return new RadioRuntimeSessionStartResult(false, 1, "Firefox targeting is ambiguous");
         }
 
@@ -145,7 +149,8 @@ internal sealed partial class RadioBehaviorTest
                 initialArtist,
                 FirefoxTargetState.Unavailable,
                 silentMode: false,
-                "Firefox title or artist metadata is unavailable");
+                "Firefox title or artist metadata is unavailable",
+                new RadioActivitySnapshot(RadioActivityState.NoSafeFirefoxTarget));
             return new RadioRuntimeSessionStartResult(false, 1, "Firefox metadata is unavailable");
         }
 
@@ -159,7 +164,8 @@ internal sealed partial class RadioBehaviorTest
                 initialArtist,
                 FirefoxTargetState.Unavailable,
                 silentMode: false,
-                "Firefox is not Playing");
+                "Firefox is not Playing",
+                new RadioActivitySnapshot(RadioActivityState.NoSafeFirefoxTarget));
             return new RadioRuntimeSessionStartResult(false, 1, "Firefox is not Playing");
         }
 
@@ -168,7 +174,8 @@ internal sealed partial class RadioBehaviorTest
             initialArtist,
             FirefoxTargetState.Safe,
             silentMode: false,
-            "Firefox target validated");
+            "Firefox target validated",
+            new RadioActivitySnapshot(RadioActivityState.ValidatingFirefoxTarget));
 
         if (options.ConfirmAsync is not null)
         {
@@ -213,7 +220,8 @@ internal sealed partial class RadioBehaviorTest
                 initialArtist,
                 FirefoxTargetState.Unavailable,
                 silentMode: false,
-                "Firefox changed while Zoya was starting");
+                "Firefox changed while Zoya was starting",
+                new RadioActivitySnapshot(RadioActivityState.NoSafeFirefoxTarget));
             return new RadioRuntimeSessionStartResult(false, 1, "Firefox changed while Zoya was starting");
         }
 
@@ -230,7 +238,8 @@ internal sealed partial class RadioBehaviorTest
                     rechecked.Media.Artist,
                     FirefoxTargetState.Unavailable,
                     silentMode: false,
-                    "Windows change observers are unavailable");
+                    "Windows change observers are unavailable",
+                    new RadioActivitySnapshot(RadioActivityState.NoSafeFirefoxTarget));
                 return new RadioRuntimeSessionStartResult(false, 1, "Windows change observers are unavailable");
             }
 
@@ -258,7 +267,8 @@ internal sealed partial class RadioBehaviorTest
             rechecked.Media.Artist,
             FirefoxTargetState.Safe,
             silentMode: false,
-            "Running and observing Firefox");
+            "Running and observing Firefox",
+            CreateObservingActivity());
 
         return new RadioRuntimeSessionStartResult(true, 0, "Running and observing Firefox");
     }
@@ -309,7 +319,10 @@ internal sealed partial class RadioBehaviorTest
             state.CurrentTrack.Artist,
             FirefoxTargetState.Safe,
             change.SilentMode,
-            change.SilentMode ? "Running silently" : "Running and observing Firefox");
+            change.SilentMode ? "Running silently" : "Running and observing Firefox",
+            change.SilentMode
+                ? new RadioActivitySnapshot(RadioActivityState.SilentMode)
+                : CreateObservingActivity());
     }
 
     public void ClearRecentHistory()
@@ -341,7 +354,8 @@ internal sealed partial class RadioBehaviorTest
             state.CurrentTrack.Artist,
             FirefoxTargetState.Safe,
             state.SilentMode,
-            "Recent in-memory history cleared");
+            "Recent in-memory history cleared",
+            CreateObservingActivity());
     }
 
     private async Task StopCoreAsync()
@@ -382,7 +396,8 @@ internal sealed partial class RadioBehaviorTest
             null,
             FirefoxTargetState.NotChecked,
             silentMode: false,
-            "Stopped safely");
+            "Stopped safely",
+            new RadioActivitySnapshot(RadioActivityState.Stopped));
     }
 
     private static async Task<bool> ConfirmConsoleStartAsync(
@@ -433,15 +448,83 @@ internal sealed partial class RadioBehaviorTest
         }
     }
 
-    private void PublishTargetStatus(FirefoxTargetState firefoxTarget, string statusText)
+    private void ReportActivity(RadioActivitySnapshot activity)
     {
         RadioRuntimeState state = GetRuntimeState();
+        RadioRuntimeStatusUpdate? lastStatus;
+
+        lock (_statusLock)
+        {
+            lastStatus = _lastStatus;
+        }
+
+        PublishRuntimeStatus(
+            state.CurrentTrack.Title,
+            state.CurrentTrack.Artist,
+            lastStatus?.FirefoxTarget ?? (state.Armed ? FirefoxTargetState.Safe : FirefoxTargetState.NotChecked),
+            state.SilentMode,
+            lastStatus?.StatusText ?? "Running and observing Firefox",
+            activity);
+    }
+
+    private RadioActivitySnapshot CreateObservingActivity()
+    {
+        lock (_stateLock)
+        {
+            if (_state.SilentMode)
+            {
+                return new RadioActivitySnapshot(RadioActivityState.SilentMode);
+            }
+
+            int remaining = Math.Max(1, _state.ScheduledThreshold - _state.TransitionCounter);
+            return new RadioActivitySnapshot(RadioActivityState.Observing, remaining);
+        }
+    }
+
+    private static RadioActivitySnapshot CreateTransitionActivity(
+        RadioTrackObservation observation,
+        bool silentMode)
+    {
+        if (silentMode)
+        {
+            return new RadioActivitySnapshot(RadioActivityState.SilentMode);
+        }
+
+        if (observation.PendingOpportunityInvalidated)
+        {
+            return new RadioActivitySnapshot(RadioActivityState.OpportunityAbandoned);
+        }
+
+        if (observation.Delivery is not null)
+        {
+            return new RadioActivitySnapshot(RadioActivityState.ValidatingFirefoxTarget);
+        }
+
+        if (observation.PreparationOpportunity is not null)
+        {
+            return new RadioActivitySnapshot(RadioActivityState.WaitingForTrackStability);
+        }
+
+        int remaining = Math.Max(1, observation.ScheduledThreshold - observation.TransitionCounter);
+        return new RadioActivitySnapshot(RadioActivityState.Observing, remaining);
+    }
+
+    private void PublishTargetStatus(
+        FirefoxTargetState firefoxTarget,
+        string statusText,
+        RadioActivitySnapshot? activity = null)
+    {
+        RadioRuntimeState state = GetRuntimeState();
+        RadioActivitySnapshot? effectiveActivity = activity ?? (firefoxTarget == FirefoxTargetState.Safe
+            ? null
+            : new RadioActivitySnapshot(RadioActivityState.NoSafeFirefoxTarget));
         PublishRuntimeStatus(
             state.CurrentTrack.Title,
             state.CurrentTrack.Artist,
             firefoxTarget,
             state.SilentMode,
-            statusText);
+            statusText,
+            effectiveActivity);
     }
 
     private void PublishRuntimeStatus(
@@ -449,19 +532,30 @@ internal sealed partial class RadioBehaviorTest
         string? artist,
         FirefoxTargetState firefoxTarget,
         bool silentMode,
-        string statusText)
+        string statusText,
+        RadioActivitySnapshot? activity = null)
     {
-        var update = new RadioRuntimeStatusUpdate(
-            title,
-            artist,
-            firefoxTarget,
-            silentMode,
-            statusText);
+        RadioRuntimeStatusUpdate update;
         Delegate[] subscribers;
 
         lock (_statusLock)
         {
+            RadioActivitySnapshot effectiveActivity = activity ?? _activity;
+            update = new RadioRuntimeStatusUpdate(
+                title,
+                artist,
+                firefoxTarget,
+                silentMode,
+                effectiveActivity,
+                statusText);
+
+            if (update == _lastStatus)
+            {
+                return;
+            }
+
             _lastStatus = update;
+            _activity = effectiveActivity;
             subscribers = StatusChanged?.GetInvocationList() ?? [];
         }
 

@@ -50,18 +50,21 @@ internal sealed class WindowsTransitionAudioDucker : ITransitionAudioDucker
     private readonly AudioDuckingConfiguration _configuration;
     private readonly IAudioSessionEnumerationProvider _enumerationProvider;
     private readonly IRadioClock _clock;
+    private readonly Action<RadioActivitySnapshot>? _activityChanged;
 
     public WindowsTransitionAudioDucker(
         IAnnouncementLog log,
         AudioDuckingConfiguration? configuration = null,
         IAudioSessionEnumerationProvider? enumerationProvider = null,
-        IRadioClock? clock = null)
+        IRadioClock? clock = null,
+        Action<RadioActivitySnapshot>? activityChanged = null)
     {
         _log = log;
         _configuration = configuration ?? AudioDuckingConfiguration.Diagnostic;
         _configuration.Validate();
         _enumerationProvider = enumerationProvider ?? new WindowsAudioSessionEnumerationProvider(log);
         _clock = clock ?? new SystemRadioClock();
+        _activityChanged = activityChanged;
     }
 
     public async Task<TransitionDuckingResult> RunAsync(
@@ -76,6 +79,7 @@ internal sealed class WindowsTransitionAudioDucker : ITransitionAudioDucker
             - SpeechStartSafetyMargin;
         int attempt = 0;
 
+        _activityChanged?.Invoke(new RadioActivitySnapshot(RadioActivityState.ValidatingFirefoxAudio));
         while (true)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -172,7 +176,7 @@ internal sealed class WindowsTransitionAudioDucker : ITransitionAudioDucker
                 $"DELIVERY AUDIO TARGET REVALIDATED: firefox.exe; PID {target.ProcessId?.ToString() ?? "<not available>"}; " +
                 $"session {target.StableSessionTag}; current volume {deliveryState.VolumeScalar:P1}; muted {(deliveryState.Muted ? "Yes" : "No")}.");
 
-            var sequence = new AudioDuckingSequence(_log, _configuration);
+            var sequence = new AudioDuckingSequence(_log, _configuration, _activityChanged);
             AudioDuckingResult result = await sequence.RunWithProtectedActionAsync(
                 target,
                 protectedAction,

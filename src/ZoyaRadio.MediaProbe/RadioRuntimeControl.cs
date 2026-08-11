@@ -19,6 +19,30 @@ public enum FirefoxTargetState
     Ambiguous,
     Unavailable,
 }
+public enum RadioActivityState
+{
+    Stopped,
+    Observing,
+    WaitingForTrackStability,
+    GeneratingComment,
+    PreparingSpeech,
+    PreparedForTransition,
+    ValidatingFirefoxTarget,
+    ValidatingFirefoxAudio,
+    LoweringFirefoxVolume,
+    Speaking,
+    RestoringFirefoxVolume,
+    SilentMode,
+    OpportunityAbandoned,
+    NoSafeFirefoxTarget,
+    Stopping,
+    Faulted,
+}
+
+public sealed record RadioActivitySnapshot(
+    RadioActivityState State,
+    int? TransitionsRemaining = null,
+    string? Detail = null);
 
 public sealed record RadioControlSnapshot(
     long Revision,
@@ -27,6 +51,7 @@ public sealed record RadioControlSnapshot(
     string? Artist,
     FirefoxTargetState FirefoxTarget,
     bool SilentMode,
+    RadioActivitySnapshot Activity,
     string StatusText,
     string LogFolderPath,
     bool HasActiveRuntime)
@@ -54,6 +79,7 @@ public sealed record RadioControlViewState(
     bool CleanupVisible,
     string TitleText,
     string ArtistText,
+    string ActivityText,
     string StatusText,
     string FirefoxStatusText)
 {
@@ -75,6 +101,7 @@ public sealed record RadioControlViewState(
             CleanupVisible: stopping,
             TitleText: Display(snapshot.Title),
             ArtistText: Display(snapshot.Artist),
+            ActivityText: DescribeActivity(snapshot.Activity),
             StatusText: snapshot.StatusText,
             FirefoxStatusText: DescribeFirefox(snapshot.FirefoxTarget));
     }
@@ -93,6 +120,39 @@ public sealed record RadioControlViewState(
             FirefoxTargetState.Ambiguous => "Ambiguous: more than one Firefox media session",
             FirefoxTargetState.Unavailable => "Unavailable: Windows could not validate Firefox",
             _ => "Not checked",
+        };
+    }
+
+    private static string DescribeActivity(RadioActivitySnapshot activity)
+    {
+        return activity.State switch
+        {
+            RadioActivityState.Stopped => "Stopped",
+            RadioActivityState.Observing when activity.TransitionsRemaining == 2 =>
+                "Observing - preparation begins on the next transition",
+            RadioActivityState.Observing when activity.TransitionsRemaining == 1 =>
+                "Observing - next comment on the next transition",
+            RadioActivityState.Observing when activity.TransitionsRemaining > 0 =>
+                $"Observing - next comment in {activity.TransitionsRemaining} transitions",
+            RadioActivityState.Observing => "Observing normally",
+            RadioActivityState.WaitingForTrackStability => "Waiting for the current track to become stable",
+            RadioActivityState.GeneratingComment => "Generating a local comment",
+            RadioActivityState.PreparingSpeech => "Preparing Nicole speech",
+            RadioActivityState.PreparedForTransition => "Ready for the next track transition",
+            RadioActivityState.ValidatingFirefoxTarget => "Validating the Firefox media target",
+            RadioActivityState.ValidatingFirefoxAudio => "Validating Firefox audio",
+            RadioActivityState.LoweringFirefoxVolume => "Lowering Firefox volume",
+            RadioActivityState.Speaking => "Speaking",
+            RadioActivityState.RestoringFirefoxVolume => "Restoring Firefox volume",
+            RadioActivityState.SilentMode => "Silent Mode - observing without announcements",
+            RadioActivityState.OpportunityAbandoned =>
+                "Opportunity abandoned safely - observing for a fresh opportunity",
+            RadioActivityState.NoSafeFirefoxTarget => "No safe Firefox media target",
+            RadioActivityState.Stopping => "Stopping and restoring audio",
+            RadioActivityState.Faulted => string.IsNullOrWhiteSpace(activity.Detail)
+                ? "Faulted - check the status message"
+                : $"Faulted - {activity.Detail}",
+            _ => "Activity unavailable",
         };
     }
 }
@@ -156,6 +216,7 @@ internal sealed record RadioRuntimeStatusUpdate(
     string? Artist,
     FirefoxTargetState FirefoxTarget,
     bool SilentMode,
+    RadioActivitySnapshot Activity,
     string StatusText);
 
 internal interface IRadioRuntimeSession : IAsyncDisposable
@@ -297,6 +358,7 @@ public sealed class RadioRuntimeController : IAsyncDisposable
             null,
             FirefoxTargetState.NotChecked,
             false,
+            new RadioActivitySnapshot(RadioActivityState.Stopped),
             "Stopped",
             logFolderProvider.GetLogFolderPath(),
             false);
@@ -380,6 +442,7 @@ public sealed class RadioRuntimeController : IAsyncDisposable
                     null,
                     FirefoxTargetState.NotChecked,
                     false,
+                    new RadioActivitySnapshot(RadioActivityState.ValidatingFirefoxTarget),
                     "Starting Zoya Radio...",
                     hasActiveRuntime: false);
             }
@@ -420,6 +483,7 @@ public sealed class RadioRuntimeController : IAsyncDisposable
                         null,
                         FirefoxTargetState.NotChecked,
                         false,
+                        new RadioActivitySnapshot(RadioActivityState.Stopped),
                         "Stopped",
                         hasActiveRuntime: false);
                 }
@@ -445,6 +509,7 @@ public sealed class RadioRuntimeController : IAsyncDisposable
                 _snapshot.Artist,
                 _snapshot.FirefoxTarget,
                 _snapshot.SilentMode,
+                new RadioActivitySnapshot(RadioActivityState.Stopping),
                 "Stopping Zoya Radio and restoring protected audio state...",
                 hasActiveRuntime: true);
         }
@@ -580,18 +645,25 @@ public sealed class RadioRuntimeController : IAsyncDisposable
                     _snapshot.Artist,
                     _snapshot.FirefoxTarget,
                     _snapshot.SilentMode,
+                    _snapshot.Activity,
                     result.StatusText,
                     hasActiveRuntime: true);
             }
             else
             {
                 bool active = session is not null && ReferenceEquals(_session, session);
+                RadioActivitySnapshot failedActivity = failure is not null
+                    ? new RadioActivitySnapshot(RadioActivityState.Faulted, Detail: result.StatusText)
+                    : _snapshot.Activity.State == RadioActivityState.NoSafeFirefoxTarget
+                        ? _snapshot.Activity
+                        : new RadioActivitySnapshot(RadioActivityState.Stopped);
                 snapshot = SetSnapshotLocked(
                     failure is null ? RadioLifecycleState.Stopped : RadioLifecycleState.Faulted,
                     _snapshot.Title,
                     _snapshot.Artist,
                     _snapshot.FirefoxTarget,
                     _snapshot.SilentMode,
+                    failedActivity,
                     failure is null ? result.StatusText : $"{result.StatusText}. Cleanup requires attention.",
                     active);
             }
@@ -635,6 +707,7 @@ public sealed class RadioRuntimeController : IAsyncDisposable
                     null,
                     FirefoxTargetState.NotChecked,
                     false,
+                    new RadioActivitySnapshot(RadioActivityState.Stopped),
                     "Stopped safely",
                     hasActiveRuntime: false);
             }
@@ -646,6 +719,7 @@ public sealed class RadioRuntimeController : IAsyncDisposable
                     _snapshot.Artist,
                     _snapshot.FirefoxTarget,
                     _snapshot.SilentMode,
+                    new RadioActivitySnapshot(RadioActivityState.Faulted, Detail: failure.Message),
                     $"STOP FAILED: protected cleanup could not be confirmed. {failure.Message}",
                     hasActiveRuntime: true);
             }
@@ -712,6 +786,9 @@ public sealed class RadioRuntimeController : IAsyncDisposable
                 update.FirefoxTarget,
                 update.SilentMode,
                 _snapshot.Lifecycle == RadioLifecycleState.Stopping
+                    ? new RadioActivitySnapshot(RadioActivityState.Stopping)
+                    : update.Activity,
+                _snapshot.Lifecycle == RadioLifecycleState.Stopping
                     ? "Stopping Zoya Radio and restoring protected audio state..."
                     : update.StatusText,
                 hasActiveRuntime: true);
@@ -726,6 +803,7 @@ public sealed class RadioRuntimeController : IAsyncDisposable
         string? artist,
         FirefoxTargetState firefoxTarget,
         bool silentMode,
+        RadioActivitySnapshot activity,
         string statusText,
         bool hasActiveRuntime)
     {
@@ -736,6 +814,7 @@ public sealed class RadioRuntimeController : IAsyncDisposable
             artist,
             firefoxTarget,
             silentMode,
+            activity,
             statusText,
             _logFolderProvider.GetLogFolderPath(),
             hasActiveRuntime);

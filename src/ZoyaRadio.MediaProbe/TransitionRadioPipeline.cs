@@ -251,13 +251,15 @@ internal sealed class TransitionRadioPipeline
     private readonly ITransitionRadioHost _host;
     private readonly IRadioClock _clock;
     private readonly IAnnouncementLog _log;
+    private readonly Action<RadioActivitySnapshot>? _activityChanged;
 
     public TransitionRadioPipeline(
         RadioBehaviorConfiguration configuration,
         ITransitionCommentProvider commentProvider,
         ITransitionRadioHost host,
         IRadioClock clock,
-        IAnnouncementLog log)
+        IAnnouncementLog log,
+        Action<RadioActivitySnapshot>? activityChanged = null)
     {
         configuration.Validate();
         _configuration = configuration;
@@ -265,6 +267,7 @@ internal sealed class TransitionRadioPipeline
         _host = host;
         _clock = clock;
         _log = log;
+        _activityChanged = activityChanged;
     }
 
     public async Task<TransitionPreparationResult> PrepareAsync(
@@ -277,6 +280,7 @@ internal sealed class TransitionRadioPipeline
 
         try
         {
+            _activityChanged?.Invoke(new RadioActivitySnapshot(RadioActivityState.ValidatingFirefoxTarget));
             RadioOpportunitySnapshot initial = await _host.ReadSnapshotAsync(
                 opportunity.Id,
                 cancellationToken);
@@ -295,6 +299,7 @@ internal sealed class TransitionRadioPipeline
             TimeSpan remainingAge = _configuration.MinimumTrackAgeBeforeSpeech - age;
             if (remainingAge > TimeSpan.Zero)
             {
+                _activityChanged?.Invoke(new RadioActivitySnapshot(RadioActivityState.WaitingForTrackStability));
                 _log.Write(
                     $"TRACK A STABILITY WAIT: {remainingAge.TotalSeconds:0.0} second(s) remain before preparation may begin.");
                 await _clock.DelayAsync(remainingAge, cancellationToken);
@@ -314,6 +319,7 @@ internal sealed class TransitionRadioPipeline
                 return AbandonPreparation(eligibleSafety.Reason);
             }
 
+            _activityChanged?.Invoke(new RadioActivitySnapshot(RadioActivityState.GeneratingComment));
             _log.Write($"TRACK A ELIGIBLE FOR PREPARATION: {_clock.Now:O}");
             _log.Write("TRANSITION PREPARATION STARTED: AI work begins while Track A remains Playing.");
             selection = await _commentProvider.SelectAsync(
@@ -337,6 +343,7 @@ internal sealed class TransitionRadioPipeline
                 return AbandonPreparation(beforeSpeechSafety.Reason);
             }
 
+            _activityChanged?.Invoke(new RadioActivitySnapshot(RadioActivityState.PreparingSpeech));
             speech = await _host.PrepareSpeechAsync(selection.Text, cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -360,6 +367,7 @@ internal sealed class TransitionRadioPipeline
                 speech,
                 _clock.Now);
             speech = null;
+            _activityChanged?.Invoke(new RadioActivitySnapshot(RadioActivityState.PreparedForTransition));
             _log.Write($"NICOLE AUDIO READY: {prepared.ReadyAt:O}");
             _log.Write("WAITING FOR TRANSITION: prepared Track-A material is held in memory; no pause or duck has occurred.");
             return new TransitionPreparationResult(
@@ -373,6 +381,7 @@ internal sealed class TransitionRadioPipeline
         }
         catch (Exception exception)
         {
+            _activityChanged?.Invoke(new RadioActivitySnapshot(RadioActivityState.OpportunityAbandoned));
             _log.Warning("Transition preparation failed", exception);
             return new TransitionPreparationResult(
                 TransitionPreparationStatus.Failed,
@@ -401,6 +410,7 @@ internal sealed class TransitionRadioPipeline
 
         try
         {
+            _activityChanged?.Invoke(new RadioActivitySnapshot(RadioActivityState.ValidatingFirefoxTarget));
             _log.Write($"TRACK A -> TRACK B TRANSITION OBSERVED: {transition.TransitionObservedAt:O}");
             _log.Write(
                 $"  Track A: {MediaSnapshot.Display(transition.CommentedTrack.Title)} - {MediaSnapshot.Display(transition.CommentedTrack.Artist)}");
@@ -425,6 +435,7 @@ internal sealed class TransitionRadioPipeline
                 $"TRANSITION DELIVERY WINDOW: {_configuration.TransitionDeliveryWindow.TotalSeconds:0.0} seconds; " +
                 $"speech must begin by {deadline:O}.");
             _log.Write("DELIVERY MEDIA TARGET REVALIDATED: PASS - Track B is current and Playing.");
+            _activityChanged?.Invoke(new RadioActivitySnapshot(RadioActivityState.ValidatingFirefoxAudio));
 
             TransitionDuckingResult ducking = await _host.RunDuckedAnnouncementAsync(
                 transition,
@@ -467,6 +478,7 @@ internal sealed class TransitionRadioPipeline
 
     private TransitionPreparationResult AbandonPreparation(string reason)
     {
+        _activityChanged?.Invoke(new RadioActivitySnapshot(RadioActivityState.OpportunityAbandoned));
         _log.Write($"PREPARATION ABANDONED: {reason}. No catch-up comment will be queued.");
         return new TransitionPreparationResult(TransitionPreparationStatus.Abandoned, reason, null);
     }
@@ -475,6 +487,7 @@ internal sealed class TransitionRadioPipeline
         string reason,
         TransitionDuckingResult? ducking = null)
     {
+        _activityChanged?.Invoke(new RadioActivitySnapshot(RadioActivityState.OpportunityAbandoned));
         _log.Write($"TRANSITION DELIVERY ABANDONED: {reason}. Silence is the safe result.");
         return new TransitionDeliveryResult(TransitionDeliveryStatus.Abandoned, reason, ducking);
     }

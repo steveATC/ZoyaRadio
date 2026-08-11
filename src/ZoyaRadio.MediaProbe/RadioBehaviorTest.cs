@@ -28,6 +28,7 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
     private Task? _runtimeStopTask;
     private bool _runtimeStarted;
     private RadioRuntimeStatusUpdate? _lastStatus;
+    private RadioActivitySnapshot _activity = new(RadioActivityState.Stopped);
 
     public RadioBehaviorTest(
         GlobalSystemMediaTransportControlsSessionManager manager,
@@ -52,7 +53,7 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
 
         var aiService = new AiCommentService(generator, aiConfiguration, log, persona);
         var commentProvider = new LocalTransitionCommentProvider(aiService);
-        var transitionDucker = new WindowsTransitionAudioDucker(log, clock: _clock);
+        var transitionDucker = new WindowsTransitionAudioDucker(log, clock: _clock, activityChanged: ReportActivity);
         var opportunityHost = new WindowsRadioOpportunityHost(
             () => _selectedSession,
             GetRuntimeState,
@@ -66,7 +67,8 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
             commentProvider,
             opportunityHost,
             _clock,
-            log);
+            log,
+            ReportActivity);
     }
 
     private async void OnMediaPropertiesChanged(
@@ -129,7 +131,8 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
                 observation.CurrentTrack.Artist,
                 FirefoxTargetState.Safe,
                 runtime.SilentMode,
-                runtime.SilentMode ? "Running silently" : "Track transition observed");
+                runtime.SilentMode ? "Running silently" : "Track transition observed",
+                CreateTransitionActivity(observation, runtime.SilentMode));
 
             if (observation.PendingOpportunityInvalidated)
             {
@@ -332,7 +335,6 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
         _log.Write(
             $"Continuous track: {MediaSnapshot.Display(refreshedDetails.Media.Title)} - " +
             $"{MediaSnapshot.Display(refreshedDetails.Media.Artist)}");
-        PublishTargetStatus(FirefoxTargetState.Safe, "Firefox wrapper refreshed; running continuously");
     }
 
     private async Task TryReacquireFirefoxSessionAsync(string reason)
@@ -420,7 +422,10 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
             $"{MediaSnapshot.Display(replacement.Media.Artist)}");
         _log.Write("Pending material was discarded. A fresh transition interval begins now.");
         WriteNextSchedule();
-        PublishTargetStatus(FirefoxTargetState.Safe, "Firefox session safely reacquired; fresh interval started");
+        PublishTargetStatus(
+            FirefoxTargetState.Safe,
+            "Firefox session safely reacquired; fresh interval started",
+            CreateObservingActivity());
     }
 
     private static string DescribeSessionIneligibility(RadioSessionDetails details)
@@ -511,6 +516,7 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
         _log.Write("PREPARATION SKIPPED: another automatic pipeline already exists.");
         _log.Write("No missed comment was queued.");
         WriteNextSchedule();
+        ReportActivity(new RadioActivitySnapshot(RadioActivityState.OpportunityAbandoned));
     }
 
     private async Task RunPreparationAndStoreAsync(
@@ -564,12 +570,14 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
                 if (resolved)
                 {
                     WriteNextSchedule();
+                    ReportActivity(new RadioActivitySnapshot(RadioActivityState.OpportunityAbandoned));
                 }
             }
         }
         catch (Exception exception)
         {
             _log.Warning("Unexpected transition-preparation cleanup failure", exception);
+            ReportActivity(new RadioActivitySnapshot(RadioActivityState.OpportunityAbandoned));
             lock (_stateLock)
             {
                 _state.ResolveOpportunity(opportunity.Id, false, null);
@@ -653,6 +661,7 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
         }
 
         WriteNextSchedule();
+        ReportActivity(new RadioActivitySnapshot(RadioActivityState.OpportunityAbandoned));
     }
 
     private async Task RunDeliveryAndFinalizeAsync(
@@ -690,11 +699,15 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
             {
                 WriteHistorySizes();
                 WriteNextSchedule();
+                ReportActivity(result.Status == TransitionDeliveryStatus.Completed
+                    ? CreateObservingActivity()
+                    : new RadioActivitySnapshot(RadioActivityState.OpportunityAbandoned));
             }
         }
         catch (Exception exception)
         {
             _log.Warning("Unexpected transition-delivery cleanup failure", exception);
+            ReportActivity(new RadioActivitySnapshot(RadioActivityState.OpportunityAbandoned));
             lock (_stateLock)
             {
                 _state.ResolveOpportunity(transition.OpportunityId, false, null);

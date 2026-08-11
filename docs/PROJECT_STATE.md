@@ -32,6 +32,7 @@ Full implemented behavior is in [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.m
 
 - Steve approved the bounded [Milestone 8 contract](MILESTONE_8_CONTRACT.md) on August 10, 2026.
 - Steve then explicitly authorized M8A implementation. The small WinForms control-application candidate is implemented and its automated verification is complete.
+- The candidate now exposes deterministic read-only **Radio activity** state for scheduling, preparation, delivery, safety, stopping, and fault phases. Harmless Firefox wrapper refreshes remain detailed-log-only and do not churn this GUI state.
 - M8A is **not passed or accepted** until Steve completes the real-desktop procedure in [MILESTONE_8A_TEST.md](MILESTONE_8A_TEST.md).
 - M8B, the private-alpha distribution gate, remains blocked until M8A is implemented, verified, manually accepted by Steve, recorded in Git, and separately authorized.
 - No post-M8 proposal is approved by the M8 contract.
@@ -41,10 +42,10 @@ Full implemented behavior is in [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.m
 - Existing console/runtime Release build: passed with 0 warnings and 0 errors.
 - M8A WinForms Release build: passed with 0 warnings and 0 errors.
 - Test-project Release build: passed with 0 warnings and 0 errors.
-- Complete automated suite: 151 passed, 0 failed, including all 124 previously accepted regression tests plus 27 M8A controller/UI-boundary tests.
+- Complete automated suite: 162 passed, 0 failed, including all 124 previously accepted regression tests plus 38 M8A controller/UI-boundary and activity-status tests.
 - Shared runtime, WinForms, and test-project formatting verification: passed. `git diff --check` also passed.
 - Automatic tests use fakes and did not open the GUI or Explorer, produce speech, contact Ollama, control desktop playback, or change real volume.
-- The accepted-snapshot result remains the historical 124 passed, 0 failed recorded above; the 151-test candidate run does not accept M8A.
+- The accepted-snapshot result remains the historical 124 passed, 0 failed recorded above; the 162-test candidate run does not accept M8A.
 
 ## Milestone 7.5B acceptance evidence
 

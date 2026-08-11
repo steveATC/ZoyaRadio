@@ -13,6 +13,7 @@ internal static class Milestone8AControllerTests
         TestAssert.Equal(RadioLifecycleState.Running, result.Snapshot.Lifecycle);
         TestAssert.Equal(1, session.StartCalls);
         TestAssert.True(result.Snapshot.HasActiveRuntime);
+        TestAssert.Equal(RadioActivityState.Observing, result.Snapshot.Activity.State);
     }
 
     public static async Task FaultyStatusListenerCannotBreakLifecycle()
@@ -52,6 +53,7 @@ internal static class Milestone8AControllerTests
 
         TestAssert.True(result.SafeToClose);
         TestAssert.Equal(RadioLifecycleState.Stopped, result.Snapshot.Lifecycle);
+        TestAssert.Equal(RadioActivityState.Stopped, result.Snapshot.Activity.State);
         TestAssert.Equal(1, session.StopCalls);
         TestAssert.Equal(1, session.DisposeCalls);
     }
@@ -198,6 +200,10 @@ internal static class Milestone8AControllerTests
 
         TestAssert.Equal(1, session.SilentModeCalls);
         TestAssert.True(controller.CurrentStatus.SilentMode);
+        TestAssert.Equal(RadioActivityState.SilentMode, controller.CurrentStatus.Activity.State);
+        TestAssert.Contains(
+            RadioControlViewState.FromSnapshot(controller.CurrentStatus).ActivityText,
+            "Silent Mode");
         TestAssert.True(session.ObservationContinues);
         TestAssert.True(session.PendingWorkInvalidated);
     }
@@ -246,6 +252,7 @@ internal static class Milestone8AControllerTests
 
         TestAssert.Equal(stoppedRevision, controller.CurrentStatus.Revision);
         TestAssert.Equal(RadioLifecycleState.Stopped, controller.CurrentStatus.Lifecycle);
+        TestAssert.Equal(RadioActivityState.Stopped, controller.CurrentStatus.Activity.State);
         TestAssert.Equal<string?>(null, controller.CurrentStatus.Title);
     }
 
@@ -283,6 +290,10 @@ internal static class Milestone8AControllerTests
 
         TestAssert.False(result.Started);
         TestAssert.Equal(RadioLifecycleState.Faulted, result.Snapshot.Lifecycle);
+        TestAssert.Equal(RadioActivityState.Faulted, result.Snapshot.Activity.State);
+        TestAssert.Contains(
+            RadioControlViewState.FromSnapshot(result.Snapshot).ActivityText,
+            "Faulted");
         TestAssert.Contains(result.Snapshot.StatusText, "simulated start failure");
         TestAssert.False(result.Snapshot.HasActiveRuntime);
     }
@@ -330,6 +341,275 @@ internal static class Milestone8AControllerTests
         TestAssert.True(typeof(IRadioRuntimeSession).IsAssignableFrom(typeof(RadioBehaviorTest)));
         TestAssert.True(typeof(RadioBehaviorTest).GetMethod("RunAsync") is not null);
         TestAssert.True(typeof(RadioRuntimeController).GetMethod("StartAsync") is not null);
+    }
+
+    public static void InitialActivityIsStopped()
+    {
+        var session = new FakeRuntimeSession();
+        var controller = CreateController(new FakeRuntimeSessionFactory(session));
+
+        TestAssert.Equal(RadioActivityState.Stopped, controller.CurrentStatus.Activity.State);
+        TestAssert.Contains(
+            RadioControlViewState.FromSnapshot(controller.CurrentStatus).ActivityText,
+            "Stopped");
+    }
+
+    public static async Task ObservingCountdownIsReadable()
+    {
+        var session = new FakeRuntimeSession();
+        await using RadioRuntimeController controller = CreateController(new FakeRuntimeSessionFactory(session));
+        await controller.StartAsync();
+
+        TestAssert.Equal(RadioActivityState.Observing, controller.CurrentStatus.Activity.State);
+        TestAssert.Equal<int?>(3, controller.CurrentStatus.Activity.TransitionsRemaining);
+        TestAssert.Contains(RadioControlViewState.FromSnapshot(controller.CurrentStatus).ActivityText, "3 transitions");
+
+        session.Emit(
+            "Cochise",
+            "Audioslave",
+            FirefoxTargetState.Safe,
+            activity: new RadioActivitySnapshot(RadioActivityState.Observing, 2));
+        TestAssert.Contains(
+            RadioControlViewState.FromSnapshot(controller.CurrentStatus).ActivityText,
+            "preparation begins on the next transition");
+
+        session.Emit(
+            "Cochise",
+            "Audioslave",
+            FirefoxTargetState.Safe,
+            activity: new RadioActivitySnapshot(RadioActivityState.Observing, 1));
+        TestAssert.Contains(
+            RadioControlViewState.FromSnapshot(controller.CurrentStatus).ActivityText,
+            "next comment on the next transition");
+    }
+
+    public static async Task TransitionPreparationActivitySequence()
+    {
+        DateTimeOffset now = DateTimeOffset.Parse("2026-08-11T12:00:00Z");
+        RadioPreparationOpportunity opportunity = TransitionOpportunity(now);
+        var activities = new List<RadioActivityState>();
+        var host = new FakeTransitionRadioHost(ValidSnapshot(opportunity));
+        var pipeline = new TransitionRadioPipeline(
+            RadioBehaviorConfiguration.Default,
+            new FakeTransitionCommentProvider(),
+            host,
+            new FakeRadioClock(now),
+            new FakeLog(),
+            activity => activities.Add(activity.State));
+
+        TransitionPreparationResult result = await pipeline.PrepareAsync(
+            opportunity,
+            true,
+            CancellationToken.None);
+
+        TestAssert.Equal(TransitionPreparationStatus.Ready, result.Status);
+        TestAssert.Equal(5, activities.Count);
+        TestAssert.Equal(RadioActivityState.ValidatingFirefoxTarget, activities[0]);
+        TestAssert.Equal(RadioActivityState.WaitingForTrackStability, activities[1]);
+        TestAssert.Equal(RadioActivityState.GeneratingComment, activities[2]);
+        TestAssert.Equal(RadioActivityState.PreparingSpeech, activities[3]);
+        TestAssert.Equal(RadioActivityState.PreparedForTransition, activities[4]);
+        result.Prepared!.Dispose();
+    }
+
+    public static async Task TransitionDeliveryActivitySequence()
+    {
+        DateTimeOffset now = DateTimeOffset.Parse("2026-08-11T12:00:20Z");
+        RadioPreparationOpportunity opportunity = TransitionOpportunity(now.AddSeconds(-20));
+        var activities = new List<RadioActivityState>();
+        var host = new FakeTransitionRadioHost(ValidSnapshot(opportunity));
+        var pipeline = new TransitionRadioPipeline(
+            RadioBehaviorConfiguration.Default,
+            new FakeTransitionCommentProvider(),
+            host,
+            new FakeRadioClock(now),
+            new FakeLog(),
+            activity => activities.Add(activity.State));
+        TransitionPreparationResult preparation = await pipeline.PrepareAsync(
+            opportunity,
+            true,
+            CancellationToken.None);
+        activities.Clear();
+        var newTrack = new MediaSnapshot("Track B", "Artist B", null);
+        var transition = new RadioTransitionDelivery(
+            opportunity.Id,
+            opportunity.Context.SubjectTrack,
+            newTrack,
+            now);
+        host.Snapshot = ValidSnapshot(opportunity, newTrack);
+
+        TransitionDeliveryResult delivery = await pipeline.DeliverAsync(
+            preparation.Prepared!,
+            transition,
+            false,
+            CancellationToken.None);
+
+        TestAssert.Equal(TransitionDeliveryStatus.Completed, delivery.Status);
+        TestAssert.Equal(2, activities.Count);
+        TestAssert.Equal(RadioActivityState.ValidatingFirefoxTarget, activities[0]);
+        TestAssert.Equal(RadioActivityState.ValidatingFirefoxAudio, activities[1]);
+        preparation.Prepared!.Dispose();
+    }
+
+    public static async Task DuckingSpeechAndRestorationActivitySequence()
+    {
+        var activities = new List<RadioActivityState>();
+        using var target = new FakeAudioSessionTarget("firefox", 20, "FIREFOX01", 0.8f);
+        var sequence = new AudioDuckingSequence(
+            new FakeLog(),
+            FastDuckingConfiguration(),
+            activity => activities.Add(activity.State));
+
+        AudioDuckingResult result = await sequence.RunWithProtectedActionAsync(
+            target,
+            _ => Task.CompletedTask,
+            false,
+            CancellationToken.None);
+
+        TestAssert.True(result.TestPassed);
+        TestAssert.Equal(3, activities.Count);
+        TestAssert.Equal(RadioActivityState.LoweringFirefoxVolume, activities[0]);
+        TestAssert.Equal(RadioActivityState.Speaking, activities[1]);
+        TestAssert.Equal(RadioActivityState.RestoringFirefoxVolume, activities[2]);
+    }
+
+    public static async Task OpportunityAbandonmentIsReadable()
+    {
+        var session = new FakeRuntimeSession();
+        await using RadioRuntimeController controller = CreateController(new FakeRuntimeSessionFactory(session));
+        await controller.StartAsync();
+
+        session.Emit(
+            "Cochise",
+            "Audioslave",
+            FirefoxTargetState.Safe,
+            activity: new RadioActivitySnapshot(RadioActivityState.OpportunityAbandoned));
+
+        TestAssert.Contains(
+            RadioControlViewState.FromSnapshot(controller.CurrentStatus).ActivityText,
+            "abandoned safely");
+    }
+
+    public static async Task MissingFirefoxTargetIsReadable()
+    {
+        var session = new FakeRuntimeSession();
+        await using RadioRuntimeController controller = CreateController(new FakeRuntimeSessionFactory(session));
+        await controller.StartAsync();
+
+        session.Emit(
+            "Cochise",
+            "Audioslave",
+            FirefoxTargetState.Missing,
+            activity: new RadioActivitySnapshot(RadioActivityState.NoSafeFirefoxTarget));
+
+        TestAssert.Contains(
+            RadioControlViewState.FromSnapshot(controller.CurrentStatus).ActivityText,
+            "No safe Firefox");
+    }
+
+    public static async Task StartRefusalPreservesMissingFirefoxActivity()
+    {
+        var session = new FakeRuntimeSession { RefuseStartForMissingFirefox = true };
+        await using RadioRuntimeController controller = CreateController(new FakeRuntimeSessionFactory(session));
+
+        RadioControlStartResult result = await controller.StartAsync();
+
+        TestAssert.False(result.Started);
+        TestAssert.Equal(RadioLifecycleState.Stopped, result.Snapshot.Lifecycle);
+        TestAssert.Equal(FirefoxTargetState.Missing, result.Snapshot.FirefoxTarget);
+        TestAssert.Equal(RadioActivityState.NoSafeFirefoxTarget, result.Snapshot.Activity.State);
+        TestAssert.Contains(
+            RadioControlViewState.FromSnapshot(result.Snapshot).ActivityText,
+            "No safe Firefox");
+    }
+
+    public static async Task StoppingActivityWinsOverLateRuntimeActivity()
+    {
+        var session = new FakeRuntimeSession { BlockStopUntilReleased = true };
+        await using RadioRuntimeController controller = CreateController(new FakeRuntimeSessionFactory(session));
+        await controller.StartAsync();
+
+        Task<RadioControlStopResult> stop = controller.StopAsync();
+        await session.StopEntered.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        session.Emit(
+            "Cochise",
+            "Audioslave",
+            FirefoxTargetState.Safe,
+            activity: new RadioActivitySnapshot(RadioActivityState.Speaking));
+
+        TestAssert.Equal(RadioActivityState.Stopping, controller.CurrentStatus.Activity.State);
+        TestAssert.Contains(
+            RadioControlViewState.FromSnapshot(controller.CurrentStatus).ActivityText,
+            "Stopping");
+        session.ReleaseStop();
+        TestAssert.True((await stop).SafeToClose);
+    }
+
+    public static async Task WrapperRefreshDoesNotCreateActivityNoise()
+    {
+        var session = new FakeRuntimeSession();
+        await using RadioRuntimeController controller = CreateController(new FakeRuntimeSessionFactory(session));
+        await controller.StartAsync();
+        RadioControlSnapshot before = controller.CurrentStatus;
+
+        session.SimulateHarmlessWrapperRefresh();
+
+        TestAssert.Equal(1, session.WrapperRefreshes);
+        TestAssert.Equal(before.Revision, controller.CurrentStatus.Revision);
+        TestAssert.Equal(before.Activity, controller.CurrentStatus.Activity);
+    }
+
+    public static void ActivityContractDoesNotExposePlaybackCommands()
+    {
+        string[] methodNames = typeof(IRadioRuntimeSession)
+            .GetMethods()
+            .Select(method => method.Name)
+            .ToArray();
+
+        TestAssert.False(methodNames.Any(name => name.Contains("Pause", StringComparison.OrdinalIgnoreCase)));
+        TestAssert.False(methodNames.Any(name => name.Contains("Play", StringComparison.OrdinalIgnoreCase)));
+        TestAssert.False(methodNames.Any(name => name.Contains("Volume", StringComparison.OrdinalIgnoreCase)));
+    }
+
+    private static RadioPreparationOpportunity TransitionOpportunity(DateTimeOffset subjectStartedAt)
+    {
+        return new RadioPreparationOpportunity(
+            800,
+            new RadioPreparationContext(
+                new MediaSnapshot("Track A", "Artist A", null),
+                subjectStartedAt,
+                [],
+                []));
+    }
+
+    private static RadioOpportunitySnapshot ValidSnapshot(
+        RadioPreparationOpportunity opportunity,
+        MediaSnapshot? currentTrack = null)
+    {
+        return new RadioOpportunitySnapshot(
+            Armed: true,
+            SilentMode: false,
+            OpportunityStillPending: true,
+            SessionListReadSucceeded: true,
+            MatchingFirefoxSessionCount: 1,
+            SameSelectedSession: true,
+            SourceId: "firefox.exe",
+            SourceReadSucceeded: true,
+            CurrentMedia: currentTrack ?? opportunity.Context.SubjectTrack,
+            MediaReadSucceeded: true,
+            PlaybackStatus: Windows.Media.Control.GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing,
+            PlaybackReadSucceeded: true);
+    }
+
+    private static AudioDuckingConfiguration FastDuckingConfiguration()
+    {
+        return new AudioDuckingConfiguration(
+            DuckRatio: 0.25f,
+            MinimumUsableStartingVolume: 0.05f,
+            RampDuration: TimeSpan.Zero,
+            HoldDuration: TimeSpan.Zero,
+            RampSteps: 2,
+            VerificationTolerance: 0.0001f);
     }
 
     private static async Task StopDuringOwnedPhase(string phaseName)
@@ -385,8 +665,20 @@ internal static class Milestone8AControllerTests
         return RadioControlViewState.FromSnapshot(snapshot).FirefoxStatusText;
     }
 
-    private static RadioControlSnapshot Snapshot(RadioLifecycleState lifecycle, bool hasRuntime)
+    private static RadioControlSnapshot Snapshot(
+        RadioLifecycleState lifecycle,
+        bool hasRuntime,
+        RadioActivitySnapshot? activity = null)
     {
+        activity ??= lifecycle switch
+        {
+            RadioLifecycleState.Stopped => new RadioActivitySnapshot(RadioActivityState.Stopped),
+            RadioLifecycleState.Starting => new RadioActivitySnapshot(RadioActivityState.ValidatingFirefoxTarget),
+            RadioLifecycleState.Stopping => new RadioActivitySnapshot(RadioActivityState.Stopping),
+            RadioLifecycleState.Faulted => new RadioActivitySnapshot(RadioActivityState.Faulted),
+            _ => new RadioActivitySnapshot(RadioActivityState.Observing, 3),
+        };
+
         return new RadioControlSnapshot(
             1,
             lifecycle,
@@ -394,6 +686,7 @@ internal static class Milestone8AControllerTests
             "Audioslave",
             FirefoxTargetState.Safe,
             false,
+            activity,
             lifecycle.ToString(),
             "C:\\FakeLocalAppData\\Zoya Radio\\logs",
             hasRuntime);
@@ -466,6 +759,10 @@ internal sealed class FakeRuntimeSession : IRadioRuntimeSession
 
     public int ClearHistoryCalls { get; private set; }
 
+    public int WrapperRefreshes { get; private set; }
+
+    public bool RefuseStartForMissingFirefox { get; init; }
+
     public bool BlockStartUntilCancelled { get; init; }
 
     public bool BlockStopUntilReleased { get; init; }
@@ -506,6 +803,19 @@ internal sealed class FakeRuntimeSession : IRadioRuntimeSession
         if (BlockStartUntilCancelled)
         {
             await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+        }
+
+        if (RefuseStartForMissingFirefox)
+        {
+            Emit(
+                "Cochise",
+                "Audioslave",
+                FirefoxTargetState.Missing,
+                activity: new RadioActivitySnapshot(RadioActivityState.NoSafeFirefoxTarget));
+            return new RadioRuntimeSessionStartResult(
+                false,
+                1,
+                "No eligible Firefox media session was found");
         }
 
         Emit("Cochise", "Audioslave", FirefoxTargetState.Safe);
@@ -553,13 +863,17 @@ internal sealed class FakeRuntimeSession : IRadioRuntimeSession
         string title,
         string artist,
         FirefoxTargetState target,
-        bool silent = false)
+        bool silent = false,
+        RadioActivitySnapshot? activity = null)
     {
         _statusChanged?.Invoke(new RadioRuntimeStatusUpdate(
             title,
             artist,
             target,
             silent,
+            activity ?? (silent
+                ? new RadioActivitySnapshot(RadioActivityState.SilentMode)
+                : new RadioActivitySnapshot(RadioActivityState.Observing, 3)),
             silent ? "Running silently" : "Running"));
     }
 
@@ -570,7 +884,13 @@ internal sealed class FakeRuntimeSession : IRadioRuntimeSession
             artist,
             FirefoxTargetState.Safe,
             false,
+            new RadioActivitySnapshot(RadioActivityState.Observing, 1),
             "stale"));
+    }
+
+    public void SimulateHarmlessWrapperRefresh()
+    {
+        WrapperRefreshes++;
     }
 
     public ValueTask DisposeAsync()

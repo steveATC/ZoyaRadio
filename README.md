@@ -46,7 +46,7 @@ Start the development control application:
 .\run-zoya-radio-control.cmd
 ```
 
-The window provides Start, safely awaited Stop, Silent Mode, Clear History, and Open Logs Folder controls. It displays the current title, artist, concise runtime status, and Firefox targeting state. Closing the window waits for the same protected cleanup path used by Stop.
+The window provides Start, safely awaited Stop, Silent Mode, Clear History, and Open Logs Folder controls. It displays the current title, artist, concise runtime status, Firefox targeting state, and a read-only **Radio activity** line. That activity line shows the transition countdown and preparation/delivery phase, so normal testing does not require a second PowerShell window tailing the log. Closing the window waits for the same protected cleanup path used by Stop.
 
 This is a candidate for Steve's desktop acceptance, not an accepted or packaged release. See [docs/MILESTONE_8A_TEST.md](docs/MILESTONE_8A_TEST.md) before testing it. Milestone 8B packaging has not begun.
 

@@ -198,14 +198,17 @@ internal sealed class AudioDuckingSequence
 {
     private readonly IAnnouncementLog _log;
     private readonly AudioDuckingConfiguration _configuration;
+    private readonly Action<RadioActivitySnapshot>? _activityChanged;
 
     public AudioDuckingSequence(
         IAnnouncementLog log,
-        AudioDuckingConfiguration? configuration = null)
+        AudioDuckingConfiguration? configuration = null,
+        Action<RadioActivitySnapshot>? activityChanged = null)
     {
         _log = log;
         _configuration = configuration ?? AudioDuckingConfiguration.Diagnostic;
         _configuration.Validate();
+        _activityChanged = activityChanged;
     }
 
     public async Task<AudioDuckingResult> RunAsync(
@@ -273,6 +276,7 @@ internal sealed class AudioDuckingSequence
             cancellationToken.ThrowIfCancellationRequested();
             restorationArmed = true;
 
+            _activityChanged?.Invoke(new RadioActivitySnapshot(RadioActivityState.LoweringFirefoxVolume));
             _log.Write("DUCK STARTED: smoothly lowering only the selected Firefox audio session.");
             await RampVolumeAsync(
                 target,
@@ -299,6 +303,7 @@ internal sealed class AudioDuckingSequence
                 throw new SimulatedAudioDuckingException();
             }
 
+            _activityChanged?.Invoke(new RadioActivitySnapshot(RadioActivityState.Speaking));
             await protectedAction(cancellationToken);
         }
         catch (OperationCanceledException)
@@ -324,6 +329,7 @@ internal sealed class AudioDuckingSequence
         {
             if (restorationArmed)
             {
+                _activityChanged?.Invoke(new RadioActivitySnapshot(RadioActivityState.RestoringFirefoxVolume));
                 restorationAttempted = true;
                 restorationVerified = await RestoreCapturedStateAsync(
                     target,

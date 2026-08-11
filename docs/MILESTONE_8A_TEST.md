@@ -20,19 +20,22 @@ The application should open without administrator privileges. It must not pause,
 
 ## Test A - startup, status, and repeated Start
 
-1. Confirm the window shows the current title, artist, and a readable Firefox targeting state.
+1. Confirm the window shows the current title, artist, a readable Firefox targeting state, and a **Radio activity** line.
 2. Click **Start** once.
-3. Confirm the status becomes Running and Start is no longer available while running.
+3. Confirm the status becomes Running, Start is no longer available while running, and Radio activity shows an observing countdown such as `next comment in 3 transitions`.
 4. Click rapidly around the Start/Stop area only as the enabled controls allow. Confirm no duplicate windows, observers, announcements, or error loops appear.
-5. Leave it running across enough genuine track transitions for at least one scheduled announcement.
+5. Skip or wait through genuine track transitions. Confirm the countdown changes and, when preparation is due, Radio activity progresses through the applicable stability wait, local generation, Nicole preparation, and ready-for-transition phases.
 6. Confirm music continues while Zoya prepares the comment and Nicole audio.
-7. Confirm the announcement is delivered over ducked Firefox audio without pausing Firefox.
-8. Confirm Firefox returns to exactly its previous volume and mute state afterward.
+7. At delivery, confirm Radio activity reports target/audio validation, lowering Firefox volume, speaking, and restoring Firefox volume as those phases occur.
+8. Confirm the announcement is delivered over ducked Firefox audio without pausing Firefox.
+9. Confirm Firefox returns to exactly its previous volume and mute state afterward.
+
+Detailed timestamped logs are still available through **Open Logs Folder**, but the normal scheduling/preparation check should now be visible directly in the window.
 
 ## Test B - Silent Mode and Clear History
 
 1. While running, turn **Silent Mode** on before a scheduled delivery if practical.
-2. Confirm observation can continue but no pending or stale announcement plays.
+2. Confirm Radio activity says Silent Mode, observation can continue, and no pending or stale announcement plays.
 3. Turn Silent Mode off and confirm scheduling starts fresh with no catch-up announcement.
 4. Click **Clear History**.
 5. Confirm the app stays running and logs are not deleted. This button clears only the small process-local recent-track/comment context.
@@ -94,7 +97,7 @@ Press **Ctrl+C** to stop the console run safely. Other explicit diagnostics do n
 Provide:
 
 - the newest `radio-behavior-test-*.txt` file from `%LOCALAPPDATA%\Zoya Radio\logs`;
-- a screenshot of the control window while Running and, if possible, while Stopping;
+- a screenshot of the control window showing Radio activity while Running and, if possible, while preparing, speaking, or Stopping;
 - which Stop/close phases you successfully exercised;
 - whether Firefox's volume and mute state were restored exactly each time;
 - confirmation that Chrome and Windows master volume stayed unchanged;

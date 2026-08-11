@@ -15,6 +15,7 @@ internal sealed class RadioControlForm : Form
     private readonly Label _artistValue = CreateValueLabel();
     private readonly Label _firefoxValue = CreateValueLabel();
     private readonly Label _statusValue = CreateValueLabel();
+    private readonly Label _activityValue = CreateValueLabel();
     private readonly Label _cleanupNotice = new()
     {
         AutoSize = true,
@@ -53,7 +54,7 @@ internal sealed class RadioControlForm : Form
             Dock = DockStyle.Fill,
             Padding = new Padding(18),
             ColumnCount = 2,
-            RowCount = 7,
+            RowCount = 8,
         };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
@@ -70,9 +71,10 @@ internal sealed class RadioControlForm : Form
         AddField(layout, 1, "Current title", _titleValue);
         AddField(layout, 2, "Current artist", _artistValue);
         AddField(layout, 3, "Firefox", _firefoxValue);
-        AddField(layout, 4, "Status", _statusValue);
+        AddField(layout, 4, "Radio activity", _activityValue);
+        AddField(layout, 5, "Status", _statusValue);
 
-        layout.Controls.Add(_cleanupNotice, 0, 5);
+        layout.Controls.Add(_cleanupNotice, 0, 6);
         layout.SetColumnSpan(_cleanupNotice, 2);
 
         var controls = new FlowLayoutPanel
@@ -91,7 +93,7 @@ internal sealed class RadioControlForm : Form
             _clearHistoryButton,
             _openLogsButton,
         ]);
-        layout.Controls.Add(controls, 0, 6);
+        layout.Controls.Add(controls, 0, 7);
         layout.SetColumnSpan(controls, 2);
 
         var historyTip = new ToolTip();
@@ -267,6 +269,7 @@ internal sealed class RadioControlForm : Form
             _cleanupNotice.Visible = state.CleanupVisible;
             _titleValue.Text = state.TitleText;
             _artistValue.Text = state.ArtistText;
+            _activityValue.Text = state.ActivityText;
             _firefoxValue.Text = state.FirefoxStatusText;
             _statusValue.Text = state.StatusText;
         }
