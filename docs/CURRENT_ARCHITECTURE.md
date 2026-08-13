@@ -1,6 +1,6 @@
 # Current architecture
 
-This document describes the accepted internal implementation at commit `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf`, including M8B packaging and readiness. Future ideas and research recommendations are excluded.
+This document describes the accepted runtime implementation at commit `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf`, including M8B packaging and readiness, plus the isolated M9A diagnostic candidate. M9A is not accepted runtime behavior. Future ideas and research recommendations are excluded.
 
 ## Platform and local dependencies
 
@@ -18,7 +18,7 @@ The project-local Microsoft .NET SDK 8.0.423 is in ignored `.dotnet/`. Microsoft
 ## Accepted versions and local artifacts
 
 - Ollama `0.32.6` and `qwen3:4b-instruct`: 4.0B parameters, Q4_K_M quantization, 2,497,293,803 bytes on disk (about 2.50 GB decimal). It was the only installed model and was downloaded after Steve's approval.
-- Normal Ollama requests use .NET `HttpClient`, `stream: false`, `think: false`, temperature `0.7`, a 20-second generation timeout, and `keep_alive: 0`. Performance mode alone uses a temporary `30s` keep-alive and `/api/ps`, then unloads only the selected model.
+- Normal Ollama requests use .NET `HttpClient`, `stream: false`, `think: false`, temperature `0.7`, a 20-second generation timeout, and `keep_alive: 0`. Explicit performance and M9A benchmark diagnostics use a temporary `30s` keep-alive and `/api/ps`, then unload only the selected model.
 - `KokoroSharp.CPU` 0.8.0 with Microsoft ONNX Runtime 1.22.0. The FP32 model is `.tools/kokoro/kokoro.onnx`, 325,532,387 bytes (310.5 MiB), SHA-256 `7D5DF8ECF7D4B1878015A32686053FD0EEBE2BC377234608764CC0EF3636A6C5`.
 - The restored package closure is about 559.69 MiB. The model, package cache, and one built application output require about 1.20 GiB, excluding additional ignored audition build output.
 - KokoroSharp is MIT licensed; MisakiSharp and the Kokoro model/voices are Apache-2.0. Restored KokoroSharp build output contains eSpeak NG, but the M8B staging audit removes and hash-audits every eSpeak file. Ordinary Nicole/en-US preparation works without it; unusual/OOV input may safely use Windows TTS fallback before any delivery control.
@@ -36,6 +36,7 @@ The project-local Microsoft .NET SDK 8.0.423 is in ignored `.dotnet/`. Microsoft
 | `run-playback-control-test.cmd` | Explicitly confirm and test targeted Firefox pause/resume. |
 | `run-spoken-announcement-test.cmd` | Explicitly confirm one prepared title/artist announcement with protected same-session recovery. |
 | `run-ai-comment-test.cmd` | Generate, validate, measure, or speak one local AI comment; includes generate-only, no-AI, and failure diagnostics. |
+| `run-commentary-benchmark.cmd` | Run the isolated M9A synthetic, generate-only, blinded prompt comparison; no media, audio, GUI, or speech path is reachable. |
 | `run-radio-behavior-test.cmd` | Arm transition-aware automatic preparation and ducked delivery. |
 | `run-audio-ducking-test.cmd` | Enumerate or explicitly test isolated Firefox Core Audio duck/restoration. |
 | `run-neural-tts-diagnostic.cmd` and related launchers | Safely exercise Nicole preparation, fallback, and resource diagnostics. |
@@ -54,6 +55,8 @@ The project-local Microsoft .NET SDK 8.0.423 is in ignored `.dotnet/`. Microsoft
 | `RadioBehaviorState` and `RadioHistory` | Deduplicate transitions, choose the 2-5-transition schedule, track one opportunity, and retain bounded in-memory history. |
 | `TransitionRadioPipeline` | Separate Track-A preparation from Track-B delivery and abandon stale, late, or unsafe work. |
 | `AiCommentService`, `OllamaClient`, `CommentPrompt`, and `CommentValidator` | Build title/artist-only prompts, call loopback Ollama, validate mechanical output rules, choose fixed fallback, and unload the model. |
+| `CommentaryBrief`, `StructuredCommentPromptFactory`, and `DeterministicAnnouncementRenderer` | Represent the isolated M9A candidate context, prompt boundary, and exact-metadata announcement candidates; normal runtime does not compose them. |
+| `CommentaryBenchmarkRunner` and `CommentaryBenchmarkArtifacts` | Run the fixed loopback-only synthetic comparison and write blinded ignored artifacts without desktop-media dependencies. |
 | `KokoroSpeechService`, `WindowsSpeechService`, and `SpeechServiceSelection` | Prepare Nicole audio locally and select Windows speech fallback when required. |
 | `WindowsAudioSessionCatalog` and `AudioSessionSelector` | Enumerate the default multimedia render endpoint and select exactly one active Firefox application session. |
 | `WindowsTransitionAudioDucker` and `AudioDuckingSequence` | Revalidate the delivery-time audio target, duck only that session, run prepared speech, and restore the exact captured state in protected cleanup. |
@@ -62,6 +65,16 @@ The project-local Microsoft .NET SDK 8.0.423 is in ignored `.dotnet/`. Microsoft
 | `PrivateAlphaReadinessPresenter`, `PrivateAlphaSetupController`, and `OllamaSetupClient` | Present package/Windows/disk/Firefox/Visual C++/loopback-Ollama/Qwen readiness and perform only explicit, consented local model setup. |
 
 ## Control application and lifecycle
+
+## Isolated Milestone 9A diagnostic candidate
+
+- The candidate derives exact-track/artist occurrence counts and transition distances from at most 10 prior usable tracks. The subject is excluded from those counts and identity normalization matches `RadioHistory`.
+- Typed reason precedence is same-artist transition, exact-track repeat, repeated artist, then the explicitly supplied ordinary/continuity/no-pattern reason. Additional applicable reasons remain secondary observations.
+- At most 6 recent accepted comments carry exact normalized text plus shallow opening, listener-name, question, comparison-marker, and word-count fingerprints.
+- The candidate prompt is a separate embedded resource with inert JSON metadata, visible trusted/creative/prohibited sections, and exact `FALLBACK`. The accepted Milestone 4 prompt remains unchanged.
+- The version 1.0 manifest contains 12 synthetic scenario classes and 2 samples for each blinded arm, for 48 requests. Generated artifacts remain ignored under `artifacts/m9a/`.
+- The M9A command returns before ordinary logging, speech setup, GSMTC, Firefox, Core Audio, ducking, GUI, or runtime-state construction. Only loopback Ollama is available to this command.
+- M9A awaits Steve's qualitative evaluation and is not integrated into the control application or automatic radio.
 
 - `ZoyaRadio.ControlApp` is a same-process WinForms frontend over the accepted automatic-radio runtime. It does not contain a second scheduling, targeting, speech, or ducking implementation.
 - `RadioRuntimeController` exposes one authoritative asynchronous lifecycle. Start is idempotent, Stop is safely awaited, window close waits for the same cleanup path, and stale callbacks from an ended generation are suppressed.
@@ -144,7 +157,7 @@ Normal automatic delivery contains no GSMTC pause, play, or toggle command. `Try
 
 ## Current boundaries
 
-The implementation has no browser scraping, cookies, account access, unofficial YouTube API, cloud AI/TTS, telemetry, tray icon, global media keys, endpoint/master-volume manipulation, persistent listening-history database, track-position tracking, duration tracking, installer, code signing, public release, clean-machine certification, or invited-tester validation. Milestone 8 is closed only for continued internal development; compatibility and third-party distribution claims remain deferred.
+The implementation has no browser scraping, cookies, account access, unofficial YouTube API, cloud AI/TTS, telemetry, tray icon, global media keys, endpoint/master-volume manipulation, persistent listening-history database, track-position tracking, duration tracking, installer, code signing, public release, clean-machine certification, or invited-tester validation. Milestone 8 is closed only for continued internal development; compatibility and third-party distribution claims remain deferred. M9A remains an isolated candidate and does not authorize M9B.
 
 ## Windows API basis
 

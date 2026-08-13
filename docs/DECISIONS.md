@@ -86,7 +86,17 @@ These decisions summarize accepted project rules and rationale already evidenced
 - Clean Windows 10 22H2, clean Windows 11, and invited private-alpha testing remain useful compatibility and distribution evidence but are deliberately deferred and do not block internal feature development.
 - The accepted internal baseline must not be described as clean-machine certified, broadly compatible, publicly released, code-signed, SmartScreen-reputable, or validated for third-party distribution.
 - A later tester failure may require a bounded compatibility or packaging repair; the absence of tester feedback is not evidence of compatibility.
-- The next project action is project-management review. No post-M8 proposal, research recommendation, Milestone 6 work, or implementation scope is approved automatically.
+- The post-M8 review approved only the bounded M9A structured-commentary experiment. Other proposal, research, Milestone 6, M9B, and later work remains unauthorized unless Steve explicitly approves a separate contract.
+
+## Approved Milestone 9A experimental boundaries
+
+- M9A is a generate-only comparison experiment, not an accepted change to ordinary radio behavior.
+- The experimental brief may use exact title/artist, bounded exact-string history facts, an explicit typed reason for speaking, recent accepted comment text, and shallow deterministic style fingerprints. It may not add inferred music, artist, listener, or session facts.
+- The accepted runtime prompt/context/fallback remains unchanged. The structured candidate prompt and deterministic announcement renderer cannot enter normal composition without a separately authorized M9B contract.
+- Metadata that resembles instructions remains inert serialized data. Creative freedom is limited to subjective reaction, literal wordplay, playful exaggeration, clearly imaginary framing, and accepted-persona teasing without unsupported claims.
+- The explicit benchmark uses fixed synthetic fixtures, two blinded arms, loopback-only `qwen3:4b-instruct`, bounded requests, ignored local artifacts, and selected-model unload. It cannot request GSMTC, use Core Audio, control playback/volume, produce speech, or open the GUI.
+- Mechanical validation and latency do not determine creative quality. Steve's blinded grounding, relevance, personality, phrasing, variety, concision, and preference review is the M9A acceptance evidence.
+- M9A does not claim the known `Borrowed Umbrella` grounding defect is fixed and does not authorize M9B.
 
 ## Approved Milestone 8 boundaries
 

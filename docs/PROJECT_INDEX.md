@@ -6,7 +6,7 @@ This is the front door to the canonical Zoya Radio documentation. The local Git 
 
 | Field | Value |
 | --- | --- |
-| Snapshot date | 2026-08-11 |
+| Snapshot date | 2026-08-12 |
 | Repository branch | `master` |
 | Latest accepted implementation commit | `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf` |
 | Documentation reorganization baseline | `d5594e7ee16be1f11afc732186fa16ae8c5cc1c9` |
@@ -14,7 +14,7 @@ This is the front door to the canonical Zoya Radio documentation. The local Git 
 | Latest accepted automated result | 178 passed, 0 failed at `b56c03d` |
 | Accepted internal packaged baseline | `0.8.0-alpha.1`; owner packaged-desktop acceptance recorded August 11, 2026 |
 | Deferred distribution evidence | Clean Windows 10/11 and invited private-alpha testing; not blockers to internal development |
-| Next project step | Project-management review must select and contract the next bounded milestone; no post-M8 implementation is authorized |
+| Next project step | M9A structured-commentary experiment is implemented as an isolated candidate and awaits Steve's blinded qualitative evaluation; M9B is not authorized |
 | Snapshot ID | `zoya-radio-2026-08-11-m8-b56c03d1` |
 
 Update this table whenever an accepted implementation commit becomes the new source snapshot.
@@ -30,6 +30,8 @@ Update this table whenever an accepted implementation commit becomes the new sou
 - [MILESTONE_8_CONTRACT.md](MILESTONE_8_CONTRACT.md) - approved M8 scope and historical gates, plus Steve's dated sequencing amendment closing M8 for internal development while deferring distribution validation.
 - [MILESTONE_8A_TEST.md](MILESTONE_8A_TEST.md) - accepted M8A desktop evidence and preserved regression procedure.
 - [MILESTONE_8B_TEST.md](MILESTONE_8B_TEST.md) - accepted owner packaged-desktop evidence plus deferred clean-machine and invited-tester procedures.
+- [MILESTONE_9A_CONTRACT.md](MILESTONE_9A_CONTRACT.md) - approved bounded structured-commentary experiment; normal runtime unchanged and M9B unauthorized.
+- [MILESTONE_9A_TEST.md](MILESTONE_9A_TEST.md) - blinded qualitative evaluation procedure and evidence boundary.
 - [RESEARCH_INDEX.md](RESEARCH_INDEX.md) - research inventory and the boundary between evidence and recommendations.
 
 ## ChatGPT Project-source availability
@@ -75,6 +77,7 @@ Repository-only does not mean non-authoritative. README and the milestone record
 | Durable decisions and accepted rationale | [DECISIONS.md](DECISIONS.md) |
 | Defects, limitations, unresolved observations, and deferred quality work | [KNOWN_ISSUES.md](KNOWN_ISSUES.md) |
 | Approved Milestone 8 scope, gates, non-goals, and acceptance requirements | [MILESTONE_8_CONTRACT.md](MILESTONE_8_CONTRACT.md) |
+| Approved M9A experimental scope and non-integration boundary | [MILESTONE_9A_CONTRACT.md](MILESTONE_9A_CONTRACT.md) |
 | External research provenance and status | [RESEARCH_INDEX.md](RESEARCH_INDEX.md) |
 | What the Design / Brainstorming conversation proposed | [POST_M8_INTAKE.md](proposals/POST_M8_INTAKE.md), as a non-authoritative historical intake only |
 | Milestone-specific manual evidence and regression procedures | Existing `MILESTONE_*_TEST.md` records |
@@ -112,3 +115,5 @@ Repository-only does not mean non-authoritative. README and the milestone record
 - [Milestone 8 contract](MILESTONE_8_CONTRACT.md) - approved contract and dated sequencing amendment; M8 is closed for internal development while clean-machine and invited-tester validation remain deferred
 - [Milestone 8A acceptance](MILESTONE_8A_TEST.md) - accepted desktop evidence plus preserved regression procedure
 - [Milestone 8B acceptance](MILESTONE_8B_TEST.md) - accepted internal package and owner desktop evidence, with deferred distribution-validation procedures
+- [Milestone 9A contract](MILESTONE_9A_CONTRACT.md) - approved experiment, candidate prompt boundary, benchmark, and non-goals
+- [Milestone 9A evaluation](MILESTONE_9A_TEST.md) - current blinded review procedure; not an acceptance record yet

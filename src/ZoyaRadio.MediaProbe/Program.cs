@@ -23,6 +23,7 @@ internal static class Program
         bool audioDuckingTest = false;
         bool enumerateAudioOnly = false;
         bool simulateDuckFailure = false;
+        bool commentaryBenchmark = false;
 
         foreach (string argument in args)
         {
@@ -128,6 +129,12 @@ internal static class Program
                 continue;
             }
 
+            if (string.Equals(argument, "--commentary-benchmark", StringComparison.OrdinalIgnoreCase))
+            {
+                commentaryBenchmark = true;
+                continue;
+            }
+
             Console.Error.WriteLine($"Unknown option: {argument}");
             WriteUsage();
             return 2;
@@ -139,11 +146,12 @@ internal static class Program
             + (aiCommentTest ? 1 : 0)
             + (radioBehaviorTest ? 1 : 0)
             + (measureNeuralTts ? 1 : 0)
-            + (audioDuckingTest ? 1 : 0);
+            + (audioDuckingTest ? 1 : 0)
+            + (commentaryBenchmark ? 1 : 0);
         if (selectedModes > 1)
         {
             Console.Error.WriteLine(
-                "Snapshot, playback-control, announcement, AI-comment, radio-behavior, neural-TTS measurement, and audio-ducking modes cannot be combined.");
+                "Snapshot, playback-control, announcement, AI-comment, radio-behavior, neural-TTS measurement, audio-ducking, and commentary-benchmark modes cannot be combined.");
             WriteUsage();
             return 2;
         }
@@ -233,6 +241,11 @@ internal static class Program
         }
 
         LocalLog log;
+        if (commentaryBenchmark)
+        {
+            return await CommentaryBenchmarkCommand.RunAsync();
+        }
+
 
         try
         {
@@ -664,5 +677,6 @@ internal static class Program
         Console.Error.WriteLine("   or: run-neural-tts-fallback-test.cmd");
         Console.Error.WriteLine("   or: run-neural-tts-diagnostic.cmd");
         Console.Error.WriteLine("   or: run-audio-ducking-test.cmd [--enumerate-only|--simulate-duck-failure]");
+        Console.Error.WriteLine("   or: run-commentary-benchmark.cmd");
     }
 }

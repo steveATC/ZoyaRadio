@@ -2,7 +2,7 @@
 
 Zoya Radio is a private, local-first Windows application with an accepted WinForms control frontend and preserved console diagnostics. It observes Firefox media, prepares short locally generated comments, speaks with the accepted Nicole voice, and can deliver prepared comments over proportionally ducked Firefox audio.
 
-Milestones 0 through 5, Milestone 7, Milestones 7.5A-7.5B, and Milestone 8 have passed their required internal-development acceptance. Milestone 6 is deliberately deferred. Steve accepted packaged version `0.8.0-alpha.1` on August 11, 2026, making commit `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf` the latest accepted internal implementation with 178 automated tests passed and 0 failed. Clean Windows 10/11 and invited-tester validation remain deferred distribution evidence, so the package is not a clean-machine-certified or public release.
+Milestones 0 through 5, Milestone 7, Milestones 7.5A-7.5B, and Milestone 8 have passed their required internal-development acceptance. Milestone 6 is deliberately deferred. Steve accepted packaged version `0.8.0-alpha.1` on August 11, 2026, making commit `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf` the latest accepted internal implementation with 178 automated tests passed and 0 failed. Milestone 9A is an isolated structured-commentary experiment awaiting Steve's blinded qualitative evaluation; it is not ordinary radio behavior. Clean Windows 10/11 and invited-tester validation remain deferred distribution evidence, so the package is not a clean-machine-certified or public release.
 
 Start with [docs/PROJECT_INDEX.md](docs/PROJECT_INDEX.md) for the canonical documentation map. Current status is in [docs/PROJECT_STATE.md](docs/PROJECT_STATE.md), and implemented behavior is in [docs/CURRENT_ARCHITECTURE.md](docs/CURRENT_ARCHITECTURE.md).
 
@@ -144,6 +144,20 @@ Safe diagnostic modes:
 ```
 
 Generate-only and measurement modes do not speak or control playback. No-AI does not contact Ollama. See [docs/MILESTONE_3_TEST.md](docs/MILESTONE_3_TEST.md) and [docs/MILESTONE_4_TEST.md](docs/MILESTONE_4_TEST.md).
+
+## Milestone 9A structured-commentary benchmark
+
+Run the explicit generate-only comparison:
+
+```powershell
+.\run-commentary-benchmark.cmd
+```
+
+This fixed benchmark compares the accepted prompt with a structured candidate over 12 synthetic scenarios and 2 samples per arm (48 local requests). It contacts only the already-configured loopback Ollama service. It does not request Windows media sessions, observe or control Firefox, change volume, open the GUI, or produce speech.
+
+Outputs are written under the ignored `artifacts\m9a\<timestamp>\` folder. Score `M9A_EVALUATION.md` before opening the separate answer key. See [docs/MILESTONE_9A_TEST.md](docs/MILESTONE_9A_TEST.md) for the exact review procedure.
+
+The candidate prompt and deterministic announcement renderer remain experimental and unreachable from normal automatic radio. A completed benchmark does not pass M9A or authorize M9B.
 
 ## Isolated Firefox audio-ducking diagnostic
 

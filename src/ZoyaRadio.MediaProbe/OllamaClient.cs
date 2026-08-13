@@ -24,6 +24,10 @@ internal interface ILocalCommentGenerator
     Task<OllamaRunningModelsResult> GetRunningModelsAsync(
         TimeSpan timeout,
         CancellationToken cancellationToken);
+
+    Task<OllamaInstalledModelsResult> GetInstalledModelsAsync(
+        TimeSpan timeout,
+        CancellationToken cancellationToken);
 }
 
 internal enum OllamaGenerationStatus
@@ -67,6 +71,17 @@ internal sealed record OllamaRunningModel(
 internal sealed record OllamaRunningModelsResult(
     bool Success,
     IReadOnlyList<OllamaRunningModel> Models,
+    string Message);
+
+internal sealed record OllamaInstalledModel(
+    [property: JsonPropertyName("name")] string? Name,
+    [property: JsonPropertyName("model")] string? Model,
+    [property: JsonPropertyName("size")] long? Size,
+    [property: JsonPropertyName("details")] OllamaModelDetails? Details);
+
+internal sealed record OllamaInstalledModelsResult(
+    bool Success,
+    IReadOnlyList<OllamaInstalledModel> Models,
     string Message);
 
 internal sealed class OllamaClient : ILocalCommentGenerator, IDisposable
@@ -267,6 +282,43 @@ internal sealed class OllamaClient : ILocalCommentGenerator, IDisposable
         }
     }
 
+    public async Task<OllamaInstalledModelsResult> GetInstalledModelsAsync(
+        TimeSpan timeout,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            using HttpResponseMessage response = await SendAsync(
+                HttpMethod.Get,
+                "tags",
+                content: null,
+                timeout,
+                cancellationToken);
+            string body = await response.Content.ReadAsStringAsync(cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return new OllamaInstalledModelsResult(
+                    false,
+                    [],
+                    $"Installed-model query returned HTTP {(int)response.StatusCode} ({response.StatusCode}).");
+            }
+
+            OllamaTagsResponse? parsed = JsonSerializer.Deserialize<OllamaTagsResponse>(body, JsonOptions);
+            return parsed?.Models is null
+                ? new OllamaInstalledModelsResult(false, [], "Installed-model query returned malformed JSON.")
+                : new OllamaInstalledModelsResult(true, parsed.Models, "Installed-model query succeeded.");
+        }
+        catch (OperationCanceledException)
+        {
+            return new OllamaInstalledModelsResult(false, [], "Installed-model query timed out or was cancelled.");
+        }
+        catch (Exception exception)
+        {
+            return new OllamaInstalledModelsResult(false, [], $"Installed-model query failed: {exception.Message}");
+        }
+    }
+
     public void Dispose()
     {
         if (_ownsHttpClient)
@@ -360,4 +412,7 @@ internal sealed class OllamaClient : ILocalCommentGenerator, IDisposable
 
     private sealed record OllamaPsResponse(
         [property: JsonPropertyName("models")] IReadOnlyList<OllamaRunningModel>? Models);
+
+    private sealed record OllamaTagsResponse(
+        [property: JsonPropertyName("models")] IReadOnlyList<OllamaInstalledModel>? Models);
 }

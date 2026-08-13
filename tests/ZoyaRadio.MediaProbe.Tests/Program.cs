@@ -129,6 +129,34 @@ var tests = new (string Name, Func<Task> Run)[]
     ("transition preparation preserves Unicode metadata", TransitionPreparationPreservesUnicode),
     ("only one transition opportunity remains pending", () => RunSynchronous(OnlyOneTransitionOpportunityRemainsPending)),
     ("prepared transition audio is disposable after use", TransitionPreparedAudioIsDisposed),
+    ("M9A brief uses bounded prior history", () => RunSynchronous(Milestone9AExperimentTests.BriefUsesBoundedPriorHistory)),
+    ("M9A exact-track repeat detection", () => RunSynchronous(Milestone9AExperimentTests.ExactTrackRepeatIsDetected)),
+    ("M9A repeated-artist detection", () => RunSynchronous(Milestone9AExperimentTests.RepeatedArtistIsDetected)),
+    ("M9A same-artist transition detection", () => RunSynchronous(Milestone9AExperimentTests.SameArtistTransitionIsDetected)),
+    ("M9A no-pattern classification", () => RunSynchronous(Milestone9AExperimentTests.NoPatternIsClassified)),
+    ("M9A reason precedence is deterministic", () => RunSynchronous(Milestone9AExperimentTests.ReasonPrecedenceIsDeterministic)),
+    ("M9A count and transition-distance semantics", () => RunSynchronous(Milestone9AExperimentTests.CountsExcludeCurrentAndDistancesCountTransitions)),
+    ("M9A identity normalization matches runtime", () => RunSynchronous(Milestone9AExperimentTests.IdentityNormalizationMatchesRadioHistory)),
+    ("M9A Unicode metadata is preserved", () => RunSynchronous(Milestone9AExperimentTests.UnicodeMetadataIsPreserved)),
+    ("M9A metadata is inert JSON", () => RunSynchronous(Milestone9AExperimentTests.MetadataIsRenderedAsInertJson)),
+    ("M9A injection metadata cannot alter prompt structure", () => RunSynchronous(Milestone9AExperimentTests.InjectionMetadataCannotClosePromptSections)),
+    ("M9A candidate prompt contains visible contract sections", () => RunSynchronous(Milestone9AExperimentTests.CandidatePromptHasVisibleContractSections)),
+    ("M9A brief builder invents no music facts", () => RunSynchronous(Milestone9AExperimentTests.BriefBuilderInventsNoMusicFacts)),
+    ("M9A recent opening fingerprint", () => RunSynchronous(Milestone9AExperimentTests.OpeningFingerprintIsShallowAndNormalized)),
+    ("M9A direct-address fingerprint", () => RunSynchronous(Milestone9AExperimentTests.DirectAddressFingerprintUsesExactNameBoundary)),
+    ("M9A question and comparison fingerprints", () => RunSynchronous(Milestone9AExperimentTests.QuestionAndComparisonFingerprintsAreDetected)),
+    ("M9A recent comments remain bounded", () => RunSynchronous(Milestone9AExperimentTests.RecentCommentsAreBoundedAndRemainText)),
+    ("M9A deterministic announcement output", () => RunSynchronous(Milestone9AExperimentTests.DeterministicAnnouncementUsesExactMetadata)),
+    ("M9A announcement preserves Unicode and punctuation", () => RunSynchronous(Milestone9AExperimentTests.AnnouncementPreservesUnicodeAndPunctuation)),
+    ("M9A scenario manifest is valid and bounded", () => RunSynchronous(Milestone9AExperimentTests.ScenarioManifestIsValidAndBounded)),
+    ("M9A scenario IDs are stable", () => RunSynchronous(Milestone9AExperimentTests.ScenarioIdsAreStable)),
+    ("M9A blinded mapping and answer key agree", () => RunSynchronous(Milestone9AExperimentTests.BlindedMappingAndAnswerKeyAgree)),
+    ("M9A fake benchmark writes safe blinded artifacts", Milestone9AExperimentTests.FakeBenchmarkProducesSafeBlindedArtifacts),
+    ("M9A benchmark mode is isolated from desktop media", () => RunSynchronous(Milestone9AExperimentTests.BenchmarkModeIsIsolatedFromDesktopMedia)),
+    ("M9A accepted prompt resource remains byte-stable", () => RunSynchronous(Milestone9AExperimentTests.AcceptedPromptResourceRemainsByteStable)),
+    ("M9A accepted runtime composition remains unchanged", () => RunSynchronous(Milestone9AExperimentTests.AcceptedRuntimeCompositionStillUsesCurrentPromptAndFallback)),
+    ("M9A existing runtime safety regressions remain registered", () => RunSynchronous(Milestone9AExperimentTests.ExistingRuntimeSafetyRegressionsRemainRegistered)),
+    ("M9A benchmark artifacts are ignored", () => RunSynchronous(Milestone9AExperimentTests.BenchmarkArtifactsAreIgnored)),
     ("M8A controller normal Start", Milestone8AControllerTests.NormalStart),
     ("M8A faulty status listener cannot break lifecycle", Milestone8AControllerTests.FaultyStatusListenerCannotBreakLifecycle),
     ("M8A repeated Start is idempotent", Milestone8AControllerTests.RepeatedStartIsIdempotent),
@@ -3317,6 +3345,8 @@ internal sealed class FakeCommentGenerator : ILocalCommentGenerator
 
     public Exception? ExceptionToThrow { get; init; }
 
+    public int InstalledModelCalls { get; private set; }
+
     public CommentPrompt? LastPrompt { get; private set; }
 
     public OllamaGenerationResult GenerationResult { get; init; } = new(
@@ -3356,6 +3386,22 @@ internal sealed class FakeCommentGenerator : ILocalCommentGenerator
     {
         PsCalls++;
         return Task.FromResult(new OllamaRunningModelsResult(true, [], "fake ps succeeded"));
+    }
+
+    public Task<OllamaInstalledModelsResult> GetInstalledModelsAsync(
+        TimeSpan timeout,
+        CancellationToken cancellationToken)
+    {
+        InstalledModelCalls++;
+        return Task.FromResult(
+            new OllamaInstalledModelsResult(
+                true,
+                [new OllamaInstalledModel(
+                    ModelName,
+                    ModelName,
+                    2_500_000_000,
+                    new OllamaModelDetails("4.0B", "Q4_K_M"))],
+                "fake tags succeeded"));
     }
 }
 
