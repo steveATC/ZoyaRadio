@@ -14,7 +14,7 @@ This is the front door to the canonical Zoya Radio documentation. The local Git 
 | Latest accepted automated result | 178 passed, 0 failed at `b56c03d` |
 | Accepted internal packaged baseline | `0.8.0-alpha.1`; owner packaged-desktop acceptance recorded August 11, 2026 |
 | Deferred distribution evidence | Clean Windows 10/11 and invited private-alpha testing; not blockers to internal development |
-| Next project step | M9A structured-commentary experiment is implemented as an isolated candidate and awaits Steve's blinded qualitative evaluation; M9B is not authorized |
+| Next project step | M9A's qualitative review rejected the structured candidate; normal radio remains at the M8 baseline and no M9B work is authorized |
 | Snapshot ID | `zoya-radio-2026-08-11-m8-b56c03d1` |
 
 Update this table whenever an accepted implementation commit becomes the new source snapshot.
@@ -116,4 +116,4 @@ Repository-only does not mean non-authoritative. README and the milestone record
 - [Milestone 8A acceptance](MILESTONE_8A_TEST.md) - accepted desktop evidence plus preserved regression procedure
 - [Milestone 8B acceptance](MILESTONE_8B_TEST.md) - accepted internal package and owner desktop evidence, with deferred distribution-validation procedures
 - [Milestone 9A contract](MILESTONE_9A_CONTRACT.md) - approved experiment, candidate prompt boundary, benchmark, and non-goals
-- [Milestone 9A evaluation](MILESTONE_9A_TEST.md) - current blinded review procedure; not an acceptance record yet
+- [Milestone 9A evaluation](MILESTONE_9A_TEST.md) - blinded review procedure and the recorded rejected-candidate outcome

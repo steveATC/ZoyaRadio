@@ -23,6 +23,12 @@ This file separates unresolved defects from accepted platform limits and deferre
 - Steve accepted the current persona and deferred further tuning rather than adding a brittle phrase blacklist.
 - Mechanical validation still cannot prove factual grounding; generated prose requires human review when grounding quality is the acceptance target.
 
+### M9A candidate remains unsuitable for runtime
+
+- Steve's corrected blinded M9A review rejected the StructuredCandidate for runtime consideration. It was preferable to the accepted baseline in the fixed comparison, but still produced repetitive constructions, awkward output, unsupported listener/session claims, and did not reliably preserve the exact supplied Unicode metadata.
+- In the Unicode scenario, the candidate translated/transliterated the supplied Cyrillic metadata while baseline samples substituted different Cyrillic metadata. Both violate the experiment's exact-metadata boundary; this is an output-grounding failure, not storage mojibake in the corrected fixture.
+- No repair, retest, runtime integration, or M9B work is authorized by this recorded result.
+
 ### Retained native working set
 
 - Repeated Nicole CPU preparation disposes the ONNX model each time, but the long-running .NET/native process retained roughly 333 MiB working set after three preparations.

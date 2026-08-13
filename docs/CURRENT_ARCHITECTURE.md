@@ -74,7 +74,7 @@ The project-local Microsoft .NET SDK 8.0.423 is in ignored `.dotnet/`. Microsoft
 - The candidate prompt is a separate embedded resource with inert JSON metadata, visible trusted/creative/prohibited sections, and exact `FALLBACK`. The accepted Milestone 4 prompt remains unchanged.
 - The version 1.0 manifest contains 12 synthetic scenario classes and 2 samples for each blinded arm, for 48 requests. Generated artifacts remain ignored under `artifacts/m9a/`.
 - The M9A command returns before ordinary logging, speech setup, GSMTC, Firefox, Core Audio, ducking, GUI, or runtime-state construction. Only loopback Ollama is available to this command.
-- M9A awaits Steve's qualitative evaluation and is not integrated into the control application or automatic radio.
+- Steve's completed blinded review rejected the M9A StructuredCandidate for runtime consideration. It remains isolated and is not integrated into the control application or automatic radio.
 
 - `ZoyaRadio.ControlApp` is a same-process WinForms frontend over the accepted automatic-radio runtime. It does not contain a second scheduling, targeting, speech, or ducking implementation.
 - `RadioRuntimeController` exposes one authoritative asynchronous lifecycle. Start is idempotent, Stop is safely awaited, window close waits for the same cleanup path, and stale callbacks from an ended generation are suppressed.
@@ -157,7 +157,7 @@ Normal automatic delivery contains no GSMTC pause, play, or toggle command. `Try
 
 ## Current boundaries
 
-The implementation has no browser scraping, cookies, account access, unofficial YouTube API, cloud AI/TTS, telemetry, tray icon, global media keys, endpoint/master-volume manipulation, persistent listening-history database, track-position tracking, duration tracking, installer, code signing, public release, clean-machine certification, or invited-tester validation. Milestone 8 is closed only for continued internal development; compatibility and third-party distribution claims remain deferred. M9A remains an isolated candidate and does not authorize M9B.
+The implementation has no browser scraping, cookies, account access, unofficial YouTube API, cloud AI/TTS, telemetry, tray icon, global media keys, endpoint/master-volume manipulation, persistent listening-history database, track-position tracking, duration tracking, installer, code signing, public release, clean-machine certification, or invited-tester validation. Milestone 8 is closed only for continued internal development; compatibility and third-party distribution claims remain deferred. The rejected M9A candidate remains isolated and does not authorize M9B.
 
 ## Windows API basis
 

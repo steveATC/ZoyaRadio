@@ -2,7 +2,7 @@
 
 ## Current status
 
-Milestone 9A is an implemented experiment awaiting Steve's qualitative review. It is not passed and is not integrated into the ordinary radio. Milestone 9B is not authorized.
+Milestone 9A is a completed experiment. Steve's blinded qualitative review rejected the StructuredCandidate for runtime consideration. M9A is not passed, normal radio remains unchanged, and Milestone 9B is not authorized.
 
 ## Engineering benchmark note
 
@@ -73,3 +73,13 @@ Also say whether the run completed normally and whether any console error appear
 ## Pass boundary
 
 Automated checks and a completed benchmark do not pass M9A. Steve must explicitly decide whether the blinded evidence justifies acceptance, rejection, or another bounded experiment. Even acceptance would not authorize normal-runtime integration; that would require a separate M9B contract.
+
+## Recorded qualitative-review outcome - August 12, 2026
+
+The valid qualitative artifact set is `artifacts/m9a/20260812-215927-424/`. The earlier Codex-run artifact set with a mojibake Unicode fixture remains excluded from qualitative acceptance.
+
+- The corrected manual run completed all 48 requests with no request failures. It recorded 42 valid non-fallback comments, 2 mechanical validator rejections, 4 safe `FALLBACK` responses, and selected-model unload verified.
+- Steve completed the blinded evaluation. All 48 samples contain either numeric scores or at least one checked rejection flag; flagged-but-unscored samples are completed rejections, not missing evaluations.
+- The answer key maps Arm Cedar to StructuredCandidate and Arm Lark to AcceptedBaseline. Cedar had 10 rejected samples out of 24, compared with Lark's 20 out of 24. This comparative improvement is not acceptance.
+- Cedar still received rejection flags for repetitive construction and malformed/awkward output, and its generated prose included unsupported claims about Steve. In the Unicode scenario it translated/transliterated rather than preserving the exact supplied Cyrillic metadata. Lark substituted entirely different Cyrillic metadata in both samples. These are material grounding failures even though the corrected fixture itself is valid UTF-8.
+- The StructuredCandidate is rejected for runtime consideration. No runtime composition changed, M9A does not pass, and M9B is not authorized. Any future repair or new commentary experiment requires a separate bounded contract.

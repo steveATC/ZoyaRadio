@@ -97,6 +97,7 @@ These decisions summarize accepted project rules and rationale already evidenced
 - The explicit benchmark uses fixed synthetic fixtures, two blinded arms, loopback-only `qwen3:4b-instruct`, bounded requests, ignored local artifacts, and selected-model unload. It cannot request GSMTC, use Core Audio, control playback/volume, produce speech, or open the GUI.
 - Mechanical validation and latency do not determine creative quality. Steve's blinded grounding, relevance, personality, phrasing, variety, concision, and preference review is the M9A acceptance evidence.
 - M9A does not claim the known `Borrowed Umbrella` grounding defect is fixed and does not authorize M9B.
+- Steve's completed blinded review rejected the StructuredCandidate for runtime consideration. Although it drew fewer rejections than the accepted baseline, neither arm reliably met the required qualitative and exact-metadata grounding standard. The accepted runtime prompt, context, validator, and fallback remain controlling; a further experiment or any M9B work requires a new bounded contract.
 
 ## Approved Milestone 8 boundaries
 

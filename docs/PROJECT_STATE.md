@@ -11,7 +11,7 @@
 | Latest accepted automated result | 178 passed, 0 failed at accepted internal implementation `b56c03d` |
 | Accepted internal packaged baseline | `0.8.0-alpha.1` |
 | Deferred distribution validation | Clean Windows 10/11 and invited private-alpha testing; not blockers to internal development |
-| Next project step | Steve must complete the M9A blinded qualitative evaluation; M9A is not passed and M9B is not authorized |
+| Next project step | No post-M8 implementation is authorized: M9A's reviewed candidate was rejected, normal radio remains unchanged, and M9B is not authorized |
 | Deferred milestone | Milestone 6 |
 
 The local Git repository is authoritative. See [PROJECT_INDEX.md](PROJECT_INDEX.md) for the documentation authority and snapshot rules.
@@ -48,8 +48,10 @@ Full implemented behavior is in [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.m
 - The implementation adds a typed deterministic brief, shallow recent-comment fingerprints, a separate candidate prompt, deterministic announcement candidates, and an explicit generate-only comparison benchmark.
 - Normal radio continues to use the accepted Milestone 4 prompt/context, validator, fixed fallback, scheduler, delivery path, voice, targeting, ducking, and restoration behavior.
 - The fake-driven suite currently passes 206 tests with 0 failures: all 178 accepted baseline regressions plus 28 focused M9A tests. This is current candidate verification, not a replacement for the accepted 178/0 baseline at `b56c03d`.
-- The one authorized Codex live benchmark completed 48/48 loopback generations and verified model unload. A post-run audit found mojibake in its Unicode fixture; the fixture and tests were corrected, the first artifact set was labelled invalid for acceptance, and no second Codex benchmark was run. Steve's documented manual run must produce the qualitative evaluation set.
-- M9A awaits Steve's blinded qualitative evaluation. It is not passed, the candidate is not integrated, the `Borrowed Umbrella` issue is not claimed fixed, and M9B is not authorized.
+- The one authorized Codex live benchmark completed 48/48 loopback generations and verified model unload. A post-run audit found mojibake in its Unicode fixture; the fixture and tests were corrected, the first artifact set was labelled invalid for acceptance, and no second Codex benchmark was run.
+- Steve's corrected manual benchmark at `artifacts/m9a/20260812-215927-424/` completed 48/48 requests, with 42 valid non-fallback comments, 2 mechanical validator rejections, 4 safe `FALLBACK` responses, and selected-model unload verified. The blind review was complete: all 48 samples were scored or explicitly rejected.
+- The answer key identifies Arm Cedar as the StructuredCandidate and Arm Lark as the AcceptedBaseline. Cedar received fewer qualitative rejections (10 of 24 samples, versus 20 of 24) but was still not acceptable: the review identified repetitive construction, awkward output, unsupported listener/session claims, and a Unicode-metadata failure where neither arm reliably preserved the exact supplied title and artist.
+- M9A does not pass. The StructuredCandidate is rejected for runtime consideration, is not integrated, the `Borrowed Umbrella` grounding issue is not fixed, and M9B is not authorized. Any further commentary experiment requires a separate bounded contract.
 
 ## M8B accepted engineering verification
 
@@ -103,7 +105,7 @@ Full implemented behavior is in [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.m
 ## Next step and deferred observations
 
 - Milestone 8 is closed for continued internal development, and `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf` is the latest accepted internal implementation snapshot.
-- The post-M8 review selected only the bounded M9A structured-commentary experiment. The next step is Steve's blinded evaluation under [MILESTONE_9A_TEST.md](MILESTONE_9A_TEST.md), not runtime integration.
+- The post-M8 review selected only the bounded M9A structured-commentary experiment. Its qualitative review rejected the candidate; normal runtime remains at the M8 baseline, and any further commentary work would require a separately approved bounded contract rather than M9B integration.
 - Clean-machine and invited-tester checks remain deferred compatibility/distribution evidence. A later defect may require a bounded repair, but missing tester feedback does not block internal development.
 - The earlier 20:49 observer stall remains intermittent, unresolved, and unreproduced by the accepted Firefox-plus-Chrome run.
 - Wrapper-refresh diagnostics are excessively repetitive; this is a deferred non-blocking logging-quality issue.
