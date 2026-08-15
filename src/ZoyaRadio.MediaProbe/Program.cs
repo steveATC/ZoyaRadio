@@ -31,6 +31,7 @@ internal static class Program
         bool m9c5Comparison = false;
         bool m9c6Benchmark = false;
         bool m9bGenerateOnlyBenchmark = false;
+        bool m9bGate3Silent = false;
 
         foreach (string argument in args)
         {
@@ -183,6 +184,12 @@ internal static class Program
                 continue;
             }
 
+            if (string.Equals(argument, "--m9b-gate3-silent", StringComparison.OrdinalIgnoreCase))
+            {
+                m9bGate3Silent = true;
+                continue;
+            }
+
             Console.Error.WriteLine($"Unknown option: {argument}");
             WriteUsage();
             return 2;
@@ -201,11 +208,12 @@ internal static class Program
             + (deterministicContextBenchmark ? 1 : 0)
             + (m9c5Comparison ? 1 : 0)
             + (m9c6Benchmark ? 1 : 0)
-            + (m9bGenerateOnlyBenchmark ? 1 : 0);
+            + (m9bGenerateOnlyBenchmark ? 1 : 0)
+            + (m9bGate3Silent ? 1 : 0);
         if (selectedModes > 1)
         {
             Console.Error.WriteLine(
-                "Snapshot, playback-control, announcement, AI-comment, radio-behavior, neural-TTS measurement, audio-ducking, commentary-benchmark, source-backed-commentary-benchmark, owner-curated-commentary-benchmark, deterministic-context-benchmark, M9C.5 comparison, M9C.6 whole-comment, and M9B generate-only modes cannot be combined.");
+                "Snapshot, playback-control, announcement, AI-comment, radio-behavior, neural-TTS measurement, audio-ducking, commentary-benchmark, source-backed-commentary-benchmark, owner-curated-commentary-benchmark, deterministic-context-benchmark, M9C.5 comparison, M9C.6 whole-comment, M9B generate-only, and M9B Gate 3 silent modes cannot be combined.");
             WriteUsage();
             return 2;
         }
@@ -298,6 +306,11 @@ internal static class Program
         if (m9bGenerateOnlyBenchmark)
         {
             return await M9BGenerateOnlyCommand.RunAsync();
+        }
+
+        if (m9bGate3Silent)
+        {
+            return await M9BGate3SilentCommand.RunAsync();
         }
 
         if (m9c6Benchmark)
@@ -768,5 +781,6 @@ internal static class Program
         Console.Error.WriteLine("   or: run-m9c5-model-comparison.cmd");
         Console.Error.WriteLine("   or: run-m9c6-whole-comment-benchmark.cmd");
         Console.Error.WriteLine("   or: run-m9b-generate-only-evaluation.cmd");
+        Console.Error.WriteLine("   or: run-m9b-gate3-silent.cmd");
     }
 }

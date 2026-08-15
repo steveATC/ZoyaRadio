@@ -1,5 +1,5 @@
 {
-  "version": "1.0",
+  "version": "1.1",
   "cards": [
     {
       "id": "M9C6-01",
@@ -31,6 +31,7 @@
       "id": "M9C6-02",
       "artist": "Black Sabbath",
       "title": "Paranoid",
+      "titleAliases": ["Paranoid (2009 Remaster)"],
       "editorialUsefulness": "useful",
       "facts": [
         {
@@ -395,6 +396,7 @@
       "id": "M9C6-16",
       "artist": "Johnny Cash",
       "title": "Cocaine Blues",
+      "titleAliases": ["Cocaine Blues (Live at Folsom State Prison, Folsom, CA - January 1968)"],
       "editorialUsefulness": "useful",
       "facts": [
         {

@@ -11,7 +11,7 @@
 | Latest accepted automated result | 178 passed, 0 failed at accepted internal implementation `b56c03d` |
 | Accepted internal packaged baseline | `0.8.0-alpha.1` |
 | Deferred distribution validation | Clean Windows 10/11 and invited private-alpha testing; not blockers to internal development |
-| Next project step | M9B Gate 2 is owner-accepted with a narrow repetition exception. Silent Gate 3 is next but remains unauthorized and unrun; audible Gate 4 is also unrun. |
+| Next project step | M9B Gate 2 is owner-accepted. Two safe Gate 3 attempts failed readiness; the repaired candidate awaits one fresh Gate 3 trial. Audible Gate 4 remains unauthorized. |
 | Deferred milestone | Milestone 6 |
 
 The local Git repository is authoritative. See [PROJECT_INDEX.md](PROJECT_INDEX.md) for the documentation authority and snapshot rules.
@@ -64,7 +64,7 @@ Full implemented behavior is in [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.m
 - Grounded and training-augmented quality was effectively tied (4.85 versus 4.86 overall), while grounded factual acceptability was higher (5.00 versus 4.84). Grounded 14B whole-comment synthesis is therefore the selected M9B candidate direction.
 - M9C is closed as successful experimental evidence, not accepted runtime behavior. Repetition, metadata-mention policy, semantic exaggeration, and unsupported sound/lyric interpretation remain integration risks.
 - Steve explicitly authorized the bounded [Milestone 9B contract](MILESTONE_9B_CONTRACT.md) on August 15, 2026. The candidate implementation adds pre-delivery reviewed context, an optional local 14B whole-comment route, bounded context cache, and M8 fallback selection; it is not accepted runtime behavior.
-- The accepted M8 safety baseline remains controlling. M9B preserves schedule, delivery-time revalidation, Firefox-only ducking/exact restoration, and safe silence. Manual silent and audible desktop gates have not run.
+- The accepted M8 safety baseline remains controlling. M9B preserves schedule, delivery-time revalidation, Firefox-only ducking/exact restoration, and safe silence. Two safe silent Gate 3 attempts failed readiness; a repaired candidate awaits a fresh Gate 3 trial, and audible Gate 4 remains unauthorized.
 - Current M9B engineering verification is recorded separately from the accepted 178/0 M8 baseline. The M9B generate-only owner review procedure is [MILESTONE_9B_TEST.md](MILESTONE_9B_TEST.md).
 
 ## Milestone 9B candidate status
@@ -72,10 +72,10 @@ Full implemented behavior is in [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.m
 - M9B is implemented as a candidate only, using the M9C.6 reviewed familiar-track catalog and a local `qwen3:14b-q4_K_M` whole-comment service before the existing Track-A preparation/delivery boundary.
 - It keeps the M8 4B candidate/fallback available when the 14B model, confirmed context, timing, validation, or safe opportunity is unavailable. The 14B service is local-only, bounded, selected-model-unloading, and does not start after ducking.
 - Live enrichment remains restricted to exact MusicBrainz and linked Wikidata; catalog source URLs are provenance and are never fetched at runtime. The bounded LocalAppData context cache is not listening history and Clear History clears it plus M9B's ephemeral repetition state.
-- Current M9B engineering verification: all four Release builds passed with 0 warnings and 0 errors; all four formatting checks and `git diff --check` passed; the complete fake-driven suite passed 249 tests with 0 failures. This is new candidate evidence and does not replace the accepted historical M8 178/0 result.
+- Current M9B Gate 3 repair engineering verification: four Release builds passed with 0 warnings and 0 errors; four formatting checks and `git diff --check` passed; the complete fake-driven suite passed 253 tests with 0 failures. The repair adds exact observed-title aliases, stronger source-card-only prompt instructions, and a typed verdict; this candidate verification does not replace the accepted historical M8 178/0 result.
 - The one authorized generate-only 14B artifact is `artifacts/m9b/20260815-095443-189/`: 48/48 requests, zero generation failures, 33 displayable candidates, 15 mechanical hard discards, 68.75% availability, 624.9 ms median/819.7 ms p95/3328.0 ms maximum latency, and selected-model unload verified.
 - Steve accepted Gate 2 on August 15, 2026 with a narrow same-card repetition exception. Of 32 scored displayable candidates, factual acceptability was 5.00, context integration 4.72, personality 4.44, spoken naturalness 4.38, variety 3.72, and overall desire 3.84. The 10 scored candidates without a repeated-template flag averaged 4.90 overall and variety; Raul Seixas candidate 3 was intentionally unscored as a near-copy. The full decision is in [MILESTONE_9B_TEST.md](MILESTONE_9B_TEST.md).
-- Silent desktop preparation, audible delivery, and final Steve acceptance remain explicitly unrun. Gate 3 requires separate authorization; Gate 4 remains prohibited until Gate 3 passes.
+- Two silent Gate 3 attempts were safe but failed candidate readiness (four then five opportunities; zero ready candidates in each). The repaired candidate requires a fresh separately authorized Gate 3 trial. Audible Gate 4 remains prohibited until that trial passes and Steve separately authorizes it.
 
 ## M8B accepted engineering verification
 
@@ -129,7 +129,7 @@ Full implemented behavior is in [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.m
 ## Next step and deferred observations
 
 - Milestone 8 is closed for continued internal development, and `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf` is the latest accepted internal implementation snapshot.
-- M9A was rejected and M9C supplied successful experimental evidence. Steve accepted M9B Gate 2 with a narrow repetition exception on August 15, 2026; silent Gate 3, audible Gate 4, and final acceptance remain pending while the accepted M8 safety baseline stays controlling.
+- M9A was rejected and M9C supplied successful experimental evidence. Steve accepted M9B Gate 2 with a narrow repetition exception on August 15, 2026; two safe Gate 3 attempts failed readiness, a fresh repaired Gate 3 trial is pending, and audible Gate 4/final acceptance remain unauthorized while the accepted M8 safety baseline stays controlling.
 - Clean-machine and invited-tester checks remain deferred compatibility/distribution evidence. A later defect may require a bounded repair, but missing tester feedback does not block internal development.
 - The earlier 20:49 observer stall remains intermittent, unresolved, and unreproduced by the accepted Firefox-plus-Chrome run.
 - Wrapper-refresh diagnostics are excessively repetitive; this is a deferred non-blocking logging-quality issue.

@@ -198,6 +198,124 @@ internal static class Milestone9BTests
         Contains(runtime, "M9BTransitionCommentProvider");
     }
 
+    public static void CatalogUsesOnlyReviewedExactArtistSpecificAliases()
+    {
+        M9BContextCatalog catalog = M9BContextCatalog.Load();
+        Equal("M9C6-02", catalog.Find(new MediaSnapshot("Paranoid (2009 Remaster)", "Black Sabbath", null))!.Id);
+        Equal("M9C6-16", catalog.Find(new MediaSnapshot("Cocaine Blues (Live at Folsom State Prison, Folsom, CA - January 1968)", "Johnny Cash", null))!.Id);
+        Equal<M9BCatalogCard?>(null, catalog.Find(new MediaSnapshot("Paranoid (2009 Remaster)", "Not Black Sabbath", null)));
+        Equal<M9BCatalogCard?>(null, catalog.Find(new MediaSnapshot("Paranoid (2010 Remaster)", "Black Sabbath", null)));
+        Equal<M9BCatalogCard?>(null, catalog.Find(new MediaSnapshot("Cocaine Blues Live", "Johnny Cash", null)));
+    }
+
+    public static void PromptExplicitlyForbidsObservedUnsupportedClaims()
+    {
+        M9BCatalogCard card = FirstCard();
+        CommentPrompt prompt = M9BWholeCommentPromptFactory.Create(new MediaSnapshot(card.Title, card.Artist, null), card.ToContextCard(), []);
+        Contains(prompt.SystemInstruction, "sound, riffs, instrumentation, vocals, production");
+        Contains(prompt.SystemInstruction, "genre, style, lyrics, song meaning, emotion, atmosphere, listener experience");
+        Contains(prompt.SystemInstruction, "iconic or legendary");
+        Contains(prompt.SystemInstruction, "return exactly FALLBACK");
+    }
+
+    public static void Gate3VerdictUsesTypedEvidenceAndAcceptanceThresholds()
+    {
+        M9BGate3Verdict zeroReady = M9BGate3Verdict.Evaluate(Gate3Evidence(12, true, 0, 0, Record(M9BGate3PreparationOutcome.ModelFallback)));
+        False(zeroReady.Passed);
+        Contains(string.Join("; ", zeroReady.Reasons), "below 90%");
+
+        M9BGate3Verdict belowThreshold = M9BGate3Verdict.Evaluate(Gate3Evidence(12, true, 0, 0,
+            Enumerable.Range(0, 8).Select(_ => Record(M9BGate3PreparationOutcome.Ready)).Append(Record(M9BGate3PreparationOutcome.HardDiscard)).ToArray()));
+        False(belowThreshold.Passed);
+        Equal(1, belowThreshold.HardDiscardFailures);
+
+        M9BGate3Verdict thresholdPass = M9BGate3Verdict.Evaluate(Gate3Evidence(12, true, 0, 0,
+            Enumerable.Range(0, 9).Select(_ => Record(M9BGate3PreparationOutcome.Ready)).Append(Record(M9BGate3PreparationOutcome.HardDiscard)).ToArray()));
+        True(thresholdPass.Passed);
+        Equal(10, thresholdPass.EligibleSteadyStateOpportunities);
+        Equal(0.9, thresholdPass.ReadinessRate);
+
+        False(M9BGate3Verdict.Evaluate(Gate3Evidence(12, false, 0, 0, Record(M9BGate3PreparationOutcome.Ready))).Passed);
+        False(M9BGate3Verdict.Evaluate(Gate3Evidence(12, true, 1, 0, Record(M9BGate3PreparationOutcome.Ready))).Passed);
+
+        M9BGate3Verdict separated = M9BGate3Verdict.Evaluate(Gate3Evidence(12, true, 0, 0,
+            Record(M9BGate3PreparationOutcome.Ready),
+            Record(M9BGate3PreparationOutcome.Cancelled),
+            Record(M9BGate3PreparationOutcome.StaleDiscarded),
+            Record(M9BGate3PreparationOutcome.EnrichmentUnavailable),
+            Record(M9BGate3PreparationOutcome.HardDiscard)));
+        Equal(2, separated.EligibleSteadyStateOpportunities);
+        Equal(1, separated.HardDiscardFailures);
+        Equal(1, separated.EnrichmentUnavailableResults);
+        False(separated.Passed);
+    }
+    public static void Gate3RunnerIsSilentAndFirefoxOnly()
+    {
+        string root = RepositoryPathLocator.FindRepositoryRoot();
+        string source = File.ReadAllText(Path.Combine(root, "src", "ZoyaRadio.MediaProbe", "M9BGate3SilentRunner.cs"));
+        Contains(source, "M9BGate3SilentRunner");
+        Contains(source, "FirefoxSessionSelector.VerifiedSourceId");
+        Contains(source, "GATE 3 DELIVERY SUPPRESSED");
+        Contains(source, "M9BGate3RunEvidence");
+        foreach (string forbidden in new[]
+        {
+            "TryPauseAsync",
+            "TryPlayAsync",
+            "TryTogglePlayPauseAsync",
+            "IAnnouncementSpeechService",
+            "KokoroSpeechService",
+            "WindowsTransitionAudioDucker",
+            "SetVolume",
+            "RunDuckedAnnouncementAsync",
+        })
+        {
+            False(source.Contains(forbidden, StringComparison.Ordinal));
+        }
+
+        var evidence = new M9BGate3RunEvidence(
+            12,
+            2,
+            2,
+            2,
+            1,
+            1,
+            0,
+            0,
+            true,
+            [new M9BGate3PreparationRecord(1, "Как дела", "Исполнитель", true, M9BGate3PreparationOutcome.Ready, "ready", 125, 100, 50, false)]);
+        string json = System.Text.Json.JsonSerializer.Serialize(evidence);
+        M9BGate3RunEvidence roundTrip = System.Text.Json.JsonSerializer.Deserialize<M9BGate3RunEvidence>(json)!;
+        Equal("Как дела", roundTrip.Preparations.Single().Title);
+        Equal("Исполнитель", roundTrip.Preparations.Single().Artist);
+    }
+    private static M9BGate3PreparationRecord Record(M9BGate3PreparationOutcome outcome) => new(
+        1,
+        "Track",
+        "Artist",
+        outcome == M9BGate3PreparationOutcome.Ready,
+        outcome,
+        outcome.ToString(),
+        125,
+        100,
+        50,
+        outcome == M9BGate3PreparationOutcome.Cancelled);
+
+    private static M9BGate3RunEvidence Gate3Evidence(
+        int transitions,
+        bool? unloaded,
+        int forbiddenActivityCount,
+        int sessionSafetyDisposals,
+        params M9BGate3PreparationRecord[] preparations) => new(
+        transitions,
+        preparations.Length,
+        preparations.Count(item => item.CandidateReady),
+        0,
+        preparations.Count(item => item.OutcomeKind == M9BGate3PreparationOutcome.Cancelled),
+        preparations.Count(item => item.OutcomeKind == M9BGate3PreparationOutcome.StaleDiscarded),
+        sessionSafetyDisposals,
+        forbiddenActivityCount,
+        unloaded,
+        preparations);
     private static M9BCatalogCard FirstCard() => M9BContextCatalog.Load().Cards.Single(card => card.Id == "M9C6-01");
     private static RadioPreparationContext Context() => new(new MediaSnapshot("Sweet Home Alabama", "Lynyrd Skynyrd", null), DateTimeOffset.UtcNow, [], []);
     private static M9BGroundedCommentService CreateService(M9BFakeGenerator generator, string directory)

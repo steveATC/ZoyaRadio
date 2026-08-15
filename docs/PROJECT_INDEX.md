@@ -14,7 +14,7 @@ This is the front door to the canonical Zoya Radio documentation. The local Git 
 | Latest accepted automated result | 178 passed, 0 failed at `b56c03d` |
 | Accepted internal packaged baseline | `0.8.0-alpha.1`; owner packaged-desktop acceptance recorded August 11, 2026 |
 | Deferred distribution evidence | Clean Windows 10/11 and invited private-alpha testing; not blockers to internal development |
-| Next project step | M9B Gate 2 is owner-accepted with a narrow repetition exception; silent Gate 3 is next but remains unauthorized and unrun |
+| Next project step | M9B Gate 2 is owner-accepted; two safe Gate 3 attempts failed readiness, and the repaired candidate awaits one fresh Gate 3 trial. Gate 4 remains unauthorized. |
 | Snapshot ID | `zoya-radio-2026-08-11-m8-b56c03d1` |
 
 Update this table whenever an accepted implementation commit becomes the new source snapshot.

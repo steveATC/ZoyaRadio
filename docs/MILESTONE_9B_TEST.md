@@ -6,9 +6,10 @@ Steve accepted M9B Gate 2 on August 15, 2026 with the narrow same-card repetitio
 exception recorded below. M9B remains an implemented candidate, not passed or accepted
 runtime behavior. The accepted Milestone 8 snapshot remains the safety baseline.
 
-The next possible stage is Gate 3, the silent desktop preparation trial. It has not run
-and requires a separate explicit authorization. Audible delivery remains prohibited
-until Gate 3 passes and Steve separately authorizes Gate 4.
+Gate 3 has now had two safe silent desktop attempts, both of which failed candidate
+readiness and therefore did not pass. The repaired candidate requires one fresh, separately
+authorized Gate 3 trial. Audible Gate 4 remains prohibited unless that fresh Gate 3 trial
+passes and Steve separately authorizes Gate 4.
 
 ## Evaluated artifact
 
@@ -85,16 +86,45 @@ Steve explicitly accepted Gate 2 with this narrow repetition exception on August
 - waive Gate 3 timing/cancellation/playback-isolation evidence; or
 - authorize audible Gate 4 testing.
 
-No prompt change, validator relaxation, code repair, or second generate-only run is
-required before Gate 3.
+## Gate 3 attempts: safe but failed
 
-## Gate 3 remains unrun
+Two separately authorized silent desktop trials completed 12 genuine Firefox transitions
+without speech, ducking, playback control, volume change, catch-up, or stale delivery:
 
-A later separately authorized silent desktop preparation trial must observe at least 12
-genuine transitions with M9B preparation enabled but speech and ducking disabled. It
-must record cold-load and warm latency, resource residency where observable, cache and
-candidate readiness, cancellation, and unload behavior. It must confirm zero playback
-control, ducking, speech, catch-up, or stale delivery.
+- `artifacts\m9b\gate3\20260815-112516-439\`: four preparation opportunities, zero
+  ready candidates, three cancelled preparations, two stale disposals, and selected-model
+  unload verified.
+- `artifacts\m9b\gate3\20260815-114211-775\`: five preparation opportunities, zero
+  ready candidates, no cancellations or stale disposals, and selected-model unload verified.
+  The two observed Firefox title variants did not match exact catalog cards, while the
+  remaining reviewed-card candidates were conservatively hard-discarded for unsupported
+  sound/genre/vocal claims.
 
-Gate 3 evidence is separate from this generate-only acceptance. Do not start normal
-radio, Firefox/media testing, or audible delivery under this documentation authorization.
+Both attempts were safe failures, not Gate 3 acceptance. The diagnostic also incorrectly
+returned success after reaching 12 transitions even when readiness was zero. The repair adds
+reviewed typed exact artist-specific aliases for the two observed titles, strengthens the
+whole-comment prompt without weakening the validator, and makes the Gate 3 process verdict
+fail unless all required acceptance conditions are met. The evidence now distinguishes typed
+eligible opportunities, hard discards, enrichment-unavailable results, cancellation, stale
+work, model unload, and forbidden desktop-media activity.
+
+A fresh separately authorized Gate 3 trial must still observe at least 12 genuine transitions
+with M9B preparation enabled but speech and ducking disabled. It must meet at least 90% ready
+candidates across eligible steady-state opportunities, verify selected-model unload, and record
+zero playback control, ducking, speech, volume change, catch-up, or stale delivery. Gate 3
+evidence remains separate from Gate 2 owner acceptance. Do not start audible Gate 4 unless
+this fresh Gate 3 trial passes and Steve separately authorizes it.
+## Fresh Gate 3 trial — authorization required
+
+Do not run this command until Steve explicitly authorizes a fresh Gate 3 trial. From the
+repository folder, run:
+
+```text
+.\run-m9b-gate3-silent.cmd
+```
+
+Keep exactly one eligible Firefox/YouTube Music session playing. The trial is bounded: it
+ends after 12 genuine Firefox transitions, writes local evidence below
+`artifacts\m9b\gate3\`, and returns exit code `0` only when its typed Gate 3 verdict is
+`PASS`. It never starts speech, ducks audio, changes any volume, or controls playback.
+A `FAIL` verdict is safe evidence, not a reason to begin audible Gate 4.

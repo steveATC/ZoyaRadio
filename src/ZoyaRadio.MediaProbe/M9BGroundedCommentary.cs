@@ -32,10 +32,13 @@ internal sealed record M9BCatalogCard(
     string Artist,
     string Title,
     bool EditoriallyUseful,
-    IReadOnlyList<M9BCatalogFact> Facts)
+    IReadOnlyList<M9BCatalogFact> Facts,
+    IReadOnlyList<string> TitleAliases)
 {
+    internal IReadOnlyList<string> ExactTitles => new[] { Title }.Concat(TitleAliases).ToArray();
+
     internal bool Matches(MediaSnapshot media) => RadioHistory.SameNormalizedText(Artist, media.Artist)
-        && RadioHistory.SameNormalizedText(Title, media.Title);
+        && ExactTitles.Any(title => RadioHistory.SameNormalizedText(title, media.Title));
 
     internal M9BContextCard ToContextCard() => new(Artist, Title, "catalog:" + Id, Facts);
 }
@@ -62,7 +65,7 @@ internal sealed record M9BContextResolution(
         && Card.HasUsefulFacts;
 }
 internal sealed record M9BContextCatalogManifest(string Version, IReadOnlyList<M9BContextCatalogEntry> Cards);
-internal sealed record M9BContextCatalogEntry(string Id, string Artist, string Title, string EditorialUsefulness, IReadOnlyList<M9BContextCatalogFactEntry> Facts);
+internal sealed record M9BContextCatalogEntry(string Id, string Artist, string Title, string EditorialUsefulness, IReadOnlyList<M9BContextCatalogFactEntry> Facts, IReadOnlyList<string>? TitleAliases = null);
 internal sealed record M9BContextCatalogFactEntry(string Text, string SourceName, string Url, string Applicability);
 
 internal sealed class M9BContextCatalog
@@ -87,9 +90,9 @@ internal sealed class M9BContextCatalog
             new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
             ?? throw new InvalidOperationException("The M9B context catalog was malformed.");
 
-        if (manifest.Version != "1.0" || manifest.Cards.Count != 16)
+        if (manifest.Version != "1.1" || manifest.Cards.Count != 16)
         {
-            throw new InvalidOperationException("M9B requires exactly the reviewed 16-card version 1.0 catalog.");
+            throw new InvalidOperationException("M9B requires exactly the reviewed 16-card version 1.1 catalog.");
         }
 
         var cards = new List<M9BCatalogCard>();
@@ -121,17 +124,32 @@ internal sealed class M9BContextCatalog
                 facts.Add(mapped);
             }
 
+            string[] aliases = (entry.TitleAliases ?? []).ToArray();
+            if (aliases.Any(string.IsNullOrWhiteSpace)
+                || aliases.Any(alias => RadioHistory.SameNormalizedText(alias, entry.Title))
+                || aliases.Distinct(StringComparer.OrdinalIgnoreCase).Count() != aliases.Length)
+            {
+                throw new InvalidOperationException("The M9B context catalog contains invalid title aliases.");
+            }
+
             cards.Add(new M9BCatalogCard(
                 entry.Id,
                 entry.Artist,
                 entry.Title,
                 string.Equals(entry.EditorialUsefulness, "useful", StringComparison.Ordinal),
-                facts));
+                facts,
+                aliases));
         }
 
         if (cards.Select(card => card.Id).Distinct(StringComparer.Ordinal).Count() != cards.Count)
         {
             throw new InvalidOperationException("The M9B context catalog contains duplicate card identifiers.");
+        }
+
+        if (cards.SelectMany(card => card.ExactTitles.Select(title => MusicContextCache.Normalize(card.Artist) + "|" + MusicContextCache.Normalize(title)))
+            .Distinct(StringComparer.Ordinal).Count() != cards.Sum(card => card.ExactTitles.Count))
+        {
+            throw new InvalidOperationException("The M9B context catalog contains ambiguous artist/title aliases.");
         }
 
         return new M9BContextCatalog(cards);
@@ -495,12 +513,28 @@ internal sealed class M9BRecentCommentState
     }
 }
 
+internal enum M9BCommentSelectionKind
+{
+    Unknown,
+    Ready,
+    AiDisabled,
+    EnrichmentUnavailable,
+    ModelUnavailable,
+    GenerationFailed,
+    ModelFallback,
+    HardDiscard,
+    AdvisoryFallback,
+}
+
 internal sealed record M9BCommentSelection(
     CommentSelection? Selection,
     M9BContextCard? Card,
     string Reason,
     bool UsedRegeneration,
-    bool ModelUnavailable);
+    bool ModelUnavailable,
+    OllamaGenerationMetrics? Metrics = null,
+    bool ContextFromCache = false,
+    M9BCommentSelectionKind OutcomeKind = M9BCommentSelectionKind.Unknown);
 
 internal sealed class M9BGroundedCommentService
 {
@@ -531,13 +565,13 @@ internal sealed class M9BGroundedCommentService
     {
         if (!aiEnabled)
         {
-            return new M9BCommentSelection(null, null, "M9B skipped because AI is disabled.", false, false);
+            return new M9BCommentSelection(null, null, "M9B skipped because AI is disabled.", false, false, OutcomeKind: M9BCommentSelectionKind.AiDisabled);
         }
 
         M9BContextResolution resolved = await _contextProvider.ResolveAsync(context.SubjectTrack, cancellationToken);
         if (!resolved.IsConfirmedWithFacts || resolved.Card is null || !resolved.Card.HasUsefulFacts)
         {
-            return new M9BCommentSelection(null, null, "M9B enrichment was unavailable, ambiguous, weak, or unsafe.", false, false);
+            return new M9BCommentSelection(null, null, "M9B enrichment was unavailable, ambiguous, weak, or unsafe.", false, false, null, resolved.FromCache, M9BCommentSelectionKind.EnrichmentUnavailable);
         }
 
         OllamaInstalledModelsResult installed = await _generator.GetInstalledModelsAsync(
@@ -548,7 +582,7 @@ internal sealed class M9BGroundedCommentService
             || string.Equals(model.Model, M9BConstants.Model, StringComparison.OrdinalIgnoreCase));
         if (!modelPresent)
         {
-            return new M9BCommentSelection(null, resolved.Card, "M9B 14B model is absent or unavailable; preserving M8 fallback.", false, true);
+            return new M9BCommentSelection(null, resolved.Card, "M9B 14B model is absent or unavailable; preserving M8 fallback.", false, true, OutcomeKind: M9BCommentSelectionKind.ModelUnavailable);
         }
 
         CommentPrompt prompt = M9BWholeCommentPromptFactory.Create(context.SubjectTrack, resolved.Card, _recent.Comments);
@@ -570,7 +604,7 @@ internal sealed class M9BGroundedCommentService
 
                 if (generation.Status != OllamaGenerationStatus.Success)
                 {
-                    return new M9BCommentSelection(null, resolved.Card, generation.ErrorMessage ?? "M9B generation failed.", regenerated, false);
+                    return new M9BCommentSelection(null, resolved.Card, generation.ErrorMessage ?? "M9B generation failed.", regenerated, false, generation.Metrics, resolved.FromCache, M9BCommentSelectionKind.GenerationFailed);
                 }
 
                 M9BCommentValidation validation = M9BCommentValidator.Validate(
@@ -581,12 +615,12 @@ internal sealed class M9BGroundedCommentService
                     _recent.FactIdentities);
                 if (validation.Kind == M9BCommentValidationKind.Fallback)
                 {
-                    return new M9BCommentSelection(null, resolved.Card, "M9B model selected FALLBACK.", regenerated, false);
+                    return new M9BCommentSelection(null, resolved.Card, "M9B model selected FALLBACK.", regenerated, false, generation.Metrics, resolved.FromCache, M9BCommentSelectionKind.ModelFallback);
                 }
 
                 if (validation.Kind == M9BCommentValidationKind.HardDiscard)
                 {
-                    return new M9BCommentSelection(null, resolved.Card, validation.Reason, regenerated, false);
+                    return new M9BCommentSelection(null, resolved.Card, validation.Reason, regenerated, false, generation.Metrics, resolved.FromCache, M9BCommentSelectionKind.HardDiscard);
                 }
 
                 if (validation.Kind == M9BCommentValidationKind.Advisory && attempt == 0)
@@ -598,7 +632,7 @@ internal sealed class M9BGroundedCommentService
 
                 if (validation.Kind == M9BCommentValidationKind.Advisory)
                 {
-                    return new M9BCommentSelection(null, resolved.Card, "M9B regeneration remained advisory/duplicate; preserving M8 fallback.", true, false);
+                    return new M9BCommentSelection(null, resolved.Card, "M9B regeneration remained advisory/duplicate; preserving M8 fallback.", true, false, generation.Metrics, resolved.FromCache, M9BCommentSelectionKind.AdvisoryFallback);
                 }
 
                 return new M9BCommentSelection(
@@ -606,7 +640,7 @@ internal sealed class M9BGroundedCommentService
                         validation.NormalizedText.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length,
                         "M9B grounded context candidate passed mechanical checks.", generation, false),
                     resolved.Card,
-                    "M9B grounded candidate ready.", regenerated, false);
+                    "M9B grounded candidate ready.", regenerated, false, generation.Metrics, resolved.FromCache, M9BCommentSelectionKind.Ready);
             }
         }
         finally
@@ -615,7 +649,7 @@ internal sealed class M9BGroundedCommentService
             _log.Write($"M9B 14B UNLOAD: {(unload.Success ? "requested" : "not confirmed")} - {unload.Message}");
         }
 
-        return new M9BCommentSelection(null, resolved.Card, "M9B candidate was unavailable.", regenerated, false);
+        return new M9BCommentSelection(null, resolved.Card, "M9B candidate was unavailable.", regenerated, false, OutcomeKind: M9BCommentSelectionKind.GenerationFailed);
     }
 
     internal void RecordDelivered(CommentSelection selection, M9BContextCard? card)
