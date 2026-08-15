@@ -24,6 +24,12 @@ internal static class Program
         bool enumerateAudioOnly = false;
         bool simulateDuckFailure = false;
         bool commentaryBenchmark = false;
+        bool sourceBackedCommentaryBenchmark = false;
+        bool ownerCuratedCommentaryBenchmark = false;
+        bool clearEnrichmentCache = false;
+        bool deterministicContextBenchmark = false;
+        bool m9c5Comparison = false;
+        bool m9c6Benchmark = false;
 
         foreach (string argument in args)
         {
@@ -135,6 +141,41 @@ internal static class Program
                 continue;
             }
 
+            if (string.Equals(argument, "--source-backed-commentary-benchmark", StringComparison.OrdinalIgnoreCase))
+            {
+                sourceBackedCommentaryBenchmark = true;
+                continue;
+            }
+
+            if (string.Equals(argument, "--owner-curated-commentary-benchmark", StringComparison.OrdinalIgnoreCase))
+            {
+                ownerCuratedCommentaryBenchmark = true;
+                continue;
+            }
+
+            if (string.Equals(argument, "--clear-enrichment-cache", StringComparison.OrdinalIgnoreCase))
+            {
+                clearEnrichmentCache = true;
+                continue;
+            }
+
+            if (string.Equals(argument, "--deterministic-context-benchmark", StringComparison.OrdinalIgnoreCase))
+            {
+                deterministicContextBenchmark = true;
+                continue;
+            }
+            if (string.Equals(argument, "--m9c5-model-comparison", StringComparison.OrdinalIgnoreCase))
+            {
+                m9c5Comparison = true;
+                continue;
+            }
+
+            if (string.Equals(argument, "--m9c6-whole-comment-benchmark", StringComparison.OrdinalIgnoreCase))
+            {
+                m9c6Benchmark = true;
+                continue;
+            }
+
             Console.Error.WriteLine($"Unknown option: {argument}");
             WriteUsage();
             return 2;
@@ -147,11 +188,16 @@ internal static class Program
             + (radioBehaviorTest ? 1 : 0)
             + (measureNeuralTts ? 1 : 0)
             + (audioDuckingTest ? 1 : 0)
-            + (commentaryBenchmark ? 1 : 0);
+            + (commentaryBenchmark ? 1 : 0)
+            + (sourceBackedCommentaryBenchmark ? 1 : 0)
+            + (ownerCuratedCommentaryBenchmark ? 1 : 0)
+            + (deterministicContextBenchmark ? 1 : 0)
+            + (m9c5Comparison ? 1 : 0)
+            + (m9c6Benchmark ? 1 : 0);
         if (selectedModes > 1)
         {
             Console.Error.WriteLine(
-                "Snapshot, playback-control, announcement, AI-comment, radio-behavior, neural-TTS measurement, audio-ducking, and commentary-benchmark modes cannot be combined.");
+                "Snapshot, playback-control, announcement, AI-comment, radio-behavior, neural-TTS measurement, audio-ducking, commentary-benchmark, source-backed-commentary-benchmark, owner-curated-commentary-benchmark, deterministic-context-benchmark, M9C.5 comparison, and M9C.6 whole-comment modes cannot be combined.");
             WriteUsage();
             return 2;
         }
@@ -241,11 +287,36 @@ internal static class Program
         }
 
         LocalLog log;
+        if (m9c6Benchmark)
+        {
+            return await M9C6Command.RunAsync();
+        }
+        if (m9c5Comparison)
+        {
+            return await M9C5ComparisonCommand.RunAsync();
+        }
+
+        if (deterministicContextBenchmark)
+        {
+            return await DeterministicContextBenchmarkCommand.RunAsync();
+        }
+
         if (commentaryBenchmark)
         {
             return await CommentaryBenchmarkCommand.RunAsync();
         }
 
+        if (sourceBackedCommentaryBenchmark || ownerCuratedCommentaryBenchmark || clearEnrichmentCache)
+        {
+            if (clearEnrichmentCache && !sourceBackedCommentaryBenchmark && !ownerCuratedCommentaryBenchmark)
+            {
+                return await MusicContextBenchmarkCommand.RunAsync(clearCacheOnly: true);
+            }
+
+            return await MusicContextBenchmarkCommand.RunAsync(
+                clearCacheOnly: false,
+                ownerCuratedCommentaryBenchmark ? MusicContextBenchmarkCorpus.M9C3OwnerCurated : MusicContextBenchmarkCorpus.M9C2SafetyAndFactCards);
+        }
 
         try
         {
@@ -678,5 +749,10 @@ internal static class Program
         Console.Error.WriteLine("   or: run-neural-tts-diagnostic.cmd");
         Console.Error.WriteLine("   or: run-audio-ducking-test.cmd [--enumerate-only|--simulate-duck-failure]");
         Console.Error.WriteLine("   or: run-commentary-benchmark.cmd");
+        Console.Error.WriteLine("   or: run-source-backed-commentary-benchmark.cmd [--clear-enrichment-cache]");
+        Console.Error.WriteLine("   or: run-owner-curated-commentary-benchmark.cmd");
+        Console.Error.WriteLine("   or: run-deterministic-context-benchmark.cmd");
+        Console.Error.WriteLine("   or: run-m9c5-model-comparison.cmd");
+        Console.Error.WriteLine("   or: run-m9c6-whole-comment-benchmark.cmd");
     }
 }

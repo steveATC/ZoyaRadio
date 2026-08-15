@@ -1,6 +1,6 @@
 # Current architecture
 
-This document describes the accepted runtime implementation at commit `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf`, including M8B packaging and readiness, plus the isolated M9A diagnostic candidate. M9A is not accepted runtime behavior. Future ideas and research recommendations are excluded.
+This document describes the accepted runtime implementation at commit `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf`, including M8B packaging and readiness, plus isolated M9A and M9C diagnostic candidates. Neither is accepted runtime behavior. Future ideas and research recommendations are excluded.
 
 ## Platform and local dependencies
 
@@ -37,6 +37,11 @@ The project-local Microsoft .NET SDK 8.0.423 is in ignored `.dotnet/`. Microsoft
 | `run-spoken-announcement-test.cmd` | Explicitly confirm one prepared title/artist announcement with protected same-session recovery. |
 | `run-ai-comment-test.cmd` | Generate, validate, measure, or speak one local AI comment; includes generate-only, no-AI, and failure diagnostics. |
 | `run-commentary-benchmark.cmd` | Run the isolated M9A synthetic, generate-only, blinded prompt comparison; no media, audio, GUI, or speech path is reachable. |
+| `run-source-backed-commentary-benchmark.cmd` | Run the isolated M9C MusicBrainz/Wikidata plus loopback-Ollama comparison; no media, audio, GUI, or speech path is reachable. |
+| `run-owner-curated-commentary-benchmark.cmd` | Run the isolated M9C.3 curated-confirmed, blinded quality benchmark; no media, audio, GUI, or speech path is reachable. |
+| `run-deterministic-context-benchmark.cmd` | Run the isolated M9C.4 deterministic-anchor benchmark; no media, audio, GUI, speech, or web-enrichment path is reachable. |
+| `run-m9c5-model-comparison.cmd` | Run the isolated M9C.5 4B-versus-14B comparison; normal radio configuration remains unchanged. |
+| `run-m9c6-whole-comment-benchmark.cmd` | Run the isolated M9C.6 grounded-versus-training-augmented whole-comment comparison with reviewed context packs and local 14B. |
 | `run-radio-behavior-test.cmd` | Arm transition-aware automatic preparation and ducked delivery. |
 | `run-audio-ducking-test.cmd` | Enumerate or explicitly test isolated Firefox Core Audio duck/restoration. |
 | `run-neural-tts-diagnostic.cmd` and related launchers | Safely exercise Nicole preparation, fallback, and resource diagnostics. |
@@ -63,6 +68,16 @@ The project-local Microsoft .NET SDK 8.0.423 is in ignored `.dotnet/`. Microsoft
 | `LocalLog` and `LocalAppDataLogFolderProvider` | Write readable timestamped UTF-8 diagnostics and resolve the accepted shared-runtime log folder under LocalAppData. |
 | `PrivateAlphaPackageIntegrity` and `PrivateAlphaSelfTest` | Verify the packaged manifest/hashes, refuse unsafe startup, audit prohibited content, and provide safe non-media extracted-package diagnostics. |
 | `PrivateAlphaReadinessPresenter`, `PrivateAlphaSetupController`, and `OllamaSetupClient` | Present package/Windows/disk/Firefox/Visual C++/loopback-Ollama/Qwen readiness and perform only explicit, consented local model setup. |
+
+## Isolated Milestone 9C diagnostic candidate
+
+- M9C uses a strict MusicBrainz artist/recording identity gate, then only a linked Wikidata structured description with a direct source URL. It caches bounded diagnostic outcomes under ignored `artifacts/m9c/cache/` and treats all uncertain/failed source chains as no enrichment.
+- Its source-backed prompt and benchmark command run before ordinary logs, GSMTC, Firefox, Core Audio, speech, ducking, GUI, and normal runtime state. Normal radio never composes M9C types or makes web requests.
+- M9C.3 was a useful source-backed direction-finding experiment, but human review found unsupported cultural/geographic expansion and invented persona history.
+- M9C.4 adds a separate 20-condition deterministic-anchor corpus. Its code renders each curated verified fact; its loopback-only model may generate only a separately validated subjective link using at most one selected `FictionalPersonaFact`.
+- M9C.5 compares the accepted 4B diagnostic model with local 14B over fixed prompt-equal inputs. M9C.6 supplies 16 reviewed multi-fact context packs and lets 14B generate the complete comment in grounded and training-augmented modes.
+- Steve selected the grounded M9C.6 direction as successful experimental evidence. All M9C commands remain generate-only, request selected-model unload, and leave normal radio unchanged.
+- M9C is closed as an experiment and does not authorize M9B or any runtime integration.
 
 ## Control application and lifecycle
 

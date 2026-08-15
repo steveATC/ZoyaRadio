@@ -22,6 +22,12 @@
   <ItemGroup>
     <EmbeddedResource Include="Prompts\Milestone9AStructuredCommentPrompt.txt" />
     <EmbeddedResource Include="Prompts\Milestone9ABenchmarkScenarios.json" />
+    <EmbeddedResource Include="Prompts\Milestone9CSourceBackedPrompt.txt" />
+    <EmbeddedResource Include="Prompts\Milestone9CBenchmarkScenarios.json" />
+    <EmbeddedResource Include="Prompts\Milestone9C3OwnerCuratedScenarios.json" />
+    <EmbeddedResource Include="Prompts\Milestone9C4DeterministicContextScenarios.json" />
+    <EmbeddedResource Include="Prompts\Milestone9C4DeterministicLinkPrompt.txt" />
+    <EmbeddedResource Include="Prompts\Milestone9C6ContextPacks.json" />
     <EmbeddedResource Include="Prompts\Milestone4HostPersonaPrompt.txt" />
   </ItemGroup>
   <ItemGroup>

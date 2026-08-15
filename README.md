@@ -2,7 +2,7 @@
 
 Zoya Radio is a private, local-first Windows application with an accepted WinForms control frontend and preserved console diagnostics. It observes Firefox media, prepares short locally generated comments, speaks with the accepted Nicole voice, and can deliver prepared comments over proportionally ducked Firefox audio.
 
-Milestones 0 through 5, Milestone 7, Milestones 7.5A-7.5B, and Milestone 8 have passed their required internal-development acceptance. Milestone 6 is deliberately deferred. Steve accepted packaged version `0.8.0-alpha.1` on August 11, 2026, making commit `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf` the latest accepted internal implementation with 178 automated tests passed and 0 failed. Milestone 9A is an isolated structured-commentary experiment awaiting Steve's blinded qualitative evaluation; it is not ordinary radio behavior. Clean Windows 10/11 and invited-tester validation remain deferred distribution evidence, so the package is not a clean-machine-certified or public release.
+Milestones 0 through 5, Milestone 7, Milestones 7.5A-7.5B, and Milestone 8 have passed their required internal-development acceptance. Milestone 6 is deliberately deferred. Steve accepted packaged version `0.8.0-alpha.1` on August 11, 2026, making commit `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf` the latest accepted internal implementation with 178 automated tests passed and 0 failed. Milestone 9A was rejected for runtime consideration. Milestone 9C is closed as successful experimental evidence: grounded whole-comment synthesis with local Qwen3 14B is the selected future candidate direction, but it is not ordinary radio behavior and no integration is authorized. Clean Windows 10/11 and invited-tester validation remain deferred distribution evidence, so the package is not a clean-machine-certified or public release.
 
 Start with [docs/PROJECT_INDEX.md](docs/PROJECT_INDEX.md) for the canonical documentation map. Current status is in [docs/PROJECT_STATE.md](docs/PROJECT_STATE.md), and implemented behavior is in [docs/CURRENT_ARCHITECTURE.md](docs/CURRENT_ARCHITECTURE.md).
 
@@ -157,7 +157,15 @@ This fixed benchmark compares the accepted prompt with a structured candidate ov
 
 Outputs are written under the ignored `artifacts\m9a\<timestamp>\` folder. Score `M9A_EVALUATION.md` before opening the separate answer key. See [docs/MILESTONE_9A_TEST.md](docs/MILESTONE_9A_TEST.md) for the exact review procedure.
 
-The candidate prompt and deterministic announcement renderer remain experimental and unreachable from normal automatic radio. A completed benchmark does not pass M9A or authorize M9B.
+The rejected M9A candidate remains unreachable from normal automatic radio. A completed M9C benchmark does not pass M9C or authorize M9B.
+
+## Milestone 9C source-backed benchmark
+
+```powershell
+.\run-source-backed-commentary-benchmark.cmd
+```
+
+This optional diagnostic sends only its fixed title/artist scenarios to approved MusicBrainz and, after strict identity confirmation, linked Wikidata. It writes ignored artifacts under `artifacts\m9c\<timestamp>\`, never accesses Firefox or audio, and cannot enter normal radio. The later M9C.3-M9C.6 launchers preserve the curated-context, deterministic-anchor, model-comparison, and whole-comment experiments; see [docs/MILESTONE_9C_TEST.md](docs/MILESTONE_9C_TEST.md) for the completed record.
 
 ## Isolated Firefox audio-ducking diagnostic
 
@@ -250,3 +258,13 @@ The application uses Microsoft's Windows media, speech, playback, and Core Audio
 - [Durable decisions](docs/DECISIONS.md)
 - [Known issues](docs/KNOWN_ISSUES.md)
 - [Research index](docs/RESEARCH_INDEX.md)
+
+### Preserved M9C quality benchmarks
+
+```powershell
+.\run-deterministic-context-benchmark.cmd
+.\run-m9c5-model-comparison.cmd
+.\run-m9c6-whole-comment-benchmark.cmd
+```
+
+These generate-only experiments preserve the rejected deterministic-anchor design, the 4B-versus-14B comparison, and the successful M9C.6 whole-comment comparison. They never touch Firefox, audio, speech, volume, ducking, the GUI, or ordinary radio state. M9C.6 selected grounded 14B whole-comment synthesis as future design evidence only; see [docs/MILESTONE_9C_TEST.md](docs/MILESTONE_9C_TEST.md).

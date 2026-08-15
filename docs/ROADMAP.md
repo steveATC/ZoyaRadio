@@ -80,7 +80,9 @@ Steve accepted M8A, separately authorized M8B, and accepted the extracted M8B pa
 
 - Steve's post-M8 review approved the bounded [Milestone 9A contract](MILESTONE_9A_CONTRACT.md) for a structured-commentary experiment only.
 - M9A's corrected manual benchmark and blinded review are recorded in [MILESTONE_9A_TEST.md](MILESTONE_9A_TEST.md). The StructuredCandidate was rejected for runtime consideration: it was less often rejected than the baseline, but still produced unacceptable repetition, awkward output, unsupported listener/session claims, and Unicode-metadata failures.
-- M9A did not pass and M9B runtime integration is not authorized. A future experiment, repair, or integration requires a separate bounded contract.
+- M9A did not pass and M9B runtime integration is not authorized.
+- Steve completed the separate bounded [Milestone 9C contract](MILESTONE_9C_CONTRACT.md). M9C.6 validated grounded whole-comment synthesis with local `qwen3:14b-q4_K_M`; its owner review is recorded in [MILESTONE_9C_TEST.md](MILESTONE_9C_TEST.md).
+- M9C is closed as successful experimental evidence. Its selected direction is not normal radio behavior, and M9B or any runtime integration still requires a separate explicitly approved contract.
 - Research remains evidence only and the post-M8 intake remains unapproved proposal history except for the exact scope Steve promoted into the M9A contract.
 - Milestone 6 remains deferred unless Steve separately promotes it.
 

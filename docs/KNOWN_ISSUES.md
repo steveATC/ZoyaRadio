@@ -99,6 +99,15 @@ This file separates unresolved defects from accepted platform limits and deferre
 - Browser-tab-level Firefox ducking is not a current requirement and has no approved implementation plan.
 - Persistent listening history is not implemented or approved; current history is intentionally process-local and bounded.
 
+### Deferred M9C.6 integration quality work
+
+- Owner review selected grounded Qwen3 14B whole-comment synthesis as successful experimental evidence, not accepted runtime behavior.
+- The 96-sample benchmark still showed repeated rhetorical openings and near-duplicate structures that exact-string counting did not fully detect.
+- Its mechanical classifier wrongly hard-rejected ten acceptable comments merely because they did not repeat the artist or title. A future integration validator should treat metadata mention as optional when playback context is already clear.
+- Some otherwise strong comments changed the strength or meaning of a supplied fact, or inferred sound, lyrics, emotional content, or genre without supporting context. A future contract must define proportionate semantic-grounding policy before speech is authorized.
+- Training-augmented prompting is not selected because it did not materially improve owner preference and reduced factual acceptability.
+- These are deferred integration-design concerns. They do not alter normal radio and do not authorize M9B.
+
 ## Recorded performance context
 
 - Ollama performance run: 4.262 seconds wall-clock, 2.191 seconds API total duration, 1.999 seconds model load, 2.68 GiB loaded size/VRAM reported by Ollama, and context length 2048. Selected-model unload verification passed.

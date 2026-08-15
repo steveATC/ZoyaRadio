@@ -86,7 +86,7 @@ These decisions summarize accepted project rules and rationale already evidenced
 - Clean Windows 10 22H2, clean Windows 11, and invited private-alpha testing remain useful compatibility and distribution evidence but are deliberately deferred and do not block internal feature development.
 - The accepted internal baseline must not be described as clean-machine certified, broadly compatible, publicly released, code-signed, SmartScreen-reputable, or validated for third-party distribution.
 - A later tester failure may require a bounded compatibility or packaging repair; the absence of tester feedback is not evidence of compatibility.
-- The post-M8 review approved only the bounded M9A structured-commentary experiment. Other proposal, research, Milestone 6, M9B, and later work remains unauthorized unless Steve explicitly approves a separate contract.
+- M9A was rejected for runtime consideration. Steve separately approved only the bounded M9C source-backed enrichment experiment; M9B and later work remain unauthorized unless Steve explicitly approves a separate contract.
 
 ## Approved Milestone 9A experimental boundaries
 
@@ -98,6 +98,19 @@ These decisions summarize accepted project rules and rationale already evidenced
 - Mechanical validation and latency do not determine creative quality. Steve's blinded grounding, relevance, personality, phrasing, variety, concision, and preference review is the M9A acceptance evidence.
 - M9A does not claim the known `Borrowed Umbrella` grounding defect is fixed and does not authorize M9B.
 - Steve's completed blinded review rejected the StructuredCandidate for runtime consideration. Although it drew fewer rejections than the accepted baseline, neither arm reliably met the required qualitative and exact-metadata grounding standard. The accepted runtime prompt, context, validator, and fallback remain controlling; a further experiment or any M9B work requires a new bounded contract.
+
+## Approved Milestone 9C experimental boundaries
+
+- M9C is a generate-only diagnostic. It may use exact title/artist only with approved MusicBrainz and linked Wikidata endpoints, plus loopback Ollama.
+- Any ambiguous, unavailable, rate-limited, malformed, conflicting, unsupported, or failed source chain produces no enrichment and safe `FALLBACK`; no source fact can force speech.
+- Every supplied external fact must be concise structured data with a direct approved HTTPS source URL. Raw page content, browser data, history, listener data, prompts, and generated prose never leave the machine.
+- The bounded ignored cache is diagnostic-only, easy to clear, and is not listening history or runtime state.
+- M9C cannot enter normal radio composition without a separately approved contract. M9B remains unauthorized.
+- Steve's completed M9C.6 review selects local `qwen3:14b-q4_K_M` with reviewed multi-fact context packs and grounded whole-comment synthesis as the direction for any future integration proposal.
+- The model must synthesize the entire comment; deterministic fact-plus-separate-reaction concatenation is rejected as unnatural and repetitive.
+- Training-augmented factual freedom is not selected: it provided no material qualitative benefit and reduced factual acceptability. Externally verifiable claims in the selected candidate remain bounded to reviewed supplied facts.
+- A future integration validator must not require every comment to repeat the current artist or title, but must guard against meaning-changing exaggeration and unsupported sound, lyric, cultural, or biographical claims.
+- M9C is accepted only as experimental design evidence. The accepted M8 runtime remains controlling until Steve approves and accepts a separate implementation contract.
 
 ## Approved Milestone 8 boundaries
 

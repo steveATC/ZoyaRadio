@@ -11,7 +11,7 @@
 | Latest accepted automated result | 178 passed, 0 failed at accepted internal implementation `b56c03d` |
 | Accepted internal packaged baseline | `0.8.0-alpha.1` |
 | Deferred distribution validation | Clean Windows 10/11 and invited private-alpha testing; not blockers to internal development |
-| Next project step | No post-M8 implementation is authorized: M9A's reviewed candidate was rejected, normal radio remains unchanged, and M9B is not authorized |
+| Next project step | M9C is closed as successful experimental evidence; grounded 14B whole-comment synthesis is the selected future candidate, but no runtime integration is authorized |
 | Deferred milestone | Milestone 6 |
 
 The local Git repository is authoritative. See [PROJECT_INDEX.md](PROJECT_INDEX.md) for the documentation authority and snapshot rules.
@@ -29,6 +29,7 @@ The local Git repository is authoritative. See [PROJECT_INDEX.md](PROJECT_INDEX.
 - Kokoro `af_nicole` is the accepted primary CPU voice; `af_heart` is runner-up and Windows local TTS is fallback.
 - The accepted M8B internal baseline adds a self-contained Windows x64 package, application-relative packaged assets, startup integrity checks, and thin prerequisite/readiness actions without changing the accepted radio runtime.
 - The M9A structured-commentary prompt, typed brief, deterministic announcement candidates, and 48-request benchmark are isolated diagnostics and are unreachable from the accepted automatic-radio composition.
+- M9C through M9C.6 are separate explicit diagnostics only. M9C.6 uses fixed reviewed context packs and loopback `qwen3:14b-q4_K_M`; all M9C candidates remain unreachable from normal radio, Firefox, audio, speech, GUI, and normal logs/state.
 - Recent state remains process-local and bounded to 10 tracks and 6 accepted AI comments. There is no persistent listening history or catch-up queue.
 
 Full implemented behavior is in [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.md).
@@ -53,6 +54,17 @@ Full implemented behavior is in [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.m
 - The answer key identifies Arm Cedar as the StructuredCandidate and Arm Lark as the AcceptedBaseline. Cedar received fewer qualitative rejections (10 of 24 samples, versus 20 of 24) but was still not acceptable: the review identified repetitive construction, awkward output, unsupported listener/session claims, and a Unicode-metadata failure where neither arm reliably preserved the exact supplied title and artist.
 - M9A does not pass. The StructuredCandidate is rejected for runtime consideration, is not integrated, the `Borrowed Umbrella` grounding issue is not fixed, and M9B is not authorized. Any further commentary experiment requires a separate bounded contract.
 
+## Milestone 9C candidate status
+
+- Steve approved M9C as a bounded source-backed enrichment experiment after M9A was rejected.
+- M9C through M9C.4 established strict identity/source boundaries and showed that useful source-backed context can improve commentary, but deterministic anchor-plus-reaction composition remained awkward, repetitive, and over-rejected.
+- M9C.5 compared identical prompts on `qwen3:4b-instruct` and `qwen3:14b-q4_K_M`. The 14B model produced 16 accepted anchor-plus-link candidates versus 2 for 4B and materially improved diversity, so it became the selected model for the final isolated experiment.
+- M9C.6 supplied 16 owner-familiar tracks with reviewed three-to-five-fact context packs and let 14B generate complete comments in grounded and training-augmented modes. The 96-request run completed without generation failure and verified model unload.
+- Steve scored 83 clean candidates at a combined mean overall desire of 4.86/5; 73 received 5/5. All 10 mechanical hard rejects were also judged acceptable.
+- Grounded and training-augmented quality was effectively tied (4.85 versus 4.86 overall), while grounded factual acceptability was higher (5.00 versus 4.84). Grounded 14B whole-comment synthesis is therefore the selected future candidate direction.
+- M9C is closed as successful experimental evidence, not accepted runtime behavior. Repetition, metadata-mention policy, semantic exaggeration, and unsupported sound/lyric interpretation remain integration risks.
+- Normal radio remains at the accepted M8 baseline. M9B and every runtime integration remain unauthorized pending a separate bounded contract.
+- Current verification for the committed diagnostic candidate is 236 passed, 0 failed; all four formatting checks and all four Release builds pass with 0 warnings and 0 errors. This does not replace the accepted 178/0 M8 baseline.
 ## M8B accepted engineering verification
 
 - Release production and test-project builds pass with 0 warnings and 0 errors.
