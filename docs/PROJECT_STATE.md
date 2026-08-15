@@ -11,7 +11,7 @@
 | Latest accepted automated result | 178 passed, 0 failed at accepted internal implementation `b56c03d` |
 | Accepted internal packaged baseline | `0.8.0-alpha.1` |
 | Deferred distribution validation | Clean Windows 10/11 and invited private-alpha testing; not blockers to internal development |
-| Next project step | M9B grounded-context integration contract is approved; implementation has not started and requires a separate explicit instruction |
+| Next project step | M9B grounded-context candidate is implemented; Gate 2 owner evaluation is next. Silent and audible desktop gates remain unrun. |
 | Deferred milestone | Milestone 6 |
 
 The local Git repository is authoritative. See [PROJECT_INDEX.md](PROJECT_INDEX.md) for the documentation authority and snapshot rules.
@@ -41,7 +41,7 @@ Full implemented behavior is in [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.m
 - Steve manually accepted M8A on August 11, 2026. The accepted evidence and preserved regression procedure are in [MILESTONE_8A_TEST.md](MILESTONE_8A_TEST.md).
 - Steve accepted the extracted M8B `0.8.0-alpha.1` package on August 11, 2026. M8B and Milestone 8 are closed for continued internal development at implementation commit `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf`.
 - Clean Windows 10/11 and invited-tester validation remain pending and deferred as distribution evidence. The accepted internal package is not clean-machine certified, broadly compatible, publicly released, or validated for third-party distribution.
-- M8 acceptance did not itself authorize post-M8 work. Steve subsequently approved the bounded M9A and M9C experiments, then approved the documentation-only [Milestone 9B contract](MILESTONE_9B_CONTRACT.md) on August 15, 2026; M9B implementation still requires a separate explicit instruction.
+- M8 acceptance did not itself authorize post-M8 work. Steve subsequently approved the bounded M9A and M9C experiments, then explicitly authorized the bounded M9B implementation on August 15, 2026. M9B is now a candidate, not an accepted replacement for the M8 baseline.
 
 ## Milestone 9A candidate status
 
@@ -63,9 +63,19 @@ Full implemented behavior is in [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.m
 - Steve scored 83 displayed outputs at a combined mean overall desire of 4.86/5; 73 received 5/5. The run contained 86 mechanically clean candidates and 10 mechanical hard rejects; all 10 rejects were also judged acceptable.
 - Grounded and training-augmented quality was effectively tied (4.85 versus 4.86 overall), while grounded factual acceptability was higher (5.00 versus 4.84). Grounded 14B whole-comment synthesis is therefore the selected M9B candidate direction.
 - M9C is closed as successful experimental evidence, not accepted runtime behavior. Repetition, metadata-mention policy, semantic exaggeration, and unsupported sound/lyric interpretation remain integration risks.
-- Steve approved the bounded [Milestone 9B contract](MILESTONE_9B_CONTRACT.md) on August 15, 2026. The current authorization is documentation-only; implementation has not started and requires a separate explicit instruction.
-- Normal radio remains at the accepted M8 baseline. No M9B prompt, model, source, cache, scheduling, speech, ducking, GUI, or packaging behavior is active.
-- Current verification for the committed diagnostic candidate is 236 passed, 0 failed; all four formatting checks and all four Release builds pass with 0 warnings and 0 errors. This does not replace the accepted 178/0 M8 baseline.
+- Steve explicitly authorized the bounded [Milestone 9B contract](MILESTONE_9B_CONTRACT.md) on August 15, 2026. The candidate implementation adds pre-delivery reviewed context, an optional local 14B whole-comment route, bounded context cache, and M8 fallback selection; it is not accepted runtime behavior.
+- The accepted M8 safety baseline remains controlling. M9B preserves schedule, delivery-time revalidation, Firefox-only ducking/exact restoration, and safe silence. Manual silent and audible desktop gates have not run.
+- Current M9B engineering verification is recorded separately from the accepted 178/0 M8 baseline. The M9B generate-only owner review procedure is [MILESTONE_9B_TEST.md](MILESTONE_9B_TEST.md).
+
+## Milestone 9B candidate status
+
+- M9B is implemented as a candidate only, using the M9C.6 reviewed familiar-track catalog and a local `qwen3:14b-q4_K_M` whole-comment service before the existing Track-A preparation/delivery boundary.
+- It keeps the M8 4B candidate/fallback available when the 14B model, confirmed context, timing, validation, or safe opportunity is unavailable. The 14B service is local-only, bounded, selected-model-unloading, and does not start after ducking.
+- Live enrichment remains restricted to exact MusicBrainz and linked Wikidata; catalog source URLs are provenance and are never fetched at runtime. The bounded LocalAppData context cache is not listening history and Clear History clears it plus M9B's ephemeral repetition state.
+- Current M9B engineering verification: all four Release builds passed with 0 warnings and 0 errors; all four formatting checks and `git diff --check` passed; the complete fake-driven suite passed 249 tests with 0 failures. This is new candidate evidence and does not replace the accepted historical M8 178/0 result.
+- The one authorized generate-only 14B artifact is `artifacts/m9b/20260815-095443-189/`: 48/48 requests, zero generation failures, 33 displayable candidates, 15 mechanical hard discards, 68.75% availability, 624.9 ms median/819.7 ms p95/3328.0 ms maximum latency, and selected-model unload verified. Its qualitative owner fields are unscored.
+- Gate 2 owner evaluation is documented in [MILESTONE_9B_TEST.md](MILESTONE_9B_TEST.md). Silent desktop preparation, audible delivery, and final Steve acceptance are explicitly unrun and still required.
+
 ## M8B accepted engineering verification
 
 - Release production and test-project builds pass with 0 warnings and 0 errors.
@@ -118,7 +128,7 @@ Full implemented behavior is in [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.m
 ## Next step and deferred observations
 
 - Milestone 8 is closed for continued internal development, and `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf` is the latest accepted internal implementation snapshot.
-- M9A was rejected and M9C supplied successful experimental evidence. Steve approved the bounded M9B grounded-context contract on August 15, 2026, but implementation has not started and normal runtime remains at the M8 baseline.
+- M9A was rejected and M9C supplied successful experimental evidence. Steve explicitly authorized the bounded M9B implementation on August 15, 2026; M9B is an integrated candidate awaiting its staged gates, while the accepted M8 safety baseline remains controlling.
 - Clean-machine and invited-tester checks remain deferred compatibility/distribution evidence. A later defect may require a bounded repair, but missing tester feedback does not block internal development.
 - The earlier 20:49 observer stall remains intermittent, unresolved, and unreproduced by the accepted Firefox-plus-Chrome run.
 - Wrapper-refresh diagnostics are excessively repetitive; this is a deferred non-blocking logging-quality issue.

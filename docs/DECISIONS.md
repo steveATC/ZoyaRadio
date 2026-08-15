@@ -86,7 +86,7 @@ These decisions summarize accepted project rules and rationale already evidenced
 - Clean Windows 10 22H2, clean Windows 11, and invited private-alpha testing remain useful compatibility and distribution evidence but are deliberately deferred and do not block internal feature development.
 - The accepted internal baseline must not be described as clean-machine certified, broadly compatible, publicly released, code-signed, SmartScreen-reputable, or validated for third-party distribution.
 - A later tester failure may require a bounded compatibility or packaging repair; the absence of tester feedback is not evidence of compatibility.
-- M9A was rejected for runtime consideration. M9C is closed as successful experimental evidence. Steve approved the bounded M9B grounded-context integration contract on August 15, 2026, but the current authorization is documentation-only and implementation requires a separate explicit instruction.
+- M9A was rejected for runtime consideration. M9C is closed as successful experimental evidence. Steve explicitly authorized the bounded M9B implementation on August 15, 2026; M9B is now an implemented candidate awaiting staged owner acceptance, not accepted runtime behavior.
 
 ## Approved Milestone 9A experimental boundaries
 
@@ -114,7 +114,7 @@ These decisions summarize accepted project rules and rationale already evidenced
 
 ## Approved Milestone 9B integration boundaries
 
-- M9B is the approved name and bounded contract for the first grounded-context runtime integration. Approval fixes scope; implementation has not started and requires a separate instruction.
+- M9B is the approved name and bounded contract for the first grounded-context runtime integration. It is implemented as a candidate after Steve's explicit August 15 instruction, but remains unaccepted until its staged engineering and owner gates are complete.
 - Live enrichment is restricted to exact MusicBrainz identity and linked structured Wikidata data. Arbitrary browsing, live Wikipedia/page retrieval, raw-page prompting, cloud AI, and unrestricted training-knowledge claims are prohibited.
 - A small versioned local catalog of reviewed, paraphrased, source-attributed context facts is allowed. Its cited pages are provenance only and are not fetched at runtime.
 - The runtime context cache may persist under bounded LocalAppData storage: at most 100 entries, 24-hour confirmed TTL, two-hour negative TTL, and Clear History deletion. It is not durable listening history.

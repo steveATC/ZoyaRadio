@@ -27,8 +27,14 @@ This file separates unresolved defects from accepted platform limits and deferre
 
 - Steve's corrected blinded M9A review rejected the StructuredCandidate for runtime consideration. It was preferable to the accepted baseline in the fixed comparison, but still produced repetitive constructions, awkward output, unsupported listener/session claims, and did not reliably preserve the exact supplied Unicode metadata.
 - In the Unicode scenario, the candidate translated/transliterated the supplied Cyrillic metadata while baseline samples substituted different Cyrillic metadata. Both violate the experiment's exact-metadata boundary; this is an output-grounding failure, not storage mojibake in the corrected fixture.
-- No repair, retest, runtime integration, or M9B work is authorized by this recorded result.
+- This recorded result remains historical: M9B now follows its separately approved contract and explicit implementation authorization, but has not resolved the M9A candidate defect.
 
+### M9B grounded-context candidate remains under staged evaluation
+
+- M9B has not yet passed its generate-only owner-quality review, silent desktop preparation gate, audible desktop gate, or Steve''s final acceptance.
+- Deterministic validation catches only defined mechanical and conservative factual-risk patterns. It cannot prove arbitrary semantic truth, naturalness, or spoken quality; owner review remains required.
+- The optional 14B model has materially higher cold-load and RAM/VRAM cost than the accepted 4B route. Its absence, failed local enrichment, timing failure, or invalid candidate must preserve the M8 candidate/fallback or safe silence.
+- The local reviewed catalog is intentionally small. Unknown tracks depend on strict MusicBrainz/Wikidata confirmation and may safely remain unenriched.
 ### Retained native working set
 
 - Repeated Nicole CPU preparation disposes the ONNX model each time, but the long-running .NET/native process retained roughly 333 MiB working set after three preparations.
@@ -106,7 +112,7 @@ This file separates unresolved defects from accepted platform limits and deferre
 - Its mechanical classifier wrongly hard-rejected ten acceptable comments merely because they did not repeat the artist or title. A future integration validator should treat metadata mention as optional when playback context is already clear.
 - Some otherwise strong comments changed the strength or meaning of a supplied fact, or inferred sound, lyrics, emotional content, or genre without supporting context. A future contract must define proportionate semantic-grounding policy before speech is authorized.
 - Training-augmented prompting is not selected because it did not materially improve owner preference and reduced factual acceptability.
-- These are deferred integration-design concerns. They do not alter normal radio and do not authorize M9B.
+- These are M9B candidate risks to be evaluated; they do not make M9B accepted runtime behavior.
 
 ## Recorded performance context
 

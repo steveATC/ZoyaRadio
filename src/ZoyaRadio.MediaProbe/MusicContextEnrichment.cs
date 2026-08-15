@@ -195,7 +195,23 @@ internal sealed class MusicContextCache
             ? DateTimeOffset.UtcNow.Add(_configuration.ConfirmedTtl)
             : DateTimeOffset.UtcNow.Add(_configuration.NegativeTtl);
         string path = GetPath(result.Requested);
-        File.WriteAllText(path, JsonSerializer.Serialize(new CacheEntry(expiry, result with { FromCache = false }), JsonOptions));
+        string temporaryPath = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
+        try
+        {
+            File.WriteAllText(
+                temporaryPath,
+                JsonSerializer.Serialize(new CacheEntry(expiry, result with { FromCache = false }), JsonOptions),
+                new UTF8Encoding(false));
+            File.Move(temporaryPath, path, overwrite: true);
+        }
+        finally
+        {
+            if (File.Exists(temporaryPath))
+            {
+                File.Delete(temporaryPath);
+            }
+        }
+
         Prune();
     }
 
@@ -261,7 +277,7 @@ internal sealed class MusicBrainzWikidataEnricher : IMusicContextEnricher, IDisp
         _configuration = configuration;
         _configuration.Validate();
         _cache = cache;
-        _httpClient = httpClient ?? new HttpClient { Timeout = Timeout.InfiniteTimeSpan };
+        _httpClient = httpClient ?? new HttpClient(new HttpClientHandler { AllowAutoRedirect = false }) { Timeout = Timeout.InfiniteTimeSpan };
         _ownsHttpClient = httpClient is null;
     }
 

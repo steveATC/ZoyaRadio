@@ -28,6 +28,8 @@
     <EmbeddedResource Include="Prompts\Milestone9C4DeterministicContextScenarios.json" />
     <EmbeddedResource Include="Prompts\Milestone9C4DeterministicLinkPrompt.txt" />
     <EmbeddedResource Include="Prompts\Milestone9C6ContextPacks.json" />
+    <EmbeddedResource Include="Prompts\Milestone9BContextCatalog.json" />
+    <EmbeddedResource Include="Prompts\Milestone9BWholeCommentPrompt.txt" />
     <EmbeddedResource Include="Prompts\Milestone4HostPersonaPrompt.txt" />
   </ItemGroup>
   <ItemGroup>

@@ -1,0 +1,421 @@
+{
+  "version": "1.0",
+  "cards": [
+    {
+      "id": "M9C6-01",
+      "artist": "Lynyrd Skynyrd",
+      "title": "Sweet Home Alabama",
+      "editorialUsefulness": "useful",
+      "facts": [
+        {
+          "text": "Lynyrd Skynyrd wrote Sweet Home Alabama as a response to Neil Young's Southern Man and Alabama.",
+          "sourceName": "Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Sweet_Home_Alabama",
+          "applicability": "recording-specific"
+        },
+        {
+          "text": "The song became the band's biggest hit, reaching number eight on the Billboard Hot 100.",
+          "sourceName": "Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Sweet_Home_Alabama",
+          "applicability": "recording-specific"
+        },
+        {
+          "text": "Guitarist Ed King wrote the song's opening guitar riff.",
+          "sourceName": "Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Sweet_Home_Alabama",
+          "applicability": "recording-specific"
+        }
+      ]
+    },
+    {
+      "id": "M9C6-02",
+      "artist": "Black Sabbath",
+      "title": "Paranoid",
+      "editorialUsefulness": "useful",
+      "facts": [
+        {
+          "text": "Paranoid was written quickly as a last-minute addition to Black Sabbath's second album.",
+          "sourceName": "Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Paranoid_(Black_Sabbath_song)",
+          "applicability": "recording-specific"
+        },
+        {
+          "text": "The record company changed the album title from War Pigs to Paranoid.",
+          "sourceName": "Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Paranoid_(album)",
+          "applicability": "recording-specific"
+        },
+        {
+          "text": "Paranoid became Black Sabbath's only top-five UK single.",
+          "sourceName": "Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Paranoid_(Black_Sabbath_song)",
+          "applicability": "recording-specific"
+        }
+      ]
+    },
+    {
+      "id": "M9C6-03",
+      "artist": "Ronnie James Dio",
+      "title": "Holy Diver",
+      "editorialUsefulness": "useful",
+      "facts": [
+        {
+          "text": "Holy Diver was the title track of Dio's 1983 debut album after leaving Black Sabbath.",
+          "sourceName": "Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Holy_Diver_(song)",
+          "applicability": "recording-specific"
+        },
+        {
+          "text": "The music video was filmed at the burned-out St Mark's Church in east London.",
+          "sourceName": "Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Holy_Diver_(song)",
+          "applicability": "recording-specific"
+        },
+        {
+          "text": "Ronnie James Dio formed the band Dio with former Rainbow drummer Vinny Appice.",
+          "sourceName": "Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Dio_(band)",
+          "applicability": "recording-specific"
+        }
+      ]
+    },
+    {
+      "id": "M9C6-04",
+      "artist": "Jerry Reed",
+      "title": "Amos Moses",
+      "editorialUsefulness": "useful",
+      "facts": [
+        {
+          "text": "Country guitarist and producer Chet Atkins produced Jerry Reed's Amos Moses.",
+          "sourceName": "Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Amos_Moses",
+          "applicability": "recording-specific"
+        },
+        {
+          "text": "Amos Moses reached number eight on the Billboard Hot 100 in 1970.",
+          "sourceName": "Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Amos_Moses",
+          "applicability": "recording-specific"
+        },
+        {
+          "text": "Jerry Reed was also known for his guitar playing and songwriting.",
+          "sourceName": "Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Jerry_Reed",
+          "applicability": "recording-specific"
+        }
+      ]
+    },
+    {
+      "id": "M9C6-05",
+      "artist": "Megadeth",
+      "title": "Symphony of Destruction",
+      "editorialUsefulness": "useful",
+      "facts": [
+        {
+          "text": "MTV edited the Symphony of Destruction video because of its assassination scene.",
+          "sourceName": "Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Symphony_of_Destruction",
+          "applicability": "recording-specific"
+        },
+        {
+          "text": "The song was released as a single from Megadeth's Countdown to Extinction album.",
+          "sourceName": "Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Symphony_of_Destruction",
+          "applicability": "recording-specific"
+        },
+        {
+          "text": "Dave Mustaine wrote the song with bassist David Ellefson.",
+          "sourceName": "Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Symphony_of_Destruction",
+          "applicability": "recording-specific"
+        }
+      ]
+    },
+    {
+      "id": "M9C6-06",
+      "artist": "Metallica",
+      "title": "Master of Puppets",
+      "editorialUsefulness": "useful",
+      "facts": [
+        {
+          "text": "Master of Puppets was recorded at Sweet Silence Studios in Copenhagen.",
+          "sourceName": "Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Master_of_Puppets_(song)",
+          "applicability": "recording-specific"
+        },
+        {
+          "text": "The song is the title track of Metallica's 1986 album Master of Puppets.",
+          "sourceName": "Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Master_of_Puppets_(song)",
+          "applicability": "recording-specific"
+        },
+        {
+          "text": "Cliff Burton and Kirk Hammett included a homage to David Bowie's Andy Warhol in the recording.",
+          "sourceName": "Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Master_of_Puppets_(song)",
+          "applicability": "recording-specific"
+        }
+      ]
+    },
+    {
+      "id": "M9C6-07",
+      "artist": "System of a Down",
+      "title": "Chop Suey!",
+      "editorialUsefulness": "useful",
+      "facts": [
+        {
+          "text": "Accounts differ over whether Chop Suey! was originally called Suicide or Self-Righteous Suicide.",
+          "sourceName": "Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Chop_Suey!",
+          "applicability": "recording-specific"
+        },
+        {
+          "text": "The song was released as the first single from Toxicity.",
+          "sourceName": "Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Chop_Suey!",
+          "applicability": "recording-specific"
+        },
+        {
+          "text": "Chop Suey! was nominated for a Grammy Award for Best Metal Performance.",
+          "sourceName": "Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Chop_Suey!",
+          "applicability": "recording-specific"
+        }
+      ]
+    },
+    {
+      "id": "M9C6-08",
+      "artist": "Bee Gees",
+      "title": "Stayin’ Alive",
+      "editorialUsefulness": "useful",
+      "facts": [
+        {
+          "text": "Stayin’ Alive was written and recorded for the Saturday Night Fever soundtrack.",
+          "sourceName": "Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Stayin%27_Alive",
+          "applicability": "recording-specific"
+        },
+        {
+          "text": "The recording uses a two-bar loop from the Bee Gees song Night Fever.",
+          "sourceName": "Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Saturday_Night_Fever_(soundtrack)",
+          "applicability": "recording-specific"
+        },
+        {
+          "text": "Stayin’ Alive spent four weeks at number one on the Billboard Hot 100.",
+          "sourceName": "Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Stayin%27_Alive",
+          "applicability": "recording-specific"
+        }
+      ]
+    },
+    {
+      "id": "M9C6-09",
+      "artist": "Black Label Society",
+      "title": "Stillborn",
+      "editorialUsefulness": "useful",
+      "facts": [
+        {
+          "text": "Ozzy Osbourne sings the chorus with Zakk Wylde on Stillborn.",
+          "sourceName": "Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Stillborn_(song)",
+          "applicability": "recording-specific"
+        },
+        {
+          "text": "Stillborn was released on Black Label Society's album The Blessed Hellride.",
+          "sourceName": "Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Stillborn_(song)",
+          "applicability": "recording-specific"
+        },
+        {
+          "text": "Zakk Wylde founded Black Label Society in 1998.",
+          "sourceName": "Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Black_Label_Society",
+          "applicability": "recording-specific"
+        }
+      ]
+    },
+    {
+      "id": "M9C6-10",
+      "artist": "Tenacious D",
+      "title": "Tribute",
+      "editorialUsefulness": "useful",
+      "facts": [
+        {
+          "text": "Tribute was Jack Black and Kyle Gass's first live song as Tenacious D.",
+          "sourceName": "Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Tribute_(song)",
+          "applicability": "recording-specific"
+        },
+        {
+          "text": "The single reached number two on the UK Singles Chart.",
+          "sourceName": "Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Tribute_(song)",
+          "applicability": "recording-specific"
+        },
+        {
+          "text": "Tenacious D began as a comedy rock duo formed by Jack Black and Kyle Gass.",
+          "sourceName": "Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Tenacious_D",
+          "applicability": "recording-specific"
+        }
+      ]
+    },
+    {
+      "id": "M9C6-11",
+      "artist": "Rage Against the Machine",
+      "title": "Sleep Now in the Fire",
+      "editorialUsefulness": "useful",
+      "facts": [
+        {
+          "text": "Filming Sleep Now in the Fire caused the New York Stock Exchange doors to close.",
+          "sourceName": "Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Sleep_Now_in_the_Fire",
+          "applicability": "recording-specific"
+        },
+        {
+          "text": "Michael Moore directed the music video.",
+          "sourceName": "Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Sleep_Now_in_the_Fire",
+          "applicability": "recording-specific"
+        },
+        {
+          "text": "The song appears on Rage Against the Machine's album The Battle of Los Angeles.",
+          "sourceName": "Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Sleep_Now_in_the_Fire",
+          "applicability": "recording-specific"
+        }
+      ]
+    },
+    {
+      "id": "M9C6-12",
+      "artist": "Rammstein",
+      "title": "Du riechst so gut",
+      "editorialUsefulness": "useful",
+      "facts": [
+        {
+          "text": "The limited Du riechst so gut '98 edition came in a scented digipak.",
+          "sourceName": "Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Du_riechst_so_gut",
+          "applicability": "recording-specific"
+        },
+        {
+          "text": "Du riechst so gut was Rammstein's first single.",
+          "sourceName": "Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Du_riechst_so_gut",
+          "applicability": "recording-specific"
+        },
+        {
+          "text": "The 1998 version was released with a second music video.",
+          "sourceName": "Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Du_riechst_so_gut",
+          "applicability": "recording-specific"
+        }
+      ]
+    },
+    {
+      "id": "M9C6-13",
+      "artist": "Shakira",
+      "title": "Hips Don’t Lie",
+      "editorialUsefulness": "useful",
+      "facts": [
+        {
+          "text": "Hips Don’t Lie reworked Wyclef Jean's song Dance Like This.",
+          "sourceName": "Recording Academy",
+          "url": "https://www.grammy.com/news/grammy-rewind-shakira-wyclef-jean-hips-dont-lie-grammy-awards-2007",
+          "applicability": "recording-specific"
+        },
+        {
+          "text": "Wyclef Jean appears on the recording.",
+          "sourceName": "Recording Academy",
+          "url": "https://www.grammy.com/news/grammy-rewind-shakira-wyclef-jean-hips-dont-lie-grammy-awards-2007",
+          "applicability": "recording-specific"
+        },
+        {
+          "text": "The song became Shakira's first number-one single in the United States.",
+          "sourceName": "Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Hips_Don%27t_Lie",
+          "applicability": "recording-specific"
+        }
+      ]
+    },
+    {
+      "id": "M9C6-14",
+      "artist": "Elis Regina",
+      "title": "Como Nossos Pais",
+      "editorialUsefulness": "useful",
+      "facts": [
+        {
+          "text": "Belchior wrote Como Nossos Pais, which Elis Regina recorded.",
+          "sourceName": "Universal Music Brazil",
+          "url": "https://www.universalmusic.com.br/2021/09/23/como-nossos-pais-de-elis-regina-e-a-primeira-musica-de-catalogo-no-brasil-a-ser-lancada-em-audio-espacial/",
+          "applicability": "recording-specific"
+        },
+        {
+          "text": "The recording appeared on Elis Regina's 1976 album Falso Brilhante.",
+          "sourceName": "Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Falso_Brilhante",
+          "applicability": "recording-specific"
+        },
+        {
+          "text": "Elis Regina was a Brazilian singer known by the nickname Pimentinha.",
+          "sourceName": "Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Elis_Regina",
+          "applicability": "recording-specific"
+        }
+      ]
+    },
+    {
+      "id": "M9C6-15",
+      "artist": "Raul Seixas",
+      "title": "Eu Nasci Há Dez Mil Anos Atrás",
+      "editorialUsefulness": "useful",
+      "facts": [
+        {
+          "text": "Eu Nasci Há Dez Mil Anos Atrás is the title track of Raul Seixas's 1976 album.",
+          "sourceName": "Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/H%C3%A1_10_Mil_Anos_Atr%C3%A1s",
+          "applicability": "recording-specific"
+        },
+        {
+          "text": "The album was Raul Seixas's last with Paulo Coelho as songwriting partner before their 1978 reunion.",
+          "sourceName": "Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/H%C3%A1_10_Mil_Anos_Atr%C3%A1s",
+          "applicability": "recording-specific"
+        },
+        {
+          "text": "Paulo Coelho is a Brazilian writer who collaborated with Raul Seixas on songs.",
+          "sourceName": "Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Paulo_Coelho",
+          "applicability": "recording-specific"
+        }
+      ]
+    },
+    {
+      "id": "M9C6-16",
+      "artist": "Johnny Cash",
+      "title": "Cocaine Blues",
+      "editorialUsefulness": "useful",
+      "facts": [
+        {
+          "text": "Johnny Cash performed Cocaine Blues at Folsom State Prison in January 1968.",
+          "sourceName": "Johnny Cash official site",
+          "url": "https://www.johnnycash.com/music/folsom-prison/",
+          "applicability": "recording-specific"
+        },
+        {
+          "text": "The performance appears on the live album At Folsom Prison.",
+          "sourceName": "Johnny Cash official site",
+          "url": "https://www.johnnycash.com/music/folsom-prison/",
+          "applicability": "recording-specific"
+        },
+        {
+          "text": "Folsom Prison Blues was one of Cash's earlier prison-themed songs.",
+          "sourceName": "Johnny Cash official site",
+          "url": "https://www.johnnycash.com/music/folsom-prison/",
+          "applicability": "recording-specific"
+        }
+      ]
+    }
+  ]
+}

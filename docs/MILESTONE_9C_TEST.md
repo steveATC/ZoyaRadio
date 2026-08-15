@@ -2,7 +2,7 @@
 
 ## Outcome
 
-Steve accepted M9C.6 on August 15, 2026 as successful experimental evidence and the selected direction for a future runtime candidate. This does not make M9C normal automatic-radio behavior and did not itself authorize integration. Steve later approved the separate M9B contract on August 15, 2026; implementation remains not started.
+Steve accepted M9C.6 on August 15, 2026 as successful experimental evidence and the selected direction for a future runtime candidate. This does not make M9C normal automatic-radio behavior and did not itself authorize integration. Steve later explicitly authorized the separate M9B implementation on August 15, 2026; it is now an implemented candidate awaiting its own staged owner evaluation.
 
 The selected direction is:
 

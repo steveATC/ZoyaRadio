@@ -2,7 +2,7 @@
 
 Zoya Radio is a private, local-first Windows application with an accepted WinForms control frontend and preserved console diagnostics. It observes Firefox media, prepares short locally generated comments, speaks with the accepted Nicole voice, and can deliver prepared comments over proportionally ducked Firefox audio.
 
-Milestones 0 through 5, Milestone 7, Milestones 7.5A-7.5B, and Milestone 8 have passed their required internal-development acceptance. Milestone 6 is deliberately deferred. Steve accepted packaged version `0.8.0-alpha.1` on August 11, 2026, making commit `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf` the latest accepted internal implementation with 178 automated tests passed and 0 failed. Milestone 9A was rejected for runtime consideration. Milestone 9C is closed as successful experimental evidence. Steve approved the documentation-only Milestone 9B grounded-context integration contract on August 15, 2026; implementation has not started, normal radio remains unchanged, and coding requires a separate explicit instruction. Clean Windows 10/11 and invited-tester validation remain deferred distribution evidence, so the package is not a clean-machine-certified or public release.
+Milestones 0 through 5, Milestone 7, Milestones 7.5A-7.5B, and Milestone 8 have passed their required internal-development acceptance. Milestone 6 is deliberately deferred. Steve accepted packaged version `0.8.0-alpha.1` on August 11, 2026, making commit `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf` the latest accepted internal implementation with 178 automated tests passed and 0 failed. Milestone 9A was rejected for runtime consideration. Milestone 9C is closed as successful experimental evidence. Steve then explicitly authorized the bounded M9B implementation. M9B is now a grounded-context candidate awaiting Gate 2 owner evaluation; it is not yet passed or accepted runtime behavior. Clean Windows 10/11 and invited-tester validation remain deferred distribution evidence, so the package is not a clean-machine-certified or public release.
 
 Start with [docs/PROJECT_INDEX.md](docs/PROJECT_INDEX.md) for the canonical documentation map. Current status is in [docs/PROJECT_STATE.md](docs/PROJECT_STATE.md), and implemented behavior is in [docs/CURRENT_ARCHITECTURE.md](docs/CURRENT_ARCHITECTURE.md).
 
@@ -157,7 +157,7 @@ This fixed benchmark compares the accepted prompt with a structured candidate ov
 
 Outputs are written under the ignored `artifacts\m9a\<timestamp>\` folder. Score `M9A_EVALUATION.md` before opening the separate answer key. See [docs/MILESTONE_9A_TEST.md](docs/MILESTONE_9A_TEST.md) for the exact review procedure.
 
-The rejected M9A candidate remains unreachable from normal automatic radio. A completed M9C benchmark does not pass M9C or authorize M9B.
+The rejected M9A candidate remains unreachable from normal automatic radio. M9C supplied the evidence used by the bounded M9B candidate; M9B still requires its staged owner gates before acceptance.
 
 ## Milestone 9C source-backed benchmark
 
@@ -167,6 +167,18 @@ The rejected M9A candidate remains unreachable from normal automatic radio. A co
 
 This optional diagnostic sends only its fixed title/artist scenarios to approved MusicBrainz and, after strict identity confirmation, linked Wikidata. It writes ignored artifacts under `artifacts\m9c\<timestamp>\`, never accesses Firefox or audio, and cannot enter normal radio. The later M9C.3-M9C.6 launchers preserve the curated-context, deterministic-anchor, model-comparison, and whole-comment experiments; see [docs/MILESTONE_9C_TEST.md](docs/MILESTONE_9C_TEST.md) for the completed record.
 
+## Milestone 9B grounded-context candidate evaluation
+
+The one authorized 48-request local run is complete. Review:
+
+```text
+artifacts\m9b\20260815-095443-189\M9B_EVALUATION.md
+```
+
+It did not start the radio, inspect or control Firefox, produce speech, or change any
+volume. Follow [docs/MILESTONE_9B_TEST.md](docs/MILESTONE_9B_TEST.md) to score this
+artifact. Do not rerun the launcher under this authorization. M9B remains a candidate:
+silent and audible desktop gates are unrun and require separate authorization.
 ## Isolated Firefox audio-ducking diagnostic
 
 List current Core Audio sessions without changing anything:

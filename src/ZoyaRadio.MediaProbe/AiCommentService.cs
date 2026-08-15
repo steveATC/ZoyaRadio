@@ -7,6 +7,7 @@ namespace ZoyaRadio.MediaProbe;
 internal enum CommentTextSource
 {
     Ai,
+    GroundedAi,
     FixedFallback,
 }
 

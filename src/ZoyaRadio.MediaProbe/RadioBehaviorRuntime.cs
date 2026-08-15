@@ -285,6 +285,7 @@ internal sealed partial class RadioBehaviorTest
     public async ValueTask DisposeAsync()
     {
         await StopAsync();
+        _m9bCommentProvider?.ClearEphemeralHistory();
     }
 
     public void SetSilentMode(bool silent)
@@ -339,6 +340,7 @@ internal sealed partial class RadioBehaviorTest
             CancelPendingPipeline("recent history was cleared");
         }
 
+        _m9bCommentProvider?.ClearHistoryAndCache();
         _log.Write("RECENT HISTORY CLEARED: recent tracks and accepted AI comments were removed from memory.");
         _log.Write("The current diagnostic log was not deleted or rewritten.");
         _log.Write(

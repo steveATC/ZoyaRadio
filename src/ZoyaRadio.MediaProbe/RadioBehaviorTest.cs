@@ -11,6 +11,7 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
     private readonly RadioBehaviorState _state;
     private readonly RadioSessionAccess _sessionAccess;
     private readonly TransitionRadioPipeline _pipeline;
+    private readonly M9BTransitionCommentProvider? _m9bCommentProvider;
     private readonly object _runtimeLifecycleLock = new();
     private readonly object _statusLock = new();
     private readonly object _stateLock = new();
@@ -39,7 +40,10 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
         HostPersonaConfiguration persona,
         RadioBehaviorConfiguration? radioConfiguration = null,
         ITransitionTargetSource? targetSource = null,
-        IRadioClock? clock = null)
+        IRadioClock? clock = null,
+        ILocalCommentGenerator? m9bGenerator = null,
+        AiCommentConfiguration? m9bConfiguration = null,
+        M9BContextProvider? m9bContextProvider = null)
     {
         _manager = manager;
         _log = log;
@@ -52,7 +56,25 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
         _sessionAccess = new RadioSessionAccess(manager, log);
 
         var aiService = new AiCommentService(generator, aiConfiguration, log, persona);
-        var commentProvider = new LocalTransitionCommentProvider(aiService);
+        ITransitionCommentProvider commentProvider = new LocalTransitionCommentProvider(aiService);
+        if (m9bGenerator is not null && m9bConfiguration is not null && m9bContextProvider is not null)
+        {
+            var recent = new M9BRecentCommentState();
+            var grounded = new M9BGroundedCommentService(
+                m9bContextProvider,
+                m9bGenerator,
+                m9bConfiguration,
+                recent,
+                log);
+            _m9bCommentProvider = new M9BTransitionCommentProvider(commentProvider, grounded, log);
+            commentProvider = _m9bCommentProvider;
+            log.Write("M9B STATUS: grounded 14B candidate is configured; M8 fallback remains available.");
+        }
+        else
+        {
+            log.Write("M9B STATUS: grounded candidate is not configured; accepted M8 behavior remains in use.");
+        }
+
         var transitionDucker = new WindowsTransitionAudioDucker(log, clock: _clock, activityChanged: ReportActivity);
         var opportunityHost = new WindowsRadioOpportunityHost(
             () => _selectedSession,
@@ -679,9 +701,19 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
                 opportunityCancellation.Token);
 
             string? acceptedAiComment = result.Status == TransitionDeliveryStatus.Completed
-                && prepared.Selection.Source == CommentTextSource.Ai
+                && (prepared.Selection.Source == CommentTextSource.Ai
+                    || prepared.Selection.Source == CommentTextSource.GroundedAi)
                     ? prepared.Selection.Text
                     : null;
+            if (result.Status == TransitionDeliveryStatus.Completed)
+            {
+                _m9bCommentProvider?.RecordCompleted(prepared.Opportunity, prepared.Selection);
+            }
+            else
+            {
+                _m9bCommentProvider?.Discard(prepared.Opportunity);
+            }
+
             bool resolved;
 
             lock (_stateLock)

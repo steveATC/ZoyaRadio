@@ -3,12 +3,9 @@
 ## Status and authority
 
 Steve approved this bounded contract direction on August 15, 2026 after reviewing the
-M9B proposal and approving its recommended decisions. The current authorization is
-documentation-only: this contract fixes the permitted implementation and acceptance
-scope, but implementation has not started and requires a separate explicit instruction.
+M9B proposal and approving its recommended decisions. Steve then explicitly authorized the bounded implementation on August 15, 2026. M9B is now an implemented candidate awaiting its staged Gate 2 owner evaluation; it is not passed or accepted runtime behavior.
 
-M9B is not passed or accepted runtime behavior. Until implementation, automated
-verification, staged desktop testing, and Steve's final manual acceptance are complete,
+M9B is not passed or accepted runtime behavior. Until automated verification, staged desktop testing, and Steve's final manual acceptance are complete,
 the accepted Milestone 8 runtime at `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf`
 remains controlling.
 

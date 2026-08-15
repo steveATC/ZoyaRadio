@@ -1,6 +1,6 @@
 # Current architecture
 
-This document describes the accepted runtime implementation at commit `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf`, including M8B packaging and readiness, plus isolated M9A and M9C diagnostic candidates. Neither is accepted runtime behavior. Future ideas and research recommendations are excluded.
+This document describes the accepted Milestone 8 runtime implementation at commit `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf`, plus the implemented-but-unaccepted M9B grounded-context candidate and preserved isolated M9A/M9C diagnostics. M9B has not passed its staged owner gates; the accepted M8 safety baseline remains controlling.
 
 ## Platform and local dependencies
 
@@ -8,7 +8,7 @@ This document describes the accepted runtime implementation at commit `b56c03d1c
 - M8B publishes the WinForms application as unsigned self-contained `win-x64` with Microsoft .NET/WindowsDesktop runtime 8.0.29, a manifest, hashes, private symbols outside the ZIP, and no installer.
 - Windows GSMTC through `Windows.Media.Control` for media-session discovery, metadata, playback state, and event observation.
 - Windows Core Audio session APIs for per-application Firefox volume capture, proportional ducking, and exact restoration.
-- Ollama's loopback HTTP API at `http://localhost:11434/api/` with `qwen3:4b-instruct` for short local comments.
+- Ollama's loopback HTTP API at `http://localhost:11434/api/` with accepted `qwen3:4b-instruct` fallback comments and an optional M9B candidate route through owner-installed `qwen3:14b-q4_K_M`.
 - KokoroSharp.CPU 0.8.0 with the local Kokoro model and `af_nicole` as the preferred voice.
 - Windows `SpeechSynthesizer`/`MediaPlayer` as the local speech fallback.
 - Timestamped UTF-8 shared-runtime logs under `%LOCALAPPDATA%\Zoya Radio\logs`; explicit diagnostic logs remain under the ignored repository `logs/` folder. There is no telemetry or cloud provider.
@@ -17,7 +17,8 @@ The project-local Microsoft .NET SDK 8.0.423 is in ignored `.dotnet/`. Microsoft
 
 ## Accepted versions and local artifacts
 
-- Ollama `0.32.6` and `qwen3:4b-instruct`: 4.0B parameters, Q4_K_M quantization, 2,497,293,803 bytes on disk (about 2.50 GB decimal). It was the only installed model and was downloaded after Steve's approval.
+- Ollama `0.32.6` and accepted `qwen3:4b-instruct`: 4.0B parameters, Q4_K_M quantization, 2,497,293,803 bytes on disk (about 2.50 GB decimal).
+- The M9B candidate additionally uses owner-installed `qwen3:14b-q4_K_M`: 14.8B parameters, Q4_K_M quantization, approximately 9.3 GB on Steve's machine, Apache License 2.0, with materially higher cold-load and RAM/VRAM cost. It is neither bundled nor automatically downloaded.
 - Normal Ollama requests use .NET `HttpClient`, `stream: false`, `think: false`, temperature `0.7`, a 20-second generation timeout, and `keep_alive: 0`. Explicit performance and M9A benchmark diagnostics use a temporary `30s` keep-alive and `/api/ps`, then unload only the selected model.
 - `KokoroSharp.CPU` 0.8.0 with Microsoft ONNX Runtime 1.22.0. The FP32 model is `.tools/kokoro/kokoro.onnx`, 325,532,387 bytes (310.5 MiB), SHA-256 `7D5DF8ECF7D4B1878015A32686053FD0EEBE2BC377234608764CC0EF3636A6C5`.
 - The restored package closure is about 559.69 MiB. The model, package cache, and one built application output require about 1.20 GiB, excluding additional ignored audition build output.
@@ -42,6 +43,7 @@ The project-local Microsoft .NET SDK 8.0.423 is in ignored `.dotnet/`. Microsoft
 | `run-deterministic-context-benchmark.cmd` | Run the isolated M9C.4 deterministic-anchor benchmark; no media, audio, GUI, speech, or web-enrichment path is reachable. |
 | `run-m9c5-model-comparison.cmd` | Run the isolated M9C.5 4B-versus-14B comparison; normal radio configuration remains unchanged. |
 | `run-m9c6-whole-comment-benchmark.cmd` | Run the isolated M9C.6 grounded-versus-training-augmented whole-comment comparison with reviewed context packs and local 14B. |
+| `run-m9b-generate-only-evaluation.cmd` | Run the M9B 16-track/48-request owner-quality artifact generation. It does not reach Firefox, media, audio, GUI, speech, or normal radio state. |
 | `run-radio-behavior-test.cmd` | Arm transition-aware automatic preparation and ducked delivery. |
 | `run-audio-ducking-test.cmd` | Enumerate or explicitly test isolated Firefox Core Audio duck/restoration. |
 | `run-neural-tts-diagnostic.cmd` and related launchers | Safely exercise Nicole preparation, fallback, and resource diagnostics. |
@@ -77,8 +79,16 @@ The project-local Microsoft .NET SDK 8.0.423 is in ignored `.dotnet/`. Microsoft
 - M9C.4 adds a separate 20-condition deterministic-anchor corpus. Its code renders each curated verified fact; its loopback-only model may generate only a separately validated subjective link using at most one selected `FictionalPersonaFact`.
 - M9C.5 compares the accepted 4B diagnostic model with local 14B over fixed prompt-equal inputs. M9C.6 supplies 16 reviewed multi-fact context packs and lets 14B generate the complete comment in grounded and training-augmented modes.
 - Steve selected the grounded M9C.6 direction as successful experimental evidence. All M9C commands remain generate-only, request selected-model unload, and leave normal radio unchanged.
-- M9C is closed as an experiment and does not authorize M9B or any runtime integration.
+- M9C is closed as an experiment. M9B reimplements only the reviewed runtime-safe responsibilities under its separate approved contract; M9C benchmark commands remain diagnostic-only.
 
+## Milestone 9B grounded-context candidate
+
+- `M9BContextCatalog` loads a versioned, reviewed 16-card local catalog. Each card keeps exact Unicode title/artist, one to three concise facts, source name/direct HTTPS provenance, applicability, and usefulness. Those cited pages are never fetched at runtime.
+- `M9BContextProvider` selects an exact local card first. Unknown tracks can use only strict MusicBrainz artist/recording confirmation plus linked Wikidata structured facts; absent, ambiguous, malformed, rate-limited, redirected, timed-out, cancelled, or weak context is discarded. Redirect following is disabled for the default source client.
+- `M9BContextCache` stores only bounded typed context outcomes under `%LOCALAPPDATA%\ZoyaRadio\cache\music-context\`: SHA-256 normalized identity keys, 100 entries maximum, 24-hour confirmed and two-hour negative TTLs, corrupt-entry refusal, and atomic writes. It stores no page content, prompts, generated prose, browser data, or listening sequence.
+- `M9BGroundedCommentService` asks only selected local `qwen3:14b-q4_K_M` for one complete grounded comment. Its prompt treats exact metadata and the typed card as factual material; training knowledge is language/tone only. Hard safety errors discard; advisory/repetition candidates receive at most one regeneration. The selected model is unloaded in protected cleanup.
+- `M9BTransitionCommentProvider` is an optional Track-A preparation wrapper around the accepted M8 provider. It prepares enrichment and 14B text before speech preparation and before Track-B delivery/ducking. M8 4B/fixed fallback remains eligible when M9B is missing, disabled, late, invalid, stale, or unavailable. No M9B web request or model operation starts after ducking.
+- An enriched fingerprint/fact identity enters M9B's six-entry ephemeral state only after completed delivery. Clear History clears that state and the context cache; shutdown clears only the ephemeral state. The candidate has not yet passed Gate 2 owner review, silent desktop preparation, audible delivery, or final acceptance.
 ## Control application and lifecycle
 
 ## Isolated Milestone 9A diagnostic candidate
@@ -172,7 +182,7 @@ Normal automatic delivery contains no GSMTC pause, play, or toggle command. `Try
 
 ## Current boundaries
 
-The implementation has no browser scraping, cookies, account access, unofficial YouTube API, cloud AI/TTS, telemetry, tray icon, global media keys, endpoint/master-volume manipulation, persistent listening-history database, track-position tracking, duration tracking, installer, code signing, public release, clean-machine certification, or invited-tester validation. Milestone 8 is closed only for continued internal development; compatibility and third-party distribution claims remain deferred. The rejected M9A candidate remains isolated and does not authorize M9B.
+The implementation has no browser scraping, cookies, account access, unofficial YouTube API, cloud AI/TTS, telemetry, tray icon, global media keys, endpoint/master-volume manipulation, persistent listening-history database, track-position tracking, duration tracking, installer, code signing, public release, clean-machine certification, or invited-tester validation. Milestone 8 is closed only for continued internal development; compatibility and third-party distribution claims remain deferred. The rejected M9A and diagnostic M9C candidates remain isolated; only the bounded M9B candidate is integrated, and it is not yet accepted runtime behavior.
 
 ## Windows API basis
 
