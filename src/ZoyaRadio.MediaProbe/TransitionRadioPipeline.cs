@@ -347,6 +347,17 @@ internal sealed class TransitionRadioPipeline
             speech = await _host.PrepareSpeechAsync(selection.Text, cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
 
+            if (speech.MeasuredDuration > _configuration.MaximumSpeechDuration)
+            {
+                string reason =
+                    $"prepared speech measured {speech.MeasuredDuration.TotalSeconds:0.###} seconds, exceeding the " +
+                    $"configured automatic maximum of {_configuration.MaximumSpeechDuration.TotalSeconds:0.###} seconds";
+                _log.Write(
+                    $"PREPARED SPEECH DISCARDED: {reason}. No Core Audio target will be enumerated, " +
+                    "Firefox will not be ducked, speech will not start, and no catch-up delivery will be queued.");
+                return AbandonPreparation(reason);
+            }
+
             RadioOpportunitySnapshot ready = await _host.ReadSnapshotAsync(
                 opportunity.Id,
                 cancellationToken);

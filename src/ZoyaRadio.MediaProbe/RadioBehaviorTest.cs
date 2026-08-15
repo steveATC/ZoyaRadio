@@ -578,6 +578,15 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
                 }
             }
 
+            if (retainedForDelivery && result.Prepared is not null)
+            {
+                _m9bCommentProvider?.RecordPrepared(result.Prepared.Opportunity, result.Prepared.Selection);
+            }
+            else
+            {
+                _m9bCommentProvider?.Discard(opportunity, result.Reason);
+            }
+
             _log.Write(
                 $"AUTOMATIC PREPARATION RESULT: {result.Status.ToString().ToUpperInvariant()} - {result.Reason}.");
 
@@ -711,7 +720,7 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
             }
             else
             {
-                _m9bCommentProvider?.Discard(prepared.Opportunity);
+                _m9bCommentProvider?.Discard(prepared.Opportunity, result.Reason);
             }
 
             bool resolved;
@@ -784,7 +793,11 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
             }
         }
 
-        prepared?.Dispose();
+        if (prepared is not null)
+        {
+            _m9bCommentProvider?.Discard(prepared.Opportunity, reason);
+            prepared.Dispose();
+        }
 
         if (cancellation is null)
         {
@@ -831,7 +844,12 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
             _pendingCancellation = null;
         }
 
-        prepared?.Dispose();
+        if (prepared is not null)
+        {
+            _m9bCommentProvider?.Discard(prepared.Opportunity, "the radio stopped before delivery");
+            prepared.Dispose();
+        }
+
         cancellation?.Dispose();
     }
 

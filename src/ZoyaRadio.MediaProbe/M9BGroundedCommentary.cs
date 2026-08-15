@@ -292,7 +292,9 @@ internal sealed class M9BContextProvider
 
         if (_cache.TryRead(request, out M9BContextResolution cached))
         {
-            _log.Write($"M9B CONTEXT CACHE: {cached.Status} result reused for the current Track-A metadata.");
+            _log.Write(
+                $"M9B CONTEXT CACHE: {cached.Status} result reused for the current Track-A metadata. " +
+                $"Cached result: {cached.SafeExplanation}");
             return cached;
         }
 
@@ -302,9 +304,12 @@ internal sealed class M9BContextProvider
             live.FactCard.MatchedTrack,
             live.FactCard.MusicBrainzArtistId + ":" + live.FactCard.WikidataId,
             live.FactCard.Facts.Select(fact => new M9BCatalogFact(fact.Text, fact.SourceName, fact.SourceUrl, "live-structured")).ToArray());
-        var mapped = new M9BContextResolution(request, live.Status, card, live.RetrievedAtUtc, live.SafeExplanation, false, M9BContextSource.LiveEnrichment);
+        M9BContextSource source = live.FromCache ? M9BContextSource.Cache : M9BContextSource.LiveEnrichment;
+        var mapped = new M9BContextResolution(request, live.Status, card, live.RetrievedAtUtc, live.SafeExplanation, live.FromCache, source);
         _cache.Store(mapped);
-        _log.Write(mapped.IsConfirmedWithFacts ? "M9B CONTEXT: exact live MusicBrainz identity and approved structured facts confirmed." : $"M9B CONTEXT UNAVAILABLE: {mapped.SafeExplanation}");
+        _log.Write(mapped.IsConfirmedWithFacts
+            ? $"M9B CONTEXT: exact {(mapped.FromCache ? "cached" : "live")} MusicBrainz identity and approved structured facts confirmed."
+            : $"M9B CONTEXT UNAVAILABLE: {(mapped.FromCache ? "cached negative outcome - " : string.Empty)}{mapped.SafeExplanation}");
         return mapped;
     }
 
@@ -670,6 +675,9 @@ internal sealed class M9BGroundedCommentService
                         reason,
                         [],
                         generation.Metrics));
+                    _log.Write(
+                        $"M9B GENERATED RESULT: attempt {attempt + 1}; classification GenerationFailed; " +
+                        reason);
                     return Result(null, reason, regenerated, false, generation.Metrics,
                         M9BCommentSelectionKind.GenerationFailed, diagnostics);
                 }
@@ -688,6 +696,9 @@ internal sealed class M9BGroundedCommentService
                     validation.Reason,
                     validation.AdvisoryFlags,
                     generation.Metrics));
+                _log.Write(
+                    $"M9B GENERATED RESULT: attempt {attempt + 1}; classification {validation.Kind}; " +
+                    validation.Reason);
                 if (validation.Kind == M9BCommentValidationKind.Fallback)
                 {
                     return Result(null, "M9B model selected FALLBACK.", regenerated, false, generation.Metrics,
@@ -756,7 +767,7 @@ internal sealed class M9BTransitionCommentProvider : ITransitionCommentProvider
     private readonly ITransitionCommentProvider _m8Fallback;
     private readonly M9BGroundedCommentService _m9b;
     private readonly IAnnouncementLog _log;
-    private readonly Dictionary<string, M9BContextCard> _preparedCards = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, M9BPreparedText> _preparedTexts = new(StringComparer.Ordinal);
 
     internal M9BTransitionCommentProvider(
         ITransitionCommentProvider m8Fallback,
@@ -776,8 +787,16 @@ internal sealed class M9BTransitionCommentProvider : ITransitionCommentProvider
         M9BCommentSelection enriched = await _m9b.TrySelectAsync(context, aiEnabled, cancellationToken);
         if (enriched.Selection is not null)
         {
-            _preparedCards[Fingerprint(context)] = enriched.Card!;
-            _log.Write("M9B STATUS: enriched candidate ready; it will be used only if the existing delivery safety checks pass.");
+            _preparedTexts[Fingerprint(context)] = new M9BPreparedText(enriched.Card!, enriched.Selection.Text);
+            _log.Write(
+                $"M9B CONTEXT SELECTED: source {enriched.ContextSource}; identity {enriched.Card!.Identity}; " +
+                $"Track A {MediaSnapshot.Display(context.SubjectTrack.Title)} - {MediaSnapshot.Display(context.SubjectTrack.Artist)}.");
+            _log.Write($"M9B FINAL SELECTED TEXT: {enriched.Selection.Text}");
+            _log.Write(
+                enriched.UsedRegeneration
+                    ? "M9B FINAL TEXT CLASSIFICATION: advisory candidate retained after bounded regeneration."
+                    : "M9B FINAL TEXT CLASSIFICATION: grounded candidate passed mechanical checks.");
+            _log.Write("M9B STATUS: enriched text selected; speech preparation and delivery safety checks remain.");
             return enriched.Selection;
         }
 
@@ -786,31 +805,47 @@ internal sealed class M9BTransitionCommentProvider : ITransitionCommentProvider
         return await _m8Fallback.SelectAsync(context, aiEnabled, cancellationToken);
     }
 
-    internal void RecordCompleted(RadioPreparationOpportunity opportunity, CommentSelection selection)
+    internal void RecordPrepared(RadioPreparationOpportunity opportunity, CommentSelection selection)
     {
-        string key = Fingerprint(opportunity.Context);
-        if (_preparedCards.Remove(key, out M9BContextCard? card))
+        if (_preparedTexts.TryGetValue(Fingerprint(opportunity.Context), out M9BPreparedText? prepared)
+            && selection.Source == CommentTextSource.GroundedAi)
         {
-            _m9b.RecordDelivered(selection, card);
+            _log.Write($"M9B PREPARED TEXT: {prepared.Text}");
         }
     }
 
-    internal void Discard(RadioPreparationOpportunity opportunity)
+    internal void RecordCompleted(RadioPreparationOpportunity opportunity, CommentSelection selection)
     {
-        _preparedCards.Remove(Fingerprint(opportunity.Context));
+        string key = Fingerprint(opportunity.Context);
+        if (_preparedTexts.Remove(key, out M9BPreparedText? prepared)
+            && selection.Source == CommentTextSource.GroundedAi)
+        {
+            _m9b.RecordDelivered(selection, prepared.Card);
+            _log.Write($"M9B DELIVERED TEXT: {prepared.Text}");
+        }
+    }
+
+    internal void Discard(RadioPreparationOpportunity opportunity, string reason)
+    {
+        if (_preparedTexts.Remove(Fingerprint(opportunity.Context), out M9BPreparedText? prepared))
+        {
+            _log.Write($"M9B PREPARED TEXT DISCARDED: {reason}. Text: {prepared.Text}");
+        }
     }
 
     internal void ClearHistoryAndCache()
     {
-        _preparedCards.Clear();
+        _preparedTexts.Clear();
         _m9b.ClearHistoryAndCache();
     }
 
     internal void ClearEphemeralHistory()
     {
-        _preparedCards.Clear();
+        _preparedTexts.Clear();
         _m9b.ClearEphemeralHistory();
     }
+
+    private sealed record M9BPreparedText(M9BContextCard Card, string Text);
 
     private static string Fingerprint(RadioPreparationContext context)
     {

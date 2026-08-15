@@ -313,13 +313,17 @@ internal sealed class MusicBrainzWikidataEnricher : IMusicContextEnricher, IDisp
         {
             throw;
         }
+        catch (EnrichmentRequestFailure exception)
+        {
+            result = Result(request, MusicContextMatchStatus.Failed, null, exception.SafeExplanation);
+        }
         catch (OperationCanceledException)
         {
             result = Result(request, MusicContextMatchStatus.Failed, null, "An approved enrichment source timed out; no enrichment was used.");
         }
         catch (HttpRequestException)
         {
-            result = Result(request, MusicContextMatchStatus.Failed, null, "An approved enrichment source was unavailable; no enrichment was used.");
+            result = Result(request, MusicContextMatchStatus.Failed, null, "An approved enrichment source request failed without an HTTP status; no enrichment was used.");
         }
         catch (Exception)
         {
@@ -341,7 +345,9 @@ internal sealed class MusicBrainzWikidataEnricher : IMusicContextEnricher, IDisp
     private async Task<MusicContextEnrichmentResult> ResolveAsync(MusicContextRequest request, CancellationToken cancellationToken)
     {
         MusicBrainzArtistSearch? artists = await GetMusicBrainzAsync<MusicBrainzArtistSearch>(
-            "artist?fmt=json&limit=5&query=" + Uri.EscapeDataString("artist:\"" + request.Artist + "\""), cancellationToken);
+            "artist?fmt=json&limit=5&query=" + Uri.EscapeDataString("artist:\"" + request.Artist + "\""),
+            EnrichmentLookupStage.MusicBrainzArtistSearch,
+            cancellationToken);
         MusicBrainzArtist[] exactArtists = (artists?.Artists ?? []).Where(artist => Same(artist.Name, request.Artist)).ToArray();
         if (exactArtists.Length == 0) return Result(request, MusicContextMatchStatus.Unavailable, null, "No exact MusicBrainz artist identity was found; no enrichment was used.");
 
@@ -353,7 +359,9 @@ internal sealed class MusicBrainzWikidataEnricher : IMusicContextEnricher, IDisp
         if (request.IdentityRequirement == MusicIdentityRequirement.ArtistAndTrack)
         {
             MusicBrainzRecordingSearch? recordings = await GetMusicBrainzAsync<MusicBrainzRecordingSearch>(
-                "recording?fmt=json&limit=100&inc=releases%2Brelease-groups&query=" + Uri.EscapeDataString("recording:\"" + request.Title + "\" AND artist:\"" + request.Artist + "\""), cancellationToken);
+                "recording?fmt=json&limit=100&inc=releases%2Brelease-groups&query=" + Uri.EscapeDataString("recording:\"" + request.Title + "\" AND artist:\"" + request.Artist + "\""),
+                EnrichmentLookupStage.MusicBrainzRecordingSearch,
+                cancellationToken);
             MusicBrainzRecording[] exactRecordings = (recordings?.Recordings ?? [])
                 .Where(recording => Same(recording.Title, request.Title) && HasConfirmedArtistCredit(recording, artist, request.Artist))
                 .ToArray();
@@ -366,11 +374,17 @@ internal sealed class MusicBrainzWikidataEnricher : IMusicContextEnricher, IDisp
         string? wikidataId = null;
         try
         {
-            MusicBrainzArtistDetails? details = await GetMusicBrainzAsync<MusicBrainzArtistDetails>("artist/" + Uri.EscapeDataString(artist.Id) + "?fmt=json&inc=url-rels", cancellationToken);
+            MusicBrainzArtistDetails? details = await GetMusicBrainzAsync<MusicBrainzArtistDetails>(
+                "artist/" + Uri.EscapeDataString(artist.Id) + "?fmt=json&inc=url-rels",
+                EnrichmentLookupStage.MusicBrainzArtistDetails,
+                cancellationToken);
             wikidataId = LinkedWikidataId(details);
             if (wikidataId is not null)
             {
-                WikidataEntityEnvelope? wikidata = await GetWikidataAsync(wikidataId, cancellationToken);
+                WikidataEntityEnvelope? wikidata = await GetWikidataAsync(
+                    wikidataId,
+                    EnrichmentLookupStage.LinkedWikidataLookup,
+                    cancellationToken);
                 if (wikidata?.Entities?.TryGetValue(wikidataId, out WikidataEntity? entity) == true)
                 {
                     string? description = entity.Descriptions?.TryGetValue("en", out WikidataText? english) == true ? english.Value : null;
@@ -433,7 +447,10 @@ internal sealed class MusicBrainzWikidataEnricher : IMusicContextEnricher, IDisp
         var linked = new List<MusicBrainzArtist>();
         foreach (MusicBrainzArtist candidate in candidates)
         {
-            MusicBrainzArtistDetails? details = await GetMusicBrainzAsync<MusicBrainzArtistDetails>("artist/" + Uri.EscapeDataString(candidate.Id) + "?fmt=json&inc=url-rels", cancellationToken);
+            MusicBrainzArtistDetails? details = await GetMusicBrainzAsync<MusicBrainzArtistDetails>(
+                "artist/" + Uri.EscapeDataString(candidate.Id) + "?fmt=json&inc=url-rels",
+                EnrichmentLookupStage.MusicBrainzArtistDetails,
+                cancellationToken);
             if (LinkedWikidataId(details) is not null) linked.Add(candidate);
         }
         return linked.Count == 1 ? linked[0] : null;
@@ -445,7 +462,10 @@ internal sealed class MusicBrainzWikidataEnricher : IMusicContextEnricher, IDisp
     private async Task<string?> TryGetOriginLabelAsync(WikidataEntity entity, CancellationToken cancellationToken)
     {
         if (!TryGetClaimEntityId(entity, "P740", out string? originId)) return null;
-        WikidataEntityEnvelope? origin = await GetWikidataAsync(originId!, cancellationToken);
+        WikidataEntityEnvelope? origin = await GetWikidataAsync(
+            originId!,
+            EnrichmentLookupStage.LinkedWikidataLookup,
+            cancellationToken);
         return origin?.Entities?.TryGetValue(originId!, out WikidataEntity? place) == true && place.Labels?.TryGetValue("en", out WikidataText? label) == true && !string.IsNullOrWhiteSpace(label.Value) ? label.Value : null;
     }
 
@@ -479,7 +499,10 @@ internal sealed class MusicBrainzWikidataEnricher : IMusicContextEnricher, IDisp
         return Regex.Matches(description, "[\\p{L}\\p{N}]+", RegexOptions.CultureInvariant).Count >= 4
             && !Regex.IsMatch(normalized, "^(AMERICAN|BRITISH|ENGLISH|CANADIAN|AUSTRALIAN|GERMAN|FRENCH)? ?(MUSICIAN|SINGER|BAND|ROCK BAND)( \\([0-9]{4}[^)]*\\))?$", RegexOptions.CultureInvariant);
     }
-    private async Task<T?> GetMusicBrainzAsync<T>(string relativePath, CancellationToken cancellationToken)
+    private async Task<T?> GetMusicBrainzAsync<T>(
+        string relativePath,
+        EnrichmentLookupStage stage,
+        CancellationToken cancellationToken)
     {
         TimeSpan wait = _configuration.MusicBrainzMinimumInterval - (DateTimeOffset.UtcNow - _lastMusicBrainzRequestUtc);
         if (wait > TimeSpan.Zero)
@@ -488,34 +511,139 @@ internal sealed class MusicBrainzWikidataEnricher : IMusicContextEnricher, IDisp
         }
 
         _lastMusicBrainzRequestUtc = DateTimeOffset.UtcNow;
-        return await GetJsonAsync<T>(new Uri(_configuration.MusicBrainzEndpoint, relativePath), cancellationToken);
+        return await GetJsonAsync<T>(new Uri(_configuration.MusicBrainzEndpoint, relativePath), stage, cancellationToken);
     }
 
-    private Task<WikidataEntityEnvelope?> GetWikidataAsync(string wikidataId, CancellationToken cancellationToken)
+    private Task<WikidataEntityEnvelope?> GetWikidataAsync(
+        string wikidataId,
+        EnrichmentLookupStage stage,
+        CancellationToken cancellationToken)
     {
         return GetJsonAsync<WikidataEntityEnvelope>(
             new Uri(_configuration.WikidataEndpoint, wikidataId + ".json"),
+            stage,
             cancellationToken);
     }
 
-    private async Task<T?> GetJsonAsync<T>(Uri uri, CancellationToken cancellationToken)
+    private async Task<T?> GetJsonAsync<T>(
+        Uri uri,
+        EnrichmentLookupStage stage,
+        CancellationToken cancellationToken)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, uri);
         request.Headers.TryAddWithoutValidation("User-Agent", _configuration.UserAgent);
         request.Headers.TryAddWithoutValidation("Accept", "application/json");
         using var timeout = new CancellationTokenSource(_configuration.RequestTimeout);
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeout.Token);
-        using HttpResponseMessage response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseContentRead, linked.Token);
-        if (response.StatusCode == HttpStatusCode.TooManyRequests)
-        {
-            throw new HttpRequestException("Approved enrichment source rate limited the request.");
-        }
 
-        response.EnsureSuccessStatusCode();
-        string body = await response.Content.ReadAsStringAsync(linked.Token);
-        return JsonSerializer.Deserialize<T>(body, JsonOptions);
+        try
+        {
+            using HttpResponseMessage response = await _httpClient.SendAsync(
+                request,
+                HttpCompletionOption.ResponseContentRead,
+                linked.Token);
+            if (!response.IsSuccessStatusCode)
+            {
+                throw EnrichmentRequestFailure.Http(
+                    stage,
+                    response.StatusCode,
+                    ReadRetryAfter(response));
+            }
+
+            string body = await response.Content.ReadAsStringAsync(linked.Token);
+            return JsonSerializer.Deserialize<T>(body, JsonOptions);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested && timeout.IsCancellationRequested)
+        {
+            throw EnrichmentRequestFailure.Timeout(stage);
+        }
+        catch (HttpRequestException exception)
+        {
+            throw EnrichmentRequestFailure.Http(stage, exception.StatusCode, null);
+        }
     }
 
+    private static string? ReadRetryAfter(HttpResponseMessage response)
+    {
+        if (!response.Headers.TryGetValues("Retry-After", out IEnumerable<string>? values))
+        {
+            return null;
+        }
+
+        string? raw = values.FirstOrDefault();
+        if (int.TryParse(raw, out int seconds) && seconds >= 0)
+        {
+            return $"{seconds} seconds";
+        }
+
+        return string.IsNullOrWhiteSpace(raw) ? null : "date provided";
+    }
+
+    private enum EnrichmentLookupStage
+    {
+        MusicBrainzArtistSearch,
+        MusicBrainzRecordingSearch,
+        MusicBrainzArtistDetails,
+        LinkedWikidataLookup,
+    }
+
+    private sealed class EnrichmentRequestFailure : Exception
+    {
+        private EnrichmentRequestFailure(
+            EnrichmentLookupStage stage,
+            bool timedOut,
+            HttpStatusCode? statusCode,
+            string? retryAfter)
+        {
+            Stage = stage;
+            TimedOut = timedOut;
+            StatusCode = statusCode;
+            RetryAfter = retryAfter;
+        }
+
+        private EnrichmentLookupStage Stage { get; }
+
+        private bool TimedOut { get; }
+
+        private HttpStatusCode? StatusCode { get; }
+
+        private string? RetryAfter { get; }
+
+        internal string SafeExplanation
+        {
+            get
+            {
+                string stage = Stage switch
+                {
+                    EnrichmentLookupStage.MusicBrainzArtistSearch => "MusicBrainz artist search",
+                    EnrichmentLookupStage.MusicBrainzRecordingSearch => "MusicBrainz recording search",
+                    EnrichmentLookupStage.MusicBrainzArtistDetails => "MusicBrainz artist-details lookup",
+                    EnrichmentLookupStage.LinkedWikidataLookup => "linked Wikidata lookup",
+                    _ => "approved enrichment lookup",
+                };
+
+                if (TimedOut)
+                {
+                    return $"{stage} timed out; no enrichment was used.";
+                }
+
+                string status = StatusCode is null
+                    ? "request failure without an HTTP status"
+                    : $"HTTP {(int)StatusCode.Value} ({StatusCode.Value})";
+                string retryAfter = RetryAfter is null ? string.Empty : $" Retry-After: {RetryAfter}.";
+                return $"{stage} returned {status}.{retryAfter} No enrichment was used.";
+            }
+        }
+
+        internal static EnrichmentRequestFailure Timeout(EnrichmentLookupStage stage)
+            => new(stage, true, null, null);
+
+        internal static EnrichmentRequestFailure Http(
+            EnrichmentLookupStage stage,
+            HttpStatusCode? statusCode,
+            string? retryAfter)
+            => new(stage, false, statusCode, retryAfter);
+    }
     private static string? TryGetWikidataId(string? resource)
     {
         if (!Uri.TryCreate(resource, UriKind.Absolute, out Uri? uri)

@@ -79,7 +79,10 @@ internal sealed class WindowsSpeechService : IAnnouncementSpeechService
             cancellationToken.ThrowIfCancellationRequested();
         }
 
-        return new MediaPlayerPreparedSpeech(stream, stream.ContentType);
+        TimeSpan measuredDuration = await PreparedSpeechDuration.ReadWaveDurationAsync(
+            stream,
+            cancellationToken);
+        return new MediaPlayerPreparedSpeech(stream, stream.ContentType, measuredDuration);
     }
 
     public void Dispose()

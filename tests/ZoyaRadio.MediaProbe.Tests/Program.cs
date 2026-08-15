@@ -129,6 +129,9 @@ var tests = new (string Name, Func<Task> Run)[]
     ("transition preparation preserves Unicode metadata", TransitionPreparationPreservesUnicode),
     ("only one transition opportunity remains pending", () => RunSynchronous(OnlyOneTransitionOpportunityRemainsPending)),
     ("prepared transition audio is disposable after use", TransitionPreparedAudioIsDisposed),
+    ("prepared speech at or below the automatic maximum remains deliverable", TransitionPreparedDurationAtOrBelowLimitIsDeliverable),
+    ("over-duration prepared speech is discarded before ducking", TransitionOverDurationPreparedSpeechIsDiscardedBeforeDucking),
+    ("over-duration prepared speech does not block later opportunities", TransitionOverDurationPreparedSpeechDoesNotBlockLaterOpportunity),
     ("M9A brief uses bounded prior history", () => RunSynchronous(Milestone9AExperimentTests.BriefUsesBoundedPriorHistory)),
     ("M9A exact-track repeat detection", () => RunSynchronous(Milestone9AExperimentTests.ExactTrackRepeatIsDetected)),
     ("M9A repeated-artist detection", () => RunSynchronous(Milestone9AExperimentTests.RepeatedArtistIsDetected)),
@@ -162,6 +165,12 @@ var tests = new (string Name, Func<Task> Run)[]
     ("M9C strict identity confirmation and ambiguity refusal", Milestone9CExperimentTests.StrictArtistConfirmationAndAmbiguity),
     ("M9C duplicate artist names require one linked identity", Milestone9CExperimentTests.DuplicateArtistNamesConfirmOnlyOneLinkedIdentity),
     ("M9C exact title-and-artist recording confirms", Milestone9CExperimentTests.ExactTitleAndArtistRecordingConfirms),
+    ("M9B MusicBrainz 429 diagnostics are typed and safe", Milestone9CExperimentTests.MusicBrainz429DiagnosticsAreTypedAndSafe),
+    ("M9B MusicBrainz 503 diagnostics are typed and safe", Milestone9CExperimentTests.MusicBrainz503DiagnosticsAreTypedAndSafe),
+    ("M9B Wikidata 503 diagnostics are typed and safe", Milestone9CExperimentTests.Wikidata503DiagnosticsAreTypedAndSafe),
+    ("M9B enrichment timeout diagnostics are typed and safe", Milestone9CExperimentTests.EnrichmentTimeoutDiagnosticsAreTypedAndSafe),
+    ("M9B cached negative enrichment retains safe reason", Milestone9CExperimentTests.CachedNegativeEnrichmentResultRetainsSafeReason),
+    ("M9B successful enrichment is unaffected by diagnostics", Milestone9CExperimentTests.SuccessfulEnrichmentIsUnaffectedByFailureDiagnostics),
     ("M9B nested MusicBrainz credits and multiple exact recordings confirm Wake Up", Milestone9CExperimentTests.NestedArtistCreditsAndMultipleExactRecordingsConfirmWakeUp),
     ("M9B wrong MusicBrainz recording identity or title is rejected", Milestone9CExperimentTests.WrongMusicBrainzRecordingIdentityOrTitleIsRejected),
     ("M9B soundtrack evidence requires one official release group", Milestone9CExperimentTests.SoundtrackEvidenceRequiresOneDistinctOfficialGroup),
@@ -205,6 +214,9 @@ var tests = new (string Name, Func<Task> Run)[]
     ("M9B cache is bounded corrupt-safe and excludes prompt material", () => RunSynchronous(Milestone9BTests.CacheIsBoundedCorruptSafeAndDoesNotContainPromptMaterial)),
     ("M9B missing 14B preserves M8 fallback", Milestone9BTests.Missing14BUsesM8FallbackWithoutGeneration),
     ("M9B valid 14B comment unloads and records after delivery", Milestone9BTests.Valid14BCommentUnloadsAndRecordsOnlyAfterDelivery),
+    ("M9B text lifecycle logs prepared and completed delivery", Milestone9BTests.TextLifecycleLoggingRecordsPreparedAndCompletedDelivery),
+    ("M9B text lifecycle logs advisory regeneration", Milestone9BTests.TextLifecycleLoggingRecordsAdvisoryRegeneration),
+    ("M9B text lifecycle logs discarded stale and failed delivery", Milestone9BTests.TextLifecycleLoggingRecordsDiscardedStaleAndFailedDelivery),
     ("M9B advisory candidate regenerates at most once", Milestone9BTests.AdvisoryCandidateRegeneratesAtMostOnce),
     ("M9B redirected live source response is refused", Milestone9BTests.RedirectedLiveSourceResponseIsRefused),
     ("M9B runtime does not use M9C diagnostic entry points", () => RunSynchronous(Milestone9BTests.M9BRuntimeDoesNotUseM9CDiagnosticEntryPoints)),
@@ -2628,6 +2640,114 @@ static Task TransitionPreparedAudioIsDisposed()
     return Task.CompletedTask;
 }
 
+static async Task TransitionPreparedDurationAtOrBelowLimitIsDeliverable()
+{
+    DateTimeOffset now = DateTimeOffset.Parse("2026-08-15T17:00:00Z");
+    foreach (TimeSpan duration in new[] { TimeSpan.FromSeconds(24.999), TimeSpan.FromSeconds(25) })
+    {
+        RadioPreparationOpportunity opportunity = TestTransitionPreparation(now.AddSeconds(-20));
+        var speech = new FakePreparedSpeech(
+            new SpeechPlaybackResult(SpeechPlaybackStatus.Completed),
+            duration);
+        var host = new FakeTransitionRadioHost(ValidTransitionSnapshot(opportunity))
+        {
+            Speech = speech,
+        };
+        var pipeline = new TransitionRadioPipeline(
+            RadioBehaviorConfiguration.Default,
+            new FakeTransitionCommentProvider(),
+            host,
+            new FakeRadioClock(now),
+            new FakeLog());
+
+        TransitionPreparationResult result = await pipeline.PrepareAsync(
+            opportunity,
+            true,
+            CancellationToken.None);
+
+        AssertEqual(TransitionPreparationStatus.Ready, result.Status);
+        AssertEqual(0, host.DuckedDeliveryCalls);
+        result.Prepared!.Dispose();
+    }
+}
+
+static async Task TransitionOverDurationPreparedSpeechIsDiscardedBeforeDucking()
+{
+    DateTimeOffset now = DateTimeOffset.Parse("2026-08-15T17:00:00Z");
+    RadioPreparationOpportunity opportunity = TestTransitionPreparation(now.AddSeconds(-20));
+    var speech = new FakePreparedSpeech(
+        new SpeechPlaybackResult(SpeechPlaybackStatus.Completed),
+        TimeSpan.FromSeconds(25.001));
+    var host = new FakeTransitionRadioHost(ValidTransitionSnapshot(opportunity))
+    {
+        Speech = speech,
+    };
+    var log = new FakeLog();
+    var pipeline = new TransitionRadioPipeline(
+        RadioBehaviorConfiguration.Default,
+        new FakeTransitionCommentProvider(),
+        host,
+        new FakeRadioClock(now),
+        log);
+
+    TransitionPreparationResult result = await pipeline.PrepareAsync(
+        opportunity,
+        true,
+        CancellationToken.None);
+
+    AssertEqual(TransitionPreparationStatus.Abandoned, result.Status);
+    AssertTrue(result.Prepared is null);
+    AssertEqual(0, host.DuckedDeliveryCalls);
+    AssertEqual(0, speech.SpeakCalls);
+    AssertEqual(1, speech.DisposeCalls);
+    AssertTrue(log.Contains("PREPARED SPEECH DISCARDED"));
+    AssertTrue(log.Contains("No Core Audio target will be enumerated"));
+    AssertTrue(log.Contains("No catch-up comment will be queued"));
+}
+
+static async Task TransitionOverDurationPreparedSpeechDoesNotBlockLaterOpportunity()
+{
+    DateTimeOffset now = DateTimeOffset.Parse("2026-08-15T17:00:00Z");
+    RadioPreparationOpportunity first = TestTransitionPreparation(now.AddSeconds(-20));
+    var host = new FakeTransitionRadioHost(ValidTransitionSnapshot(first))
+    {
+        Speech = new FakePreparedSpeech(
+            new SpeechPlaybackResult(SpeechPlaybackStatus.Completed),
+            TimeSpan.FromSeconds(26)),
+    };
+    var pipeline = new TransitionRadioPipeline(
+        RadioBehaviorConfiguration.Default,
+        new FakeTransitionCommentProvider(),
+        host,
+        new FakeRadioClock(now),
+        new FakeLog());
+
+    TransitionPreparationResult rejected = await pipeline.PrepareAsync(
+        first,
+        true,
+        CancellationToken.None);
+    AssertEqual(TransitionPreparationStatus.Abandoned, rejected.Status);
+
+    RadioPreparationOpportunity later = first with
+    {
+        Id = first.Id + 1,
+        Context = first.Context with { SubjectTrackStartedAt = now.AddSeconds(-21) },
+    };
+    host.Snapshot = ValidTransitionSnapshot(later);
+    host.Speech = new FakePreparedSpeech(
+        new SpeechPlaybackResult(SpeechPlaybackStatus.Completed),
+        TimeSpan.FromSeconds(10));
+
+    TransitionPreparationResult laterResult = await pipeline.PrepareAsync(
+        later,
+        true,
+        CancellationToken.None);
+
+    AssertEqual(TransitionPreparationStatus.Ready, laterResult.Status);
+    AssertEqual(0, host.DuckedDeliveryCalls);
+    laterResult.Prepared!.Dispose();
+}
+
 static RadioPreparationOpportunity TestTransitionPreparation(DateTimeOffset subjectStartedAt)
 {
     return new RadioPreparationOpportunity(
@@ -2986,15 +3106,21 @@ internal sealed class FakePreparedSpeech : IPreparedAnnouncementSpeech
     private readonly SpeechPlaybackResult? _result;
     private readonly bool _throwCancellation;
 
-    public FakePreparedSpeech(SpeechPlaybackResult result)
+    public FakePreparedSpeech(
+        SpeechPlaybackResult result,
+        TimeSpan? measuredDuration = null)
     {
         _result = result;
+        MeasuredDuration = measuredDuration ?? TimeSpan.FromSeconds(10);
     }
 
     public FakePreparedSpeech(bool throwCancellation)
     {
         _throwCancellation = throwCancellation;
+        MeasuredDuration = TimeSpan.FromSeconds(10);
     }
+
+    public TimeSpan MeasuredDuration { get; }
 
     public int SpeakCalls { get; private set; }
 
@@ -3188,7 +3314,7 @@ internal sealed class FakeTransitionRadioHost : ITransitionRadioHost
 
     public RadioOpportunitySnapshot Snapshot { get; set; }
 
-    public FakePreparedSpeech Speech { get; } = new(
+    public FakePreparedSpeech Speech { get; set; } = new(
         new SpeechPlaybackResult(SpeechPlaybackStatus.Completed));
 
     public int SnapshotReads { get; private set; }

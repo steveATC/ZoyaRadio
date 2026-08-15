@@ -87,6 +87,106 @@ internal static class Milestone9CExperimentTests
         }
         finally { if (Directory.Exists(cacheDirectory)) Directory.Delete(cacheDirectory, true); }
     }
+    public static async Task MusicBrainz429DiagnosticsAreTypedAndSafe()
+    {
+        await AssertTypedFailureAsync(
+            new ScriptedHandler(() => JsonResponse(HttpStatusCode.TooManyRequests, "{}", "45")),
+            "MusicBrainz artist search returned HTTP 429 (TooManyRequests). Retry-After: 45 seconds.");
+    }
+
+    public static async Task MusicBrainz503DiagnosticsAreTypedAndSafe()
+    {
+        await AssertTypedFailureAsync(
+            new ScriptedHandler(() => JsonResponse(HttpStatusCode.ServiceUnavailable, "{}")),
+            "MusicBrainz artist search returned HTTP 503 (ServiceUnavailable).");
+    }
+
+    public static async Task Wikidata503DiagnosticsAreTypedAndSafe()
+    {
+        await AssertTypedFailureAsync(
+            new ScriptedHandler(
+                () => JsonResponse(HttpStatusCode.OK, "{\"artists\":[{\"id\":\"a1\",\"name\":\"Exact Artist\"}]}"),
+                () => JsonResponse(HttpStatusCode.OK, "{\"relations\":[{\"type\":\"wikidata\",\"url\":{\"resource\":\"https://www.wikidata.org/wiki/Q1\"}}]}"),
+                () => JsonResponse(HttpStatusCode.ServiceUnavailable, "{}")),
+            "linked Wikidata lookup returned HTTP 503 (ServiceUnavailable).");
+    }
+
+    public static async Task EnrichmentTimeoutDiagnosticsAreTypedAndSafe()
+    {
+        string directory = TemporaryDirectory();
+        try
+        {
+            using var client = new HttpClient(new TimeoutHandler());
+            MusicContextEnrichmentConfiguration configuration = MusicContextEnrichmentConfiguration.Default with
+            {
+                RequestTimeout = TimeSpan.FromMilliseconds(25),
+            };
+            using var enricher = new MusicBrainzWikidataEnricher(
+                configuration,
+                new MusicContextCache(directory, configuration),
+                client);
+            MusicContextEnrichmentResult result = await enricher.EnrichAsync(
+                new MusicContextRequest("Exact Track", "Exact Artist", MusicIdentityRequirement.ArtistOnly),
+                CancellationToken.None);
+
+            Equal(MusicContextMatchStatus.Failed, result.Status);
+            Contains(result.SafeExplanation, "MusicBrainz artist search timed out");
+            False(result.SafeExplanation.Contains("Exception", StringComparison.Ordinal));
+        }
+        finally { Delete(directory); }
+    }
+
+    public static async Task CachedNegativeEnrichmentResultRetainsSafeReason()
+    {
+        string directory = TemporaryDirectory();
+        try
+        {
+            var request = new MusicContextRequest("Exact Track", "Exact Artist", MusicIdentityRequirement.ArtistOnly);
+            var cache = new MusicContextCache(directory, MusicContextEnrichmentConfiguration.Default);
+            cache.Store(new MusicContextEnrichmentResult(
+                request,
+                MusicContextMatchStatus.Failed,
+                null,
+                DateTimeOffset.UtcNow,
+                "MusicBrainz artist search returned HTTP 503 (ServiceUnavailable). No enrichment was used.",
+                false));
+            var handler = new ScriptedHandler(() => throw new InvalidOperationException("A cached negative result should not contact a source."));
+            using var client = new HttpClient(handler);
+            using var enricher = new MusicBrainzWikidataEnricher(MusicContextEnrichmentConfiguration.Default, cache, client);
+            MusicContextEnrichmentResult result = await enricher.EnrichAsync(request, CancellationToken.None);
+
+            True(result.FromCache);
+            Equal(MusicContextMatchStatus.Failed, result.Status);
+            Contains(result.SafeExplanation, "MusicBrainz artist search returned HTTP 503");
+            Equal(0, handler.Calls);
+        }
+        finally { Delete(directory); }
+    }
+
+    public static async Task SuccessfulEnrichmentIsUnaffectedByFailureDiagnostics()
+    {
+        string directory = TemporaryDirectory();
+        try
+        {
+            using var client = new HttpClient(new ScriptedHandler(
+                () => JsonResponse(HttpStatusCode.OK, "{\"artists\":[{\"id\":\"a1\",\"name\":\"Exact Artist\"}]}"),
+                () => JsonResponse(HttpStatusCode.OK, "{\"relations\":[{\"type\":\"wikidata\",\"url\":{\"resource\":\"https://www.wikidata.org/wiki/Q1\"}}]}"),
+                () => JsonResponse(HttpStatusCode.OK, "{\"entities\":{\"Q1\":{\"descriptions\":{\"en\":{\"value\":\"a specific structured artist description\"}}}}}")));
+            using var enricher = new MusicBrainzWikidataEnricher(
+                MusicContextEnrichmentConfiguration.Default,
+                new MusicContextCache(directory, MusicContextEnrichmentConfiguration.Default),
+                client);
+            MusicContextEnrichmentResult result = await enricher.EnrichAsync(
+                new MusicContextRequest("Exact Track", "Exact Artist", MusicIdentityRequirement.ArtistOnly),
+                CancellationToken.None);
+
+            Equal(MusicContextMatchStatus.Confirmed, result.Status);
+            True(result.IsConfirmedWithFacts);
+            Contains(result.SafeExplanation, "Exact MusicBrainz identity");
+        }
+        finally { Delete(directory); }
+    }
+
     public static async Task NestedArtistCreditsAndMultipleExactRecordingsConfirmWakeUp()
     {
         string directory = TemporaryDirectory();
@@ -670,6 +770,50 @@ internal static class Milestone9CExperimentTests
         False(command.Contains("CoreAudio", StringComparison.Ordinal));
         False(command.Contains("MusicBrainz", StringComparison.Ordinal));
     }
+    private static async Task AssertTypedFailureAsync(
+        HttpMessageHandler handler,
+        string expected)
+    {
+        string directory = TemporaryDirectory();
+        try
+        {
+            using var client = new HttpClient(handler);
+            using var enricher = new MusicBrainzWikidataEnricher(
+                MusicContextEnrichmentConfiguration.Default,
+                new MusicContextCache(directory, MusicContextEnrichmentConfiguration.Default),
+                client);
+            MusicContextEnrichmentResult result = await enricher.EnrichAsync(
+                new MusicContextRequest("Exact Track", "Exact Artist", MusicIdentityRequirement.ArtistOnly),
+                CancellationToken.None);
+
+            Equal(MusicContextMatchStatus.Failed, result.Status);
+            Contains(result.SafeExplanation, expected);
+            False(result.SafeExplanation.Contains("{}", StringComparison.Ordinal));
+        }
+        finally
+        {
+            handler.Dispose();
+            Delete(directory);
+        }
+    }
+
+    private static HttpResponseMessage JsonResponse(
+        HttpStatusCode status,
+        string body,
+        string? retryAfter = null)
+    {
+        var response = new HttpResponseMessage(status)
+        {
+            Content = new StringContent(body, Encoding.UTF8, "application/json"),
+        };
+        if (retryAfter is not null)
+        {
+            response.Headers.TryAddWithoutValidation("Retry-After", retryAfter);
+        }
+
+        return response;
+    }
+
     private static string TemporaryDirectory()
     {
         string root = RepositoryPathLocator.FindRepositoryRoot();
@@ -688,6 +832,42 @@ internal static class Milestone9CExperimentTests
         {
             var fact = new SourceBackedFact("A structured test fact.", "Wikidata", new Uri("https://www.wikidata.org/wiki/Q1"));
             return Task.FromResult(new MusicContextEnrichmentResult(request, MusicContextMatchStatus.Confirmed, new MusicContextFactCard(request.Artist, null, "a1", "Q1", [fact]), DateTimeOffset.UtcNow, "Fake confirmed identity.", false));
+        }
+    }
+
+    private sealed class ScriptedHandler : HttpMessageHandler
+    {
+        private readonly Queue<Func<HttpResponseMessage>> _responses;
+
+        internal ScriptedHandler(params Func<HttpResponseMessage>[] responses)
+        {
+            _responses = new Queue<Func<HttpResponseMessage>>(responses);
+        }
+
+        internal int Calls { get; private set; }
+
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            Calls++;
+            if (_responses.Count == 0)
+            {
+                throw new InvalidOperationException("No fake HTTP response was configured.");
+            }
+
+            return Task.FromResult(_responses.Dequeue()());
+        }
+    }
+
+    private sealed class TimeoutHandler : HttpMessageHandler
+    {
+        protected override async Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+            throw new InvalidOperationException("The cancellation-aware delay should not complete.");
         }
     }
 

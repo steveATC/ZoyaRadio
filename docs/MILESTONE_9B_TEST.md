@@ -161,3 +161,43 @@ and the absence of desktop-media APIs from the enrichment path.
 This safe first attempt does not satisfy Gate 4's requirement for five enriched deliveries.
 Gate 4 remains authorized but paused until Steve resumes the same bounded desktop test after
 this repair. M9B remains unpassed.
+
+## Gate 4 latest audible run: evidence and paused repair
+
+Steve's latest authorized Gate 4 run is recorded in
+`%LOCALAPPDATA%\Zoya Radio\logs\radio-behavior-20260815-164408-236.txt`. It recorded seven
+scheduled preparation opportunities:
+
+- Raul Seixas — `Ouro De Tolo`: exact live MusicBrainz identity/context; one M9B comment
+  prepared and delivered.
+- AC/DC — `T.N.T.`: exact live MusicBrainz context; one M9B comment prepared and delivered.
+- Pantera — `Cemetery Gates`: approved context unavailable; M8 fallback delivered.
+- System Of A Down — `Mind`: approved context unavailable; the 4B local fallback request
+  received HTTP 500 after `llama-server` exited with `0xc0000409` and
+  `GGML_ASSERT(check == -n_chars) failed`; the deterministic `That was Mind by System Of A Down.`
+  fallback was prepared/delivered, selected-model unload was attempted, and Firefox restored.
+- Black Label Society — `We Live No More`: approved context unavailable; M8 fallback delivered.
+- Black Sabbath — `Paranoid (2009 Remaster)`: reviewed local card `M9C6-02`; one advisory
+  regeneration retained a second 14B result, but Kokoro prepared 26.3 seconds against the
+  25-second automatic maximum. The old path ducked, timed out, and restored Firefox exactly.
+- Lynyrd Skynyrd — `Sweet Home Alabama`: reviewed local card `M9C6-01`; one M9B comment
+  prepared and delivered.
+
+The aggregate was four M9B preparations, three successful enriched M9B deliveries, three
+successful M8/fixed-fallback deliveries, and one safe over-duration M9B delivery failure. Every
+ducked attempt restored the exact captured Firefox volume/mute state; playback was never paused;
+and the application stopped cleanly. The live `Ouro De Tolo` and `T.N.T.` results confirm the
+MusicBrainz credit repair works beyond the earlier `Wake Up` example.
+
+This run exposed three bounded diagnostic/safety issues: M9B final text was absent from normal
+runtime logs, approved-source absence lacked a typed lookup reason, and known over-duration audio
+was allowed into the ducking path. The repair records private selected/prepared/delivered/discarded
+M9B text, retains typed bounded MusicBrainz/Wikidata failure diagnostics, and rejects/disposes
+prepared audio strictly above the automatic maximum before Core Audio enumeration, ducking, or
+speech. It preserves the delivery-time timeout/restoration path as defense in depth.
+
+The repair's fake-driven verification passed all four Release builds with 0 warnings and 0 errors,
+all four formatting checks, `git diff --check`, and 278 tests with 0 failures. It did not run the
+radio, contact live enrichment/Ollama, produce speech, or alter desktop media. Gate 4 remains
+incomplete because five successful enriched deliveries have not yet been observed. Steve has paused
+further testing; the next action is Steve's decision whether and when to resume the same bounded

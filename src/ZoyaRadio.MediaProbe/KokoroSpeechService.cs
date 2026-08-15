@@ -227,7 +227,7 @@ internal sealed class KokoroSpeechService : IAnnouncementSpeechService
                     $"prepared audio {audioDuration.TotalSeconds:N3} seconds; " +
                     $"real-time factor {totalTimer.Elapsed.TotalSeconds / audioDuration.TotalSeconds:N3}x.");
                 _log.Write("Neural audio verified and held in memory; Firefox has not yet been paused.");
-                return new MediaPlayerPreparedSpeech(stream, "audio/wav");
+                return new MediaPlayerPreparedSpeech(stream, "audio/wav", audioDuration);
             }
             catch
             {

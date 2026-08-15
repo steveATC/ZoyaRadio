@@ -3,7 +3,7 @@
 ## Status and authority
 
 Steve approved this bounded contract direction on August 15, 2026 after reviewing the
-M9B proposal and approving its recommended decisions. Steve then explicitly authorized the bounded implementation on August 15, 2026. M9B is now an implemented candidate with Gate 2 owner evaluation and the silent operational Gate 3 accepted. It remains unaccepted runtime behavior. Gate 4 is authorized but paused after its first safe, fallback-only audible attempt exposed a bounded MusicBrainz identity/cache repair; resumed Gate 4 evidence and final owner acceptance remain required.
+M9B proposal and approving its recommended decisions. Steve then explicitly authorized the bounded implementation on August 15, 2026. M9B is now an implemented candidate with Gate 2 owner evaluation and the silent operational Gate 3 accepted. It remains unaccepted runtime behavior. The latest Gate 4 run delivered three enriched M9B comments and three M8/fixed fallbacks, while one 26.3-second M9B preparation timed out safely and restored Firefox exactly. Gate 4 remains authorized but paused while Steve decides whether and when to resume it; final owner acceptance remains required.
 
 M9B is not passed or accepted runtime behavior. Until automated verification, staged desktop testing, and Steve's final manual acceptance are complete,
 the accepted Milestone 8 runtime at `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf`
@@ -189,6 +189,8 @@ both title and artist when natural context does not require them.
 Training knowledge may support natural host language, familiar low-risk music knowledge, and colorful but modest editorial opinion. The reviewed card remains the factual/editorial anchor, rather than a list of every word or low-stakes association Zoya may use. Riffs, vocals, instrumentation, production, sound, style, genre, popularity/cultural observations, ordinary radio-host adjectives such as “iconic” or “legendary,” low-risk music-related names, and modest exaggeration are permitted.
 
 The model should avoid fabricating precise dates, quotations, credits, historical incidents, or severe causal claims that conflict with the supplied context. Exact `FALLBACK` remains a valid response and is never spoken literally.
+
+Private local runtime diagnostics must distinguish selected, prepared, delivered, and discarded M9B text. They may record typed context source/card/identity, first-result classification, bounded advisory-regeneration reason, final normalized text, and safe discard/delivery reason. They must not record full prompts, raw source content, credentials, browser information, or unrelated listening history. A prepared comment is not recorded as delivered until its speech/delivery path reports successful completion.
 ## Validation and repetition
 
 Hard discard is reserved for high-confidence technical or safety failures:
@@ -225,6 +227,7 @@ audible runtime candidate.
 - Release builds and formatting checks pass with zero warnings and zero errors.
 - Tests prove no non-approved host, raw-page path, browser data, unrelated Ollama model,
   playback target, application volume, or master volume can be used.
+- Tests prove typed MusicBrainz/Wikidata HTTP and timeout diagnostics, cached-negative indication, selected-text lifecycle logging, and safe pre-duck rejection/disposal of measured over-limit prepared speech.
 
 ### 2. Generate-only owner review
 
@@ -276,14 +279,14 @@ second generate-only run is required before Gate 3.
 ### 4. Bounded audible desktop trial
 
 - Only after Gates 1-3 pass, deliver at least five scheduled enriched comments across
-  multiple familiar tracks. The first authorized attempt delivered five safe M8 fallback comments
-  but zero enriched comments because live context failed before 14B generation; it does not meet
-  this requirement. Gate 4 is paused pending the bounded MusicBrainz nested-credit,
-  multiple-recording, soundtrack-mapping, and cache repair, then resumes only with Steve's test.
+  multiple familiar tracks. The latest authorized attempt delivered three enriched M9B comments,
+  three M8/fixed fallbacks, and one safely failed 26.3-second M9B preparation. It does not meet
+  this requirement. Gate 4 is authorized but paused while Steve decides whether and when to resume the bounded desktop test.
 - Confirm the candidate is complete before ducking, only the validated Firefox session
   is ducked, captured scalar/mute state is restored exactly, Chrome/master volume remain
   untouched, normal playback is never paused, cancellation cleans up safely, and no
   stale or rejected comment is spoken.
+- Before any Core Audio enumeration, ducking, or speech, measured prepared duration must be at or below the configured automatic maximum; a duration strictly above that maximum is discarded, disposed, logged, and rescheduled without catch-up. Existing delivery-time timeout/restoration remains a defense in depth for unexpected stalls or measurement disagreement.
 - Steve judges factual reliability, naturalness, repetition, timing, fallback behavior,
   and whether each comment belonged on Zoya Radio.
 

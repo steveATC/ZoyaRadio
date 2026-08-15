@@ -23,6 +23,8 @@ internal interface IAnnouncementPlaybackTarget
 
 internal interface IPreparedAnnouncementSpeech : IDisposable
 {
+    TimeSpan MeasuredDuration { get; }
+
     Task<SpeechPlaybackResult> SpeakAsync(TimeSpan timeout, CancellationToken cancellationToken);
 }
 

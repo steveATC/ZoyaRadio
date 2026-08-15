@@ -195,6 +195,89 @@ internal static class Milestone9BTests
         }
         finally { Delete(directory); }
     }
+    public static async Task TextLifecycleLoggingRecordsPreparedAndCompletedDelivery()
+    {
+        string directory = TemporaryDirectory();
+        try
+        {
+            var log = new FakeLog();
+            var provider = CreateLifecycleProvider(
+                ["That answer to Neil Young arrived with enough history to make a simple song introduction feel almost suspiciously well prepared."],
+                directory,
+                log);
+            RadioPreparationContext context = LifecycleContext(1);
+            CommentSelection selection = await provider.SelectAsync(context, true, CancellationToken.None);
+            var opportunity = new RadioPreparationOpportunity(1, context);
+
+            provider.RecordPrepared(opportunity, selection);
+            provider.RecordCompleted(opportunity, selection);
+
+            True(log.Contains("M9B CONTEXT SELECTED: source ReviewedCatalog"));
+            True(log.Contains("M9B GENERATED RESULT: attempt 1; classification Valid"));
+            True(log.Contains("M9B FINAL SELECTED TEXT:"));
+            True(log.Contains("M9B PREPARED TEXT:"));
+            True(log.Contains("M9B DELIVERED TEXT:"));
+            False(log.Contains("M9B PREPARED TEXT DISCARDED:"));
+        }
+        finally { Delete(directory); }
+    }
+
+    public static async Task TextLifecycleLoggingRecordsAdvisoryRegeneration()
+    {
+        string directory = TemporaryDirectory();
+        try
+        {
+            var log = new FakeLog();
+            var provider = CreateLifecycleProvider(
+                [
+                    "I'm picturing Sweet Home Alabama sitting beside Neil Young's response—does anyone mind if I call that wonderfully direct?",
+                    "Picture this: Sweet Home Alabama replying to Neil Young with a response that has the subtlety of a certified letter.",
+                ],
+                directory,
+                log);
+            RadioPreparationContext context = LifecycleContext(2);
+            CommentSelection selection = await provider.SelectAsync(context, true, CancellationToken.None);
+            provider.RecordPrepared(new RadioPreparationOpportunity(2, context), selection);
+
+            True(log.Contains("M9B GENERATED RESULT: attempt 1; classification Advisory"));
+            True(log.Contains("M9B ADVISORY REGENERATION:"));
+            True(log.Contains("M9B GENERATED RESULT: attempt 2; classification Advisory"));
+            True(log.Contains("M9B FINAL TEXT CLASSIFICATION: advisory candidate retained after bounded regeneration."));
+            True(log.Contains("M9B PREPARED TEXT:"));
+        }
+        finally { Delete(directory); }
+    }
+
+    public static async Task TextLifecycleLoggingRecordsDiscardedStaleAndFailedDelivery()
+    {
+        string directory = TemporaryDirectory();
+        try
+        {
+            const string response = "That answer to Neil Young arrived with enough history to make a simple song introduction feel almost suspiciously well prepared.";
+            var log = new FakeLog();
+            var provider = CreateLifecycleProvider([response, response, response], directory, log);
+            foreach ((long id, string reason) in new[]
+            {
+                (3L, "prepared speech measured 26.3 seconds, exceeding the configured automatic maximum"),
+                (4L, "Track B changed before delivery could begin"),
+                (5L, "delivery failed after protected restoration"),
+            })
+            {
+                RadioPreparationContext context = LifecycleContext((int)id);
+                CommentSelection selection = await provider.SelectAsync(context, true, CancellationToken.None);
+                var opportunity = new RadioPreparationOpportunity(id, context);
+                provider.RecordPrepared(opportunity, selection);
+                provider.Discard(opportunity, reason);
+            }
+
+            True(log.Contains("M9B PREPARED TEXT DISCARDED: prepared speech measured 26.3 seconds"));
+            True(log.Contains("M9B PREPARED TEXT DISCARDED: Track B changed before delivery could begin"));
+            True(log.Contains("M9B PREPARED TEXT DISCARDED: delivery failed after protected restoration"));
+            False(log.Contains("M9B DELIVERED TEXT:"));
+        }
+        finally { Delete(directory); }
+    }
+
     public static async Task RedirectedLiveSourceResponseIsRefused()
     {
         string directory = TemporaryDirectory();
@@ -489,10 +572,42 @@ internal static class Milestone9BTests
     }
     private static M9BCatalogCard FirstCard() => M9BContextCatalog.Load().Cards.Single(card => card.Id == "M9C6-01");
     private static RadioPreparationContext Context() => new(new MediaSnapshot("Sweet Home Alabama", "Lynyrd Skynyrd", null), DateTimeOffset.UtcNow, [], []);
-    private static M9BGroundedCommentService CreateService(M9BFakeGenerator generator, string directory)
+
+    private static RadioPreparationContext LifecycleContext(int id) => new(
+        new MediaSnapshot("Sweet Home Alabama", "Lynyrd Skynyrd", null),
+        DateTimeOffset.UnixEpoch.AddSeconds(id),
+        [],
+        []);
+
+    private static M9BTransitionCommentProvider CreateLifecycleProvider(
+        IEnumerable<string> responses,
+        string directory,
+        FakeLog log)
     {
-        var provider = new M9BContextProvider(M9BContextCatalog.Load(), new FakeM9BLiveResolver(), new M9BContextCache(directory, MusicContextEnrichmentConfiguration.Default), new FakeLog());
-        return new M9BGroundedCommentService(provider, generator, AiCommentConfiguration.Default with { Model = M9BConstants.Model }, new M9BRecentCommentState(), new FakeLog());
+        M9BGroundedCommentService service = CreateService(
+            new M9BFakeGenerator(modelPresent: true, responses),
+            directory,
+            log);
+        return new M9BTransitionCommentProvider(new FakeTransitionProvider(), service, log);
+    }
+
+    private static M9BGroundedCommentService CreateService(
+        M9BFakeGenerator generator,
+        string directory,
+        FakeLog? log = null)
+    {
+        log ??= new FakeLog();
+        var provider = new M9BContextProvider(
+            M9BContextCatalog.Load(),
+            new FakeM9BLiveResolver(),
+            new M9BContextCache(directory, MusicContextEnrichmentConfiguration.Default),
+            log);
+        return new M9BGroundedCommentService(
+            provider,
+            generator,
+            AiCommentConfiguration.Default with { Model = M9BConstants.Model },
+            new M9BRecentCommentState(),
+            log);
     }
     private static M9BContextResolution Resolution(string title, string artist) => new(new MusicContextRequest(title, artist, MusicIdentityRequirement.ArtistAndTrack), MusicContextMatchStatus.Unavailable, null, DateTimeOffset.UtcNow, "safe test result", false);
     private static string TemporaryDirectory()

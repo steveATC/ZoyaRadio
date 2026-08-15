@@ -10,11 +10,22 @@ internal sealed class MediaPlayerPreparedSpeech : IPreparedAnnouncementSpeech
     private readonly string _contentType;
     private bool _disposed;
 
-    public MediaPlayerPreparedSpeech(IRandomAccessStream stream, string contentType)
+    public MediaPlayerPreparedSpeech(
+        IRandomAccessStream stream,
+        string contentType,
+        TimeSpan measuredDuration)
     {
+        if (measuredDuration <= TimeSpan.Zero)
+        {
+            throw new ArgumentOutOfRangeException(nameof(measuredDuration));
+        }
+
         _stream = stream;
         _contentType = contentType;
+        MeasuredDuration = measuredDuration;
     }
+
+    public TimeSpan MeasuredDuration { get; }
 
     public async Task<SpeechPlaybackResult> SpeakAsync(
         TimeSpan timeout,
