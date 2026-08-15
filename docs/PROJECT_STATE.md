@@ -11,7 +11,7 @@
 | Latest accepted automated result | 178 passed, 0 failed at accepted internal implementation `b56c03d` |
 | Accepted internal packaged baseline | `0.8.0-alpha.1` |
 | Deferred distribution validation | Clean Windows 10/11 and invited private-alpha testing; not blockers to internal development |
-| Next project step | M9C is closed as successful experimental evidence; grounded 14B whole-comment synthesis is the selected future candidate, but no runtime integration is authorized |
+| Next project step | M9B grounded-context integration contract is approved; implementation has not started and requires a separate explicit instruction |
 | Deferred milestone | Milestone 6 |
 
 The local Git repository is authoritative. See [PROJECT_INDEX.md](PROJECT_INDEX.md) for the documentation authority and snapshot rules.
@@ -41,7 +41,7 @@ Full implemented behavior is in [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.m
 - Steve manually accepted M8A on August 11, 2026. The accepted evidence and preserved regression procedure are in [MILESTONE_8A_TEST.md](MILESTONE_8A_TEST.md).
 - Steve accepted the extracted M8B `0.8.0-alpha.1` package on August 11, 2026. M8B and Milestone 8 are closed for continued internal development at implementation commit `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf`.
 - Clean Windows 10/11 and invited-tester validation remain pending and deferred as distribution evidence. The accepted internal package is not clean-machine certified, broadly compatible, publicly released, or validated for third-party distribution.
-- M8 acceptance did not authorize post-M8 work. Steve subsequently approved only the bounded M9A experiment in [MILESTONE_9A_CONTRACT.md](MILESTONE_9A_CONTRACT.md); M9B and every other post-M8 implementation remain unauthorized.
+- M8 acceptance did not itself authorize post-M8 work. Steve subsequently approved the bounded M9A and M9C experiments, then approved the documentation-only [Milestone 9B contract](MILESTONE_9B_CONTRACT.md) on August 15, 2026; M9B implementation still requires a separate explicit instruction.
 
 ## Milestone 9A candidate status
 
@@ -52,7 +52,7 @@ Full implemented behavior is in [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.m
 - The one authorized Codex live benchmark completed 48/48 loopback generations and verified model unload. A post-run audit found mojibake in its Unicode fixture; the fixture and tests were corrected, the first artifact set was labelled invalid for acceptance, and no second Codex benchmark was run.
 - Steve's corrected manual benchmark at `artifacts/m9a/20260812-215927-424/` completed 48/48 requests, with 42 valid non-fallback comments, 2 mechanical validator rejections, 4 safe `FALLBACK` responses, and selected-model unload verified. The blind review was complete: all 48 samples were scored or explicitly rejected.
 - The answer key identifies Arm Cedar as the StructuredCandidate and Arm Lark as the AcceptedBaseline. Cedar received fewer qualitative rejections (10 of 24 samples, versus 20 of 24) but was still not acceptable: the review identified repetitive construction, awkward output, unsupported listener/session claims, and a Unicode-metadata failure where neither arm reliably preserved the exact supplied title and artist.
-- M9A does not pass. The StructuredCandidate is rejected for runtime consideration, is not integrated, the `Borrowed Umbrella` grounding issue is not fixed, and M9B is not authorized. Any further commentary experiment requires a separate bounded contract.
+- M9A does not pass. The StructuredCandidate is rejected for runtime consideration, is not integrated, and the `Borrowed Umbrella` grounding issue is not fixed. It supplied no integration authorization; later work is governed separately by the M9C record and approved M9B contract.
 
 ## Milestone 9C candidate status
 
@@ -60,10 +60,11 @@ Full implemented behavior is in [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.m
 - M9C through M9C.4 established strict identity/source boundaries and showed that useful source-backed context can improve commentary, but deterministic anchor-plus-reaction composition remained awkward, repetitive, and over-rejected.
 - M9C.5 compared identical prompts on `qwen3:4b-instruct` and `qwen3:14b-q4_K_M`. The 14B model produced 16 accepted anchor-plus-link candidates versus 2 for 4B and materially improved diversity, so it became the selected model for the final isolated experiment.
 - M9C.6 supplied 16 owner-familiar tracks with reviewed three-to-five-fact context packs and let 14B generate complete comments in grounded and training-augmented modes. The 96-request run completed without generation failure and verified model unload.
-- Steve scored 83 clean candidates at a combined mean overall desire of 4.86/5; 73 received 5/5. All 10 mechanical hard rejects were also judged acceptable.
-- Grounded and training-augmented quality was effectively tied (4.85 versus 4.86 overall), while grounded factual acceptability was higher (5.00 versus 4.84). Grounded 14B whole-comment synthesis is therefore the selected future candidate direction.
+- Steve scored 83 displayed outputs at a combined mean overall desire of 4.86/5; 73 received 5/5. The run contained 86 mechanically clean candidates and 10 mechanical hard rejects; all 10 rejects were also judged acceptable.
+- Grounded and training-augmented quality was effectively tied (4.85 versus 4.86 overall), while grounded factual acceptability was higher (5.00 versus 4.84). Grounded 14B whole-comment synthesis is therefore the selected M9B candidate direction.
 - M9C is closed as successful experimental evidence, not accepted runtime behavior. Repetition, metadata-mention policy, semantic exaggeration, and unsupported sound/lyric interpretation remain integration risks.
-- Normal radio remains at the accepted M8 baseline. M9B and every runtime integration remain unauthorized pending a separate bounded contract.
+- Steve approved the bounded [Milestone 9B contract](MILESTONE_9B_CONTRACT.md) on August 15, 2026. The current authorization is documentation-only; implementation has not started and requires a separate explicit instruction.
+- Normal radio remains at the accepted M8 baseline. No M9B prompt, model, source, cache, scheduling, speech, ducking, GUI, or packaging behavior is active.
 - Current verification for the committed diagnostic candidate is 236 passed, 0 failed; all four formatting checks and all four Release builds pass with 0 warnings and 0 errors. This does not replace the accepted 178/0 M8 baseline.
 ## M8B accepted engineering verification
 
@@ -117,7 +118,7 @@ Full implemented behavior is in [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.m
 ## Next step and deferred observations
 
 - Milestone 8 is closed for continued internal development, and `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf` is the latest accepted internal implementation snapshot.
-- The post-M8 review selected only the bounded M9A structured-commentary experiment. Its qualitative review rejected the candidate; normal runtime remains at the M8 baseline, and any further commentary work would require a separately approved bounded contract rather than M9B integration.
+- M9A was rejected and M9C supplied successful experimental evidence. Steve approved the bounded M9B grounded-context contract on August 15, 2026, but implementation has not started and normal runtime remains at the M8 baseline.
 - Clean-machine and invited-tester checks remain deferred compatibility/distribution evidence. A later defect may require a bounded repair, but missing tester feedback does not block internal development.
 - The earlier 20:49 observer stall remains intermittent, unresolved, and unreproduced by the accepted Firefox-plus-Chrome run.
 - Wrapper-refresh diagnostics are excessively repetitive; this is a deferred non-blocking logging-quality issue.

@@ -86,7 +86,7 @@ These decisions summarize accepted project rules and rationale already evidenced
 - Clean Windows 10 22H2, clean Windows 11, and invited private-alpha testing remain useful compatibility and distribution evidence but are deliberately deferred and do not block internal feature development.
 - The accepted internal baseline must not be described as clean-machine certified, broadly compatible, publicly released, code-signed, SmartScreen-reputable, or validated for third-party distribution.
 - A later tester failure may require a bounded compatibility or packaging repair; the absence of tester feedback is not evidence of compatibility.
-- M9A was rejected for runtime consideration. Steve separately approved only the bounded M9C source-backed enrichment experiment; M9B and later work remain unauthorized unless Steve explicitly approves a separate contract.
+- M9A was rejected for runtime consideration. M9C is closed as successful experimental evidence. Steve approved the bounded M9B grounded-context integration contract on August 15, 2026, but the current authorization is documentation-only and implementation requires a separate explicit instruction.
 
 ## Approved Milestone 9A experimental boundaries
 
@@ -105,12 +105,26 @@ These decisions summarize accepted project rules and rationale already evidenced
 - Any ambiguous, unavailable, rate-limited, malformed, conflicting, unsupported, or failed source chain produces no enrichment and safe `FALLBACK`; no source fact can force speech.
 - Every supplied external fact must be concise structured data with a direct approved HTTPS source URL. Raw page content, browser data, history, listener data, prompts, and generated prose never leave the machine.
 - The bounded ignored cache is diagnostic-only, easy to clear, and is not listening history or runtime state.
-- M9C cannot enter normal radio composition without a separately approved contract. M9B remains unauthorized.
+- M9C diagnostic code cannot enter normal radio composition directly. Only the separately approved M9B contract may authorize a bounded reimplementation after Steve gives an explicit coding instruction.
 - Steve's completed M9C.6 review selects local `qwen3:14b-q4_K_M` with reviewed multi-fact context packs and grounded whole-comment synthesis as the direction for any future integration proposal.
 - The model must synthesize the entire comment; deterministic fact-plus-separate-reaction concatenation is rejected as unnatural and repetitive.
 - Training-augmented factual freedom is not selected: it provided no material qualitative benefit and reduced factual acceptability. Externally verifiable claims in the selected candidate remain bounded to reviewed supplied facts.
 - A future integration validator must not require every comment to repeat the current artist or title, but must guard against meaning-changing exaggeration and unsupported sound, lyric, cultural, or biographical claims.
-- M9C is accepted only as experimental design evidence. The accepted M8 runtime remains controlling until Steve approves and accepts a separate implementation contract.
+- M9C is accepted only as experimental design evidence. The accepted M8 runtime remains controlling until M9B is implemented, verified, and explicitly accepted.
+
+## Approved Milestone 9B integration boundaries
+
+- M9B is the approved name and bounded contract for the first grounded-context runtime integration. Approval fixes scope; implementation has not started and requires a separate instruction.
+- Live enrichment is restricted to exact MusicBrainz identity and linked structured Wikidata data. Arbitrary browsing, live Wikipedia/page retrieval, raw-page prompting, cloud AI, and unrestricted training-knowledge claims are prohibited.
+- A small versioned local catalog of reviewed, paraphrased, source-attributed context facts is allowed. Its cited pages are provenance only and are not fetched at runtime.
+- The runtime context cache may persist under bounded LocalAppData storage: at most 100 entries, 24-hour confirmed TTL, two-hour negative TTL, and Clear History deletion. It is not durable listening history.
+- `qwen3:14b-q4_K_M` is an optional owner-installed local prerequisite. It is not bundled or automatically downloaded. If absent, disabled, late, or failed, the accepted M8 4B behavior remains eligible and unsafe opportunities remain silent.
+- The 14B model writes the whole comment from supplied metadata/context. It may paraphrase and synthesize but may not introduce externally verifiable claims from training knowledge.
+- Omission of artist/title, questions, clichés, mild verbosity, imagined-scene phrasing, fact recitation, and formulaic construction are advisory quality signals unless they create another violation. They are not automatic hard rejections.
+- Unsupported facts, new unsupported entities/numbers/dates, invented biography, stale/mismatched context, and material exaggeration or changed causality are hard discard conditions.
+- M9B permits at most one bounded quality regeneration, six ephemeral enriched-comment fingerprints, and no catch-up or unbounded retry.
+- All accepted M8 targeting, scheduling, cancellation, Silent Mode, speech, Firefox-only ducking, exact restoration, shutdown, local-first, and safe-silence invariants remain controlling.
+- M9B must pass fake-driven engineering checks, a familiar-track generate-only review, a silent desktop preparation trial, a bounded audible trial, and explicit Steve acceptance. No intermediate gate alone makes it accepted runtime behavior.
 
 ## Approved Milestone 8 boundaries
 

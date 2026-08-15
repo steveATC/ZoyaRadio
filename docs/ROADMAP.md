@@ -19,6 +19,8 @@ This document records accepted milestone status and approved direction. It does 
 | 8A - Control application | Passed | Shared controller/runtime, WinForms frontend, read-only activity status, LocalAppData logs, safe controls, and protected shutdown accepted on August 11, 2026. |
 | 8B - Private-alpha distribution | Passed - internal-development gate | Version `0.8.0-alpha.1`, package integrity/neural self-tests, and Steve's packaged-desktop behavior accepted; clean-machine and invited-tester distribution validation deferred. |
 | 9A - Structured host commentary experiment | Completed - candidate rejected | Blinded qualitative review found the structured candidate preferable to the baseline in aggregate but still unsuitable for runtime; normal radio remains unchanged. |
+| 9B - Grounded context integration | Approved - not started | Bounded contract selects grounded 14B whole-comment preparation, narrow live identity sources, reviewed local context cards, M8 fallback, and staged safety/quality acceptance. |
+| 9C - Source-backed commentary experiments | Completed - direction selected | M9C.6 selected grounded 14B whole-comment synthesis as integration evidence; diagnostic paths remain outside normal radio. |
 
 Milestone 8 is closed for continued internal development after M8A and M8B owner acceptance. Clean Windows 10/11 and invited-tester evidence remain deferred compatibility/distribution gates and do not certify this package for broad or public distribution.
 
@@ -80,10 +82,11 @@ Steve accepted M8A, separately authorized M8B, and accepted the extracted M8B pa
 
 - Steve's post-M8 review approved the bounded [Milestone 9A contract](MILESTONE_9A_CONTRACT.md) for a structured-commentary experiment only.
 - M9A's corrected manual benchmark and blinded review are recorded in [MILESTONE_9A_TEST.md](MILESTONE_9A_TEST.md). The StructuredCandidate was rejected for runtime consideration: it was less often rejected than the baseline, but still produced unacceptable repetition, awkward output, unsupported listener/session claims, and Unicode-metadata failures.
-- M9A did not pass and M9B runtime integration is not authorized.
+- M9A did not pass; its structured candidate remains rejected.
 - Steve completed the separate bounded [Milestone 9C contract](MILESTONE_9C_CONTRACT.md). M9C.6 validated grounded whole-comment synthesis with local `qwen3:14b-q4_K_M`; its owner review is recorded in [MILESTONE_9C_TEST.md](MILESTONE_9C_TEST.md).
-- M9C is closed as successful experimental evidence. Its selected direction is not normal radio behavior, and M9B or any runtime integration still requires a separate explicitly approved contract.
-- Research remains evidence only and the post-M8 intake remains unapproved proposal history except for the exact scope Steve promoted into the M9A contract.
+- M9C is closed as successful experimental evidence. Its selected direction is not normal radio behavior.
+- Steve approved the bounded [Milestone 9B contract](MILESTONE_9B_CONTRACT.md) on August 15, 2026. The current authorization is documentation-only; implementation remains not started until a separate explicit coding instruction.
+- Research remains evidence only and proposal history remains non-authoritative except for exact decisions Steve separately promoted into canonical milestone contracts.
 - Milestone 6 remains deferred unless Steve separately promotes it.
 
 ## Deferred and future boundaries

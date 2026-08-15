@@ -39,7 +39,8 @@ It is not normal runtime state, listening history, telemetry, or a new package f
 
 The benchmark has 12 fixed scenarios, two blinded arms, and two samples each: 48 sample records. It writes ignored local artifacts under `artifacts/m9c/<timestamp>/`: a blinded evaluation sheet, anonymous JSON results, answer key, summary, and per-sample match/fact-card outcome.
 
-It is generate-only. It starts before normal logging, GSMTC, Firefox, Core Audio, speech, ducking, GUI, and normal radio state. It does not alter scheduling, targeting, fallback, voice, package version, or accepted M8/M9A paths. M9B remains unauthorized.
+It is generate-only. It starts before normal logging, GSMTC, Firefox, Core Audio, speech, ducking, GUI, and normal radio state. It does not alter scheduling, targeting, fallback, voice, package version, or accepted M8/M9A paths. M9C itself supplied no runtime authorization; the later M9B contract governs any bounded implementation.
+
 ## M9C.1 repair/retest rules
 
 - Duplicate exact MusicBrainz artist names remain ambiguous unless exactly one candidate has a valid linked Wikidata identity, or an exact required recording identifies exactly one candidate artist ID. Search rank and popularity are never tie-breakers.
@@ -93,6 +94,6 @@ It is generate-only. It starts before normal logging, GSMTC, Firefox, Core Audio
 - The model generated the complete spoken comment. The application did not prepend a deterministic anchor or append a separate reaction.
 - The grounded arm limited externally verifiable claims to the supplied pack. The comparison arm permitted training-derived knowledge only to measure whether that freedom improved quality.
 - Steve's completed review found both arms highly successful, with a combined mean overall desire of 4.86/5 over 83 scored clean candidates. All 10 mechanical hard rejects were also judged acceptable.
-- The training-augmented arm did not materially improve quality and reduced factual acceptability. Grounded whole-comment synthesis with the 14B model is the selected future candidate direction.
+- The training-augmented arm did not materially improve quality and reduced factual acceptability. Grounded whole-comment synthesis with the 14B model is the selected M9B integration direction.
 - Repetition control, metadata-mention policy, semantic exaggeration, and unsupported sound/lyric interpretation remain future integration concerns. They do not authorize runtime changes.
 - The experiment is closed. M9C code remains unreachable from normal radio, and any integration requires a separate explicitly approved bounded contract.

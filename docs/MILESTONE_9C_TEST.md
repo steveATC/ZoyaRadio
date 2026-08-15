@@ -2,7 +2,7 @@
 
 ## Outcome
 
-Steve accepted M9C.6 on August 15, 2026 as successful experimental evidence and the selected direction for a future runtime candidate. This does not make M9C normal automatic-radio behavior and does not authorize M9B or any other integration work.
+Steve accepted M9C.6 on August 15, 2026 as successful experimental evidence and the selected direction for a future runtime candidate. This does not make M9C normal automatic-radio behavior and did not itself authorize integration. Steve later approved the separate M9B contract on August 15, 2026; implementation remains not started.
 
 The selected direction is:
 
@@ -31,7 +31,7 @@ The completed artifacts are under ignored local directory:
 
 The run produced 96 of 96 local responses, verified selected-model unload, and did not access Firefox, Core Audio, speech, ducking, the GUI, or normal radio state.
 
-Mechanical classification reported 43 clean and 5 hard-rejected candidates in each arm. Steve scored 83 clean candidates:
+Mechanical classification reported 43 clean and 5 hard-rejected candidates in each arm. Steve scored 83 displayed outputs; these were not identical to the mechanical clean-candidate set:
 
 | Measure | Grounded | Training-augmented | Combined |
 | --- | ---: | ---: | ---: |
