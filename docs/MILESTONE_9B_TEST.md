@@ -2,65 +2,99 @@
 
 ## Status
 
-Milestone 9B is implemented as a **candidate**. It is not passed or accepted runtime
-behavior. The accepted Milestone 8 snapshot remains the safety baseline until Steve has
-reviewed the generate-only evidence and later explicitly authorizes the separate silent
-and audible desktop gates.
+Steve accepted M9B Gate 2 on August 15, 2026 with the narrow same-card repetition
+exception recorded below. M9B remains an implemented candidate, not passed or accepted
+runtime behavior. The accepted Milestone 8 snapshot remains the safety baseline.
 
-## What this evaluation does
+The next possible stage is Gate 3, the silent desktop preparation trial. It has not run
+and requires a separate explicit authorization. Audible delivery remains prohibited
+until Gate 3 passes and Steve separately authorizes Gate 4.
 
-The one authorized M9B run is complete. Review this exact artifact folder:
+## Evaluated artifact
+
+Steve reviewed this exact ignored local artifact set:
 
 ```text
 artifacts\m9b\20260815-095443-189\
 ```
 
-It made 48 local requests: three independently generated whole comments for each of the
-16 reviewed familiar-track cards. It used the already-installed local
-`qwen3:14b-q4_K_M` model and confirmed selected-model unload. Do not rerun the launcher
-under this authorization; the owner-quality review is of this recorded artifact.
+The run generated three independent comments for each of the 16 familiar reviewed
+context cards using the already-installed local `qwen3:14b-q4_K_M` model.
 
-It does **not** open the radio, access Firefox or Windows media sessions, play audio,
-synthesize speech, duck volume, change playback, or open the control application. It
-requests the selected local model unload when finished.
+- Requests: 48 of 48; generation failures: 0.
+- Displayable candidates: 33.
+- Mechanical hard discards: 15.
+- Model-selected `FALLBACK`: 0; advisory candidates: 0; regeneration: 0.
+- Mechanical candidate availability: 68.75%.
+- Latency: 624.9 ms median, 819.7 ms p95, 3328.0 ms maximum.
+- Selected-model unload: verified.
+- Firefox, media sessions, playback, speech, Core Audio, ducking, GUI, and normal radio
+  were not used.
 
-## Recorded generate-only engineering evidence
+## Owner scores
 
-- Artifact: `artifacts\m9b\20260815-095443-189\`
-- Completed requests: 48 of 48; generation failures: 0.
-- Displayable candidates: 33; mechanical hard discards: 15; model-selected `FALLBACK`: 0; advisory candidates: 0; regeneration: 0.
-- Candidate availability: 68.75%. Latency: 624.9 ms median, 819.7 ms p95, 3328.0 ms maximum.
-- Selected `qwen3:14b-q4_K_M` unload was verified.
-- These are engineering observations only. No one has scored the qualitative fields yet, and no silent or audible desktop M9B test was run.
+Steve numerically scored 32 displayable candidates. Raul Seixas candidate 3 was
+intentionally left unscored because it was almost a one-to-one copy of candidate 2;
+that omission is part of the qualitative evidence rather than an incomplete review.
 
-## How to review the artifact
+| Measure | Result |
+| --- | ---: |
+| Mean factual acceptability | 5.00/5 |
+| Mean natural context integration | 4.72/5 |
+| Mean Zoya personality | 4.44/5 |
+| Mean spoken naturalness | 4.38/5 |
+| Mean variety | 3.72/5 |
+| Mean overall desire | 3.84/5 |
+| Overall desire 4 or 5 | 17 of 32 |
+| Overall desire 5 | 11 of 32 |
 
-1. Open `artifacts\m9b\20260815-095443-189\M9B_EVALUATION.md`.
-2. Read each candidate beside its exact title/artist, reviewed context card, and source
-   links. Source links are provenance; the run did not fetch those pages.
-3. Score only the displayed owner fields from 1 to 5: factual grounding, natural
-   fact-to-link, host voice/personality, natural spoken phrasing, variety, and whether
-   you would want Zoya Radio to say it.
-4. Mark the simple flags when applicable: unsupported/questionable claim, fact
-   recitation, formulaic fact-then-reaction, repeated opening/template, or awkward
-   third-party reference.
-5. For a mechanically discarded item, answer whether it would actually have been
-   acceptable on Zoya Radio and add a short note. A discard is engineering evidence,
-   not a score assigned by Codex.
-6. Keep the matching `M9B_RESULTS.json`, `M9B_MANIFEST.json`, and
-   `M9B_RUN_SUMMARY.md` with the evaluation sheet. Bring that complete folder to the
-   Work chat for review.
+No displayable candidate was owner-flagged for an unsupported/questionable claim, fact
+recitation, formulaic fact-then-reaction construction, or an awkward third-party
+reference. Five were explicitly marked as comments Steve wanted Zoya to say.
 
-## What not to test yet
+Steve marked 23 of the 33 displayable candidates for repeated opening/template; 22 of
+those were numerically scored. Their mean overall desire was 3.36 and mean variety was
+3.18. The 10 scored candidates without that flag averaged 4.90 for both overall desire
+and variety, and every one received overall desire of at least 4.
 
-Do not run normal automatic radio, silent desktop preparation, or audible delivery for
-M9B yet. Those gates need their own explicit authorization after this owner-quality
-review. This evaluation cannot prove normal Firefox targeting, timing, speech, or
-volume-restoration behavior.
+All 15 mechanically hard-discarded comments were judged acceptable by Steve, including
+Shakira candidate 1, which Steve confirmed in the Work chat on August 15. This owner
+judgment does not automatically relax runtime hard-discard rules: conservative grounding
+and material-exaggeration refusals remain in force unless separately amended.
 
-## If the run cannot complete
+## Gate 2 owner exception and acceptance
 
-Bring back the complete artifact folder if it was created, plus the final command-window
-message. Do not install, update, or download a model to fix the issue. The normal M8
-candidate/fallback remains the safe runtime route when the M9B model or enrichment is
-unavailable.
+The recorded run met the factual, natural-integration, latency, request-completion, and
+model-unload expectations. It missed the pre-agreed mean variety, mean overall desire,
+80%-at-four-or-better, and 70% mechanical-availability thresholds.
+
+Steve determined that the qualitative misses were driven by the benchmark asking for
+three independent outputs from the same song and same fact card. That construction
+amplified repetition beyond normal varied-track listening. The implemented runtime
+retains six recent comment/fact fingerprints, treats recent same-fact or repeated-opening
+output as advisory, permits at most one regeneration, and otherwise preserves the M8
+fallback or silence. Same-song repetition therefore remains bounded and test-covered.
+
+Steve explicitly accepted Gate 2 with this narrow repetition exception on August 15,
+2026. This is a one-run owner acceptance based on the recorded evidence. It does not:
+
+- lower the grounding requirement;
+- authorize unsupported factual claims or material exaggeration;
+- remove the repetition state, regeneration bound, M8 fallback, or safe-silence behavior;
+- make the M9B candidate accepted runtime behavior;
+- waive Gate 3 timing/cancellation/playback-isolation evidence; or
+- authorize audible Gate 4 testing.
+
+No prompt change, validator relaxation, code repair, or second generate-only run is
+required before Gate 3.
+
+## Gate 3 remains unrun
+
+A later separately authorized silent desktop preparation trial must observe at least 12
+genuine transitions with M9B preparation enabled but speech and ducking disabled. It
+must record cold-load and warm latency, resource residency where observable, cache and
+candidate readiness, cancellation, and unload behavior. It must confirm zero playback
+control, ducking, speech, catch-up, or stale delivery.
+
+Gate 3 evidence is separate from this generate-only acceptance. Do not start normal
+radio, Firefox/media testing, or audible delivery under this documentation authorization.

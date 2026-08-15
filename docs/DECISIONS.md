@@ -124,6 +124,7 @@ These decisions summarize accepted project rules and rationale already evidenced
 - Unsupported facts, new unsupported entities/numbers/dates, invented biography, stale/mismatched context, and material exaggeration or changed causality are hard discard conditions.
 - M9B permits at most one bounded quality regeneration, six ephemeral enriched-comment fingerprints, and no catch-up or unbounded retry.
 - All accepted M8 targeting, scheduling, cancellation, Silent Mode, speech, Firefox-only ducking, exact restoration, shutdown, local-first, and safe-silence invariants remain controlling.
+- Steve accepted the recorded M9B Gate 2 generate-only review on August 15, 2026 with a narrow same-card repetition exception. The exception recognizes that three outputs from each identical song/card amplified repeated templates; it does not relax grounding, hard-discard, repetition-state, fallback, silence, silent-desktop, audible-desktop, or final-acceptance requirements.
 - M9B must pass fake-driven engineering checks, a familiar-track generate-only review, a silent desktop preparation trial, a bounded audible trial, and explicit Steve acceptance. No intermediate gate alone makes it accepted runtime behavior.
 
 ## Approved Milestone 8 boundaries

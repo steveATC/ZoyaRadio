@@ -31,10 +31,12 @@ This file separates unresolved defects from accepted platform limits and deferre
 
 ### M9B grounded-context candidate remains under staged evaluation
 
-- M9B has not yet passed its generate-only owner-quality review, silent desktop preparation gate, audible desktop gate, or Steve''s final acceptance.
+- M9B passed its generate-only Gate 2 owner review on August 15, 2026 with a narrow same-card repetition exception. Silent desktop preparation, audible delivery, and Steve's final acceptance remain unrun.
 - Deterministic validation catches only defined mechanical and conservative factual-risk patterns. It cannot prove arbitrary semantic truth, naturalness, or spoken quality; owner review remains required.
+- Three independent generations from the same song/card frequently reused openings or templates. Runtime state bounds the last six delivered comments/fact identities and permits one regeneration before M8 fallback or silence, but real varied-track behavior still needs Gate 3/4 observation.
 - The optional 14B model has materially higher cold-load and RAM/VRAM cost than the accepted 4B route. Its absence, failed local enrichment, timing failure, or invalid candidate must preserve the M8 candidate/fallback or safe silence.
 - The local reviewed catalog is intentionally small. Unknown tracks depend on strict MusicBrainz/Wikidata confirmation and may safely remain unenriched.
+
 ### Retained native working set
 
 - Repeated Nicole CPU preparation disposes the ONNX model each time, but the long-running .NET/native process retained roughly 333 MiB working set after three preparations.

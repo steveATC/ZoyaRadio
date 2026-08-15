@@ -251,6 +251,27 @@ audible runtime candidate.
   0.69-second median, 0.85-second p95, and one 3.55-second outlier; those warm benchmark
   measurements are evidence, not a runtime guarantee.
 
+#### August 15, 2026 owner amendment
+
+Steve accepted the recorded 48-request Gate 2 run with a narrow same-card repetition
+exception. Thirty-two displayable candidates were scored; Raul Seixas candidate 3 was
+intentionally unscored as an almost one-to-one copy of candidate 2. The run achieved
+5.00 factual acceptability, 4.72 context integration, 4.44 personality, 4.38 spoken
+naturalness, 3.72 variety, and 3.84 overall desire. Seventeen of 32 scored candidates
+received overall 4 or 5. Mechanical availability was 68.75%.
+
+The run therefore missed the original variety, overall-desire, 80%-at-four-or-better,
+and 70%-availability thresholds. Steve accepted Gate 2 because 23 of 33 displayable
+candidates were marked for repeated openings/templates under three generations from the
+same song/card; the 10 scored candidates without that flag averaged 4.90 overall and
+variety, with every one at 4 or better. All 15 hard discards were owner-acceptable, but
+that judgment does not relax conservative runtime grounding or exaggeration refusals.
+
+This dated exception applies only to the recorded Gate 2 artifact. It does not change
+the general thresholds, repetition/regeneration bounds, M8 fallback, safe-silence rules,
+Gate 3 requirements, Gate 4 authorization boundary, or final acceptance requirement. No
+second generate-only run is required before Gate 3.
+
 ### 3. Silent desktop preparation trial
 
 - Observe at least 12 genuine transitions with Firefox playing and all M9B preparation
