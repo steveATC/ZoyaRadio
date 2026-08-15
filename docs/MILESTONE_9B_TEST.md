@@ -6,10 +6,11 @@ Steve accepted M9B Gate 2 on August 15, 2026 with the narrow same-card repetitio
 exception recorded below. M9B remains an implemented candidate, not passed or accepted
 runtime behavior. The accepted Milestone 8 snapshot remains the safety baseline.
 
-Gate 3 has now had two safe silent desktop attempts, both of which failed candidate
-readiness and therefore did not pass. The repaired candidate requires one fresh, separately
-authorized Gate 3 trial. Audible Gate 4 remains prohibited unless that fresh Gate 3 trial
-passes and Steve separately authorizes Gate 4.
+Gate 3 has now had four safe silent desktop attempts, all of which failed candidate readiness
+and therefore did not pass. The bounded repair's final reviewed-context, loopback-only smoke
+also reached only 7/12 validator-ready samples. The one permitted prompt-only revision has been
+used. Further Gate 3 desktop trials and audible Gate 4 are prohibited pending a separately
+approved future direction.
 
 ## Evaluated artifact
 
@@ -86,9 +87,9 @@ Steve explicitly accepted Gate 2 with this narrow repetition exception on August
 - waive Gate 3 timing/cancellation/playback-isolation evidence; or
 - authorize audible Gate 4 testing.
 
-## Gate 3 attempts: safe but failed
+## Gate 3 attempts and bounded repair: safe but failed
 
-Two separately authorized silent desktop trials completed 12 genuine Firefox transitions
+Four separately authorized silent desktop trials completed 12 genuine Firefox transitions
 without speech, ducking, playback control, volume change, catch-up, or stale delivery:
 
 - `artifacts\m9b\gate3\20260815-112516-439\`: four preparation opportunities, zero
@@ -96,35 +97,37 @@ without speech, ducking, playback control, volume change, catch-up, or stale del
   unload verified.
 - `artifacts\m9b\gate3\20260815-114211-775\`: five preparation opportunities, zero
   ready candidates, no cancellations or stale disposals, and selected-model unload verified.
-  The two observed Firefox title variants did not match exact catalog cards, while the
-  remaining reviewed-card candidates were conservatively hard-discarded for unsupported
-  sound/genre/vocal claims.
+- `artifacts\m9b\gate3\20260815-121706-020\`: two eligible opportunities, one ready
+  candidate (50%); the selected model unloaded and no forbidden desktop-media action occurred.
+- `artifacts\m9b\gate3\20260815-121902-189\`: three eligible opportunities, zero ready
+  candidates (0%); the selected model unloaded and no forbidden desktop-media action occurred.
 
-Both attempts were safe failures, not Gate 3 acceptance. The diagnostic also incorrectly
-returned success after reaching 12 transitions even when readiness was zero. The repair adds
-reviewed typed exact artist-specific aliases for the two observed titles, strengthens the
-whole-comment prompt without weakening the validator, and makes the Gate 3 process verdict
-fail unless all required acceptance conditions are met. The evidence now distinguishes typed
-eligible opportunities, hard discards, enrichment-unavailable results, cancellation, stale
-work, model unload, and forbidden desktop-media activity.
+The first two attempts exposed two safe repair targets: exact observed Firefox title variants
+were masked by stale negative cache outcomes, and rejected prose retained only a typed reason,
+not owner-inspectable local raw evidence. The repair makes an exact reviewed card or individually
+reviewed exact artist-specific alias win before cache lookup, preserves raw/normalized rejected
+candidate diagnostics locally with typed classification/reason and timing, and keeps unknown tracks
+on the bounded cache/live-resolution path. It does not make a catalog match fuzzy or contact live
+enrichment for a reviewed card.
 
-A fresh separately authorized Gate 3 trial must still observe at least 12 genuine transitions
-with M9B preparation enabled but speech and ducking disabled. It must meet at least 90% ready
-candidates across eligible steady-state opportunities, verify selected-model unload, and record
-zero playback control, ducking, speech, volume change, catch-up, or stale delivery. Gate 3
-evidence remains separate from Gate 2 owner acceptance. Do not start audible Gate 4 unless
-this fresh Gate 3 trial passes and Steve separately authorizes it.
-## Fresh Gate 3 trial — authorization required
+Steve separately clarified the qualitative policy: ordinary subjective musical characterization
+is permitted. Terms such as riffs, vocals, instrumentation, production, sound, style, genre, and
+“heavy metal” are not automatic hard-discard conditions. Specific historical incidents, dates,
+people, credits, quotations, motives, lyrics/meanings presented as fact, biography, influence, and
+strong-superlative claims still require supplied context and remain rejectable when unsupported.
+The final prompt/validator change applies that policy directly; it is not merely prompt avoidance.
 
-Do not run this command until Steve explicitly authorizes a fresh Gate 3 trial. From the
-repository folder, run:
+The required one bounded prompt-only revision was then measured with the fixed local reviewed-card
+smoke plan at `artifacts\m9b\gate3-smoke\20260815-124500-256\`. All four exact aliases resolved
+from `ReviewedCatalog`, selected-model unload verified, and the smoke made no Firefox, GSMTC,
+audio, speech, ducking, playback, volume, GUI, cache, or live-enrichment call. It produced 7/12
+validator-ready samples (58%): Sweet Home Alabama 1/3, Paranoid (2009 Remaster) 1/3, Master of
+Puppets 2/3, and the exact Johnny Cash Folsom title 3/3. This is below the 90% Gate 3 readiness
+threshold. The preceding fixed-plan smoke at `artifacts\m9b\gate3-smoke\20260815-124201-165\`
+produced 10/12 before the owner-approved validator policy correction.
 
-```text
-.\run-m9b-gate3-silent.cmd
-```
-
-Keep exactly one eligible Firefox/YouTube Music session playing. The trial is bounded: it
-ends after 12 genuine Firefox transitions, writes local evidence below
-`artifacts\m9b\gate3\`, and returns exit code `0` only when its typed Gate 3 verdict is
-`PASS`. It never starts speech, ducks audio, changes any volume, or controls playback.
-A `FAIL` verdict is safe evidence, not a reason to begin audible Gate 4.
+These are safe failures, not Gate 3 acceptance. The final smoke artifact retains the full raw local
+output and typed result for every sample; it demonstrates that deterministic checks still cannot
+prove all semantic grounding. The one permitted prompt-only revision has been consumed. Do not run
+another desktop Gate 3 trial, do not tune the prompt/validator again under this repair, and do not
+start audible Gate 4.

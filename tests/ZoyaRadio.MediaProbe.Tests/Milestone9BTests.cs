@@ -25,8 +25,8 @@ internal static class Milestone9BTests
         M9BCatalogCard card = FirstCard();
         var media = new MediaSnapshot(card.Title, card.Artist, null);
         CommentPrompt prompt = M9BWholeCommentPromptFactory.Create(media, card.ToContextCard(), []);
-        Contains(prompt.SystemInstruction, "only factual material");
-        Contains(prompt.SystemInstruction, "Training knowledge may improve language and tone only");
+        Contains(prompt.SystemInstruction, "only source for externally verifiable history");
+        Contains(prompt.SystemInstruction, "ordinary host vocabulary and modest subjective musical characterization");
         Contains(prompt.SystemInstruction, "force title/artist repetition");
         Contains(prompt.MetadataPrompt, card.Title);
         M9BCommentValidation validation = M9BCommentValidator.Validate(
@@ -44,11 +44,22 @@ internal static class Milestone9BTests
         var media = new MediaSnapshot(card.Title, card.Artist, null);
         Equal(M9BCommentValidationKind.Fallback, M9BCommentValidator.Validate("FALLBACK", media, card.ToContextCard(), [], []).Kind);
         Equal(M9BCommentValidationKind.HardDiscard, M9BCommentValidator.Validate("David Bowie released this in 1999.", media, card.ToContextCard(), [], []).Kind);
-        Equal(M9BCommentValidationKind.HardDiscard, M9BCommentValidator.Validate("The riff makes this a heavy metal storm.", media, card.ToContextCard(), [], []).Kind);
+        Equal(M9BCommentValidationKind.Advisory, M9BCommentValidator.Validate("The riff makes this a heavy metal storm.", media, card.ToContextCard(), [], []).Kind);
         M9BCatalogCard rage = M9BContextCatalog.Load().Cards.Single(item => item.Id == "M9C6-11");
         Equal(M9BCommentValidationKind.HardDiscard, M9BCommentValidator.Validate("Rage Against the Machine shut down the New York Stock Exchange.", new MediaSnapshot(rage.Title, rage.Artist, null), rage.ToContextCard(), [], []).Kind);
     }
 
+    public static void OrdinaryMusicalCharacterizationIsAllowedButUnsupportedInfluenceIsNot()
+    {
+        M9BCatalogCard master = M9BContextCatalog.Load().Cards.Single(card => card.Id == "M9C6-06");
+        var media = new MediaSnapshot(master.Title, master.Artist, null);
+        Equal(M9BCommentValidationKind.Advisory, M9BCommentValidator.Validate(
+            "That riff is pure heavy metal menace.", media, master.ToContextCard(), [], []).Kind);
+        Equal(M9BCommentValidationKind.HardDiscard, M9BCommentValidator.Validate(
+            "This riff invented heavy metal in 1986.", media, master.ToContextCard(), [], []).Kind);
+        Equal(M9BCommentValidationKind.HardDiscard, M9BCommentValidator.Validate(
+            "Sweet Silence Studios played a key role in shaping Metallica's sound.", media, master.ToContextCard(), [], []).Kind);
+    }
     public static void QuestionsClichesAndImaginedScenesRemainAdvisory()
     {
         M9BCatalogCard card = FirstCard();
@@ -198,6 +209,99 @@ internal static class Milestone9BTests
         Contains(runtime, "M9BTransitionCommentProvider");
     }
 
+    public static async Task ReviewedAliasesOverrideNegativeCacheWithoutNetwork()
+    {
+        string directory = TemporaryDirectory();
+        try
+        {
+            var live = new FakeM9BLiveResolver();
+            var cache = new M9BContextCache(directory, MusicContextEnrichmentConfiguration.Default);
+            var provider = new M9BContextProvider(M9BContextCatalog.Load(), live, cache, new FakeLog());
+            (string Artist, string Title, string CardId)[] identities =
+            [
+                ("Black Sabbath", "Paranoid (2009 Remaster)", "M9C6-02"),
+                ("Johnny Cash", "Cocaine Blues (Live at Folsom State Prison, Folsom, CA - January 1968)", "M9C6-16"),
+            ];
+            foreach ((string artist, string title, string cardId) in identities)
+            {
+                var request = new MusicContextRequest(title, artist, MusicIdentityRequirement.ArtistAndTrack);
+                cache.Store(new M9BContextResolution(request, MusicContextMatchStatus.Unavailable, null, DateTimeOffset.UtcNow, "stale negative test entry", false, M9BContextSource.LiveEnrichment));
+                M9BContextResolution result = await provider.ResolveAsync(new MediaSnapshot(title, artist, null), CancellationToken.None);
+                Equal(cardId, result.Card!.Identity.Replace("catalog:", string.Empty, StringComparison.Ordinal));
+                Equal(M9BContextSource.ReviewedCatalog, result.Source);
+                False(result.FromCache);
+            }
+
+            Equal(0, live.Calls);
+        }
+        finally { Delete(directory); }
+    }
+
+    public static async Task NonCatalogContextStillUsesCacheBeforeLiveResolver()
+    {
+        string directory = TemporaryDirectory();
+        try
+        {
+            var live = new FakeM9BLiveResolver();
+            var cache = new M9BContextCache(directory, MusicContextEnrichmentConfiguration.Default);
+            var provider = new M9BContextProvider(M9BContextCatalog.Load(), live, cache, new FakeLog());
+            var request = new MusicContextRequest("Unreviewed Runtime Title", "Unreviewed Runtime Artist", MusicIdentityRequirement.ArtistAndTrack);
+            cache.Store(new M9BContextResolution(request, MusicContextMatchStatus.Unavailable, null, DateTimeOffset.UtcNow, "cached non-catalog result", false, M9BContextSource.LiveEnrichment));
+            M9BContextResolution result = await provider.ResolveAsync(new MediaSnapshot(request.Title, request.Artist, null), CancellationToken.None);
+            True(result.FromCache);
+            Equal(M9BContextSource.Cache, result.Source);
+            Equal(0, live.Calls);
+        }
+        finally { Delete(directory); }
+    }
+
+    public static async Task RejectedGenerationDiagnosticsPreserveTypedLocalEvidence()
+    {
+        string directory = TemporaryDirectory();
+        try
+        {
+            var generator = new M9BFakeGenerator(true, ["This recording invented modern music and remains legendary."]);
+            M9BCommentSelection selection = await CreateService(generator, directory).TrySelectAsync(Context(), true, CancellationToken.None);
+            Equal(M9BCommentSelectionKind.HardDiscard, selection.OutcomeKind);
+            Equal(M9BContextSource.ReviewedCatalog, selection.ContextSource);
+            IReadOnlyList<M9BGenerationDiagnostic> selectedDiagnostics = selection.GenerationDiagnostics ?? throw new InvalidOperationException("Expected local generation diagnostics.");
+            Equal("This recording invented modern music and remains legendary.", selectedDiagnostics.Single().RawOutput);
+            Equal(M9BCommentValidationKind.HardDiscard, selectedDiagnostics.Single().ValidationKind);
+
+            var diagnostics = new[]
+            {
+                new M9BGenerationDiagnostic(1, "valid raw", "valid raw", M9BCommentValidationKind.Valid, "valid", [], null),
+                new M9BGenerationDiagnostic(2, "FALLBACK", "FALLBACK", M9BCommentValidationKind.Fallback, "fallback", [], null),
+                new M9BGenerationDiagnostic(3, "advisory raw", "advisory raw", M9BCommentValidationKind.Advisory, "advisory", ["test flag"], null),
+                new M9BGenerationDiagnostic(4, "hard raw", "hard raw", M9BCommentValidationKind.HardDiscard, "hard", [], null),
+            };
+            var evidence = new M9BGate3RunEvidence(12, 1, 0, 0, 0, 0, 0, 0, true,
+                [new M9BGate3PreparationRecord(1, "Title", "Artist", false, M9BGate3PreparationOutcome.HardDiscard, "hard", 125, 100, 50, false, "catalog:test", M9BContextSource.ReviewedCatalog, diagnostics)]);
+            string json = System.Text.Json.JsonSerializer.Serialize(evidence);
+            M9BGate3RunEvidence roundTrip = System.Text.Json.JsonSerializer.Deserialize<M9BGate3RunEvidence>(json)!;
+            Equal("catalog:test", roundTrip.Preparations.Single().ContextCardIdentity);
+            Equal(M9BContextSource.ReviewedCatalog, roundTrip.Preparations.Single().ContextSource);
+            Equal(4, roundTrip.Preparations.Single().GenerationDiagnostics!.Count);
+            Equal(M9BCommentValidationKind.Valid, roundTrip.Preparations.Single().GenerationDiagnostics![0].ValidationKind);
+            Equal(M9BCommentValidationKind.Fallback, roundTrip.Preparations.Single().GenerationDiagnostics![1].ValidationKind);
+            Equal(M9BCommentValidationKind.Advisory, roundTrip.Preparations.Single().GenerationDiagnostics![2].ValidationKind);
+            Equal(M9BCommentValidationKind.HardDiscard, roundTrip.Preparations.Single().GenerationDiagnostics![3].ValidationKind);
+        }
+        finally { Delete(directory); }
+    }
+
+    public static void Gate3SmokeRunnerIsReviewedCatalogOnlyAndSilent()
+    {
+        string root = RepositoryPathLocator.FindRepositoryRoot();
+        string source = File.ReadAllText(Path.Combine(root, "src", "ZoyaRadio.MediaProbe", "M9BGate3SmokeTest.cs"));
+        Contains(source, "Paranoid (2009 Remaster)");
+        Contains(source, "Cocaine Blues (Live at Folsom State Prison, Folsom, CA - January 1968)");
+        Contains(source, "M9BContextSource.ReviewedCatalog");
+        foreach (string forbidden in new[] { "GlobalSystemMediaTransportControls", "WindowsTransitionAudioDucker", "IAnnouncementSpeechService", "TryPauseAsync", "SetVolume" })
+        {
+            False(source.Contains(forbidden, StringComparison.Ordinal));
+        }
+    }
     public static void CatalogUsesOnlyReviewedExactArtistSpecificAliases()
     {
         M9BContextCatalog catalog = M9BContextCatalog.Load();
@@ -212,9 +316,8 @@ internal static class Milestone9BTests
     {
         M9BCatalogCard card = FirstCard();
         CommentPrompt prompt = M9BWholeCommentPromptFactory.Create(new MediaSnapshot(card.Title, card.Artist, null), card.ToContextCard(), []);
-        Contains(prompt.SystemInstruction, "sound, riffs, instrumentation, vocals, production");
-        Contains(prompt.SystemInstruction, "genre, style, lyrics, song meaning, emotion, atmosphere, listener experience");
-        Contains(prompt.SystemInstruction, "iconic or legendary");
+        Contains(prompt.SystemInstruction, "ordinary host vocabulary and modest subjective musical characterization");
+        Contains(prompt.SystemInstruction, "invented, defined, shaped, pioneered");
         Contains(prompt.SystemInstruction, "return exactly FALLBACK");
     }
 

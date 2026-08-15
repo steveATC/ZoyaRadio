@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Windows.Media.Control;
 
 namespace ZoyaRadio.MediaProbe;
@@ -28,7 +29,10 @@ internal sealed record M9BGate3PreparationRecord(
     double ElapsedMilliseconds,
     long? TotalDurationNanoseconds,
     long? LoadDurationNanoseconds,
-    bool Cancelled);
+    bool Cancelled,
+    string? ContextCardIdentity = null,
+    M9BContextSource ContextSource = M9BContextSource.Unknown,
+    IReadOnlyList<M9BGenerationDiagnostic>? GenerationDiagnostics = null);
 
 internal sealed record M9BGate3RunEvidence(
     int GenuineTransitions,
@@ -450,15 +454,19 @@ internal sealed class M9BGate3SilentRunner
                     ToGate3Outcome(selected.OutcomeKind),
                     selected.Reason,
                     stopwatch.Elapsed.TotalMilliseconds,
-                    null,
-                    null,
-                    false));
+                    selected.Metrics?.TotalDurationNanoseconds,
+                    selected.Metrics?.LoadDurationNanoseconds,
+                    false,
+                    selected.Card?.Identity,
+                    selected.ContextSource,
+                    selected.GenerationDiagnostics));
+                WriteRejectedCandidateDiagnostics(selected);
                 _log.Write($"GATE 3 M9B CANDIDATE NOT READY: {selected.Reason} Accepted M8 fallback remains hypothetical; no fallback speech is prepared.");
                 _state.ResolveOpportunity(opportunity.Id, false, null);
                 return;
             }
 
-            OllamaGenerationMetrics? metrics = selected.Selection.Generation?.Metrics;
+            OllamaGenerationMetrics? metrics = selected.Metrics ?? selected.Selection.Generation?.Metrics;
             bool retained = _state.MarkPreparationReady(opportunity.Id);
             _preparations.Add(new M9BGate3PreparationRecord(
                 opportunity.Id,
@@ -470,7 +478,10 @@ internal sealed class M9BGate3SilentRunner
                 stopwatch.Elapsed.TotalMilliseconds,
                 metrics?.TotalDurationNanoseconds,
                 metrics?.LoadDurationNanoseconds,
-                false));
+                false,
+                selected.Card?.Identity,
+                selected.ContextSource,
+                selected.GenerationDiagnostics));
             if (!retained)
             {
                 _staleDisposals++;
@@ -533,6 +544,16 @@ internal sealed class M9BGate3SilentRunner
         }
     }
 
+    private void WriteRejectedCandidateDiagnostics(M9BCommentSelection selected)
+    {
+        foreach (M9BGenerationDiagnostic diagnostic in selected.GenerationDiagnostics ?? [])
+        {
+            string candidate = diagnostic.NormalizedOutput ?? diagnostic.RawOutput ?? "<no model output>";
+            candidate = candidate.Replace('\r', ' ').Replace('\n', ' ').Trim();
+            string classification = diagnostic.ValidationKind?.ToString() ?? "GenerationFailed";
+            _log.Write($"GATE 3 M9B REJECTED CANDIDATE: {candidate} | classification={classification}; reason={diagnostic.Reason}");
+        }
+    }
     private static M9BGate3PreparationOutcome ToGate3Outcome(M9BCommentSelectionKind outcome) => outcome switch
     {
         M9BCommentSelectionKind.EnrichmentUnavailable => M9BGate3PreparationOutcome.EnrichmentUnavailable,
@@ -663,7 +684,7 @@ internal sealed class M9BGate3SilentRunner
 
 internal static class M9BGate3Artifacts
 {
-    private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+    private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase, Converters = { new JsonStringEnumConverter() } };
 
     internal static string Write(M9BGate3RunEvidence evidence, M9BGate3Verdict verdict)
     {
@@ -694,10 +715,23 @@ internal static class M9BGate3Artifacts
         text.AppendLine($"- Forbidden media/audio activity: {evidence.ForbiddenActivityCount}");
         text.AppendLine($"- Final Gate 3 verdict: {(verdict.Passed ? "PASS" : "FAIL")} — {string.Join("; ", verdict.Reasons)}");
         text.AppendLine();
-        text.AppendLine("## Preparation timing");
+        text.AppendLine("## Preparation timing and local diagnostics");
         foreach (M9BGate3PreparationRecord record in evidence.Preparations)
         {
-            text.AppendLine($"- Opportunity {record.OpportunityId}: {record.Artist} — {record.Title}; ready={record.CandidateReady}; cancelled={record.Cancelled}; elapsed={record.ElapsedMilliseconds:0} ms; total-ns={record.TotalDurationNanoseconds?.ToString() ?? "unavailable"}; load-ns={record.LoadDurationNanoseconds?.ToString() ?? "unavailable"}; {record.Outcome}");
+            text.AppendLine($"### Opportunity {record.OpportunityId}: {record.Artist} — {record.Title}");
+            text.AppendLine($"- Outcome: `{record.OutcomeKind}`; ready={record.CandidateReady}; cancelled={record.Cancelled}; {record.Outcome}");
+            text.AppendLine($"- Context: source=`{record.ContextSource}`; card=`{record.ContextCardIdentity ?? "unavailable"}`.");
+            text.AppendLine($"- Timing: elapsed={record.ElapsedMilliseconds:0} ms; total-ns={record.TotalDurationNanoseconds?.ToString() ?? "unavailable"}; load-ns={record.LoadDurationNanoseconds?.ToString() ?? "unavailable"}.");
+            foreach (M9BGenerationDiagnostic diagnostic in record.GenerationDiagnostics ?? [])
+            {
+                text.AppendLine($"- Generation attempt {diagnostic.Attempt}: classification=`{diagnostic.ValidationKind?.ToString() ?? "GenerationFailed"}`; reason={diagnostic.Reason}");
+                text.AppendLine($"  - Advisory flags: {(diagnostic.AdvisoryFlags.Count == 0 ? "none" : string.Join("; ", diagnostic.AdvisoryFlags))}");
+                text.AppendLine($"  - Raw output: {diagnostic.RawOutput ?? "<no model output>"}");
+                text.AppendLine($"  - Normalized output: {diagnostic.NormalizedOutput ?? "<not available>"}");
+                text.AppendLine($"  - Metrics: total-ns={diagnostic.Metrics?.TotalDurationNanoseconds?.ToString() ?? "unavailable"}; load-ns={diagnostic.Metrics?.LoadDurationNanoseconds?.ToString() ?? "unavailable"}.");
+            }
+
+            text.AppendLine();
         }
 
         return text.ToString();

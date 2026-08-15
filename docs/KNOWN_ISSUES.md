@@ -31,9 +31,9 @@ This file separates unresolved defects from accepted platform limits and deferre
 
 ### M9B grounded-context candidate remains under staged evaluation
 
-- M9B passed its generate-only Gate 2 owner review on August 15, 2026 with a narrow same-card repetition exception. Silent desktop preparation, audible delivery, and Steve's final acceptance remain unrun.
-- Deterministic validation catches only defined mechanical and conservative factual-risk patterns. It cannot prove arbitrary semantic truth, naturalness, or spoken quality; owner review remains required.
-- Three independent generations from the same song/card frequently reused openings or templates. Runtime state bounds the last six delivered comments/fact identities and permits one regeneration before M8 fallback or silence, but real varied-track behavior still needs Gate 3/4 observation.
+- M9B passed its generate-only Gate 2 owner review on August 15, 2026 with a narrow same-card repetition exception. Four safe Gate 3 desktop attempts failed readiness, and the final reviewed-context 12-sample smoke reached 7/12 validator-ready samples despite confirming aliases and model unload. Further Gate 3 desktop trials, audible delivery, and Steve's final acceptance remain unrun/prohibited.
+- Deterministic validation catches only defined mechanical and conservative factual-risk patterns. Ordinary subjective musical characterization (for example riffs, vocals, instrumentation, production, sound, style, or genre) is owner-approved and not automatically a hard failure; specific unsupported history, credits, influence, or strong-superlative claims remain hard failures. The validator cannot prove arbitrary semantic truth, naturalness, or spoken quality; owner review remains required.
+- Three independent generations from the same song/card frequently reused openings or templates. Runtime state bounds the last six delivered comments/fact identities and permits one regeneration before M8 fallback or silence; further Gate 3/4 observation is currently prohibited after the final bounded smoke missed readiness.
 - The optional 14B model has materially higher cold-load and RAM/VRAM cost than the accepted 4B route. Its absence, failed local enrichment, timing failure, or invalid candidate must preserve the M8 candidate/fallback or safe silence.
 - The local reviewed catalog is intentionally small. Unknown tracks depend on strict MusicBrainz/Wikidata confirmation and may safely remain unenriched.
 

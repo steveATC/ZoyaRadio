@@ -3,7 +3,7 @@
 ## Status and authority
 
 Steve approved this bounded contract direction on August 15, 2026 after reviewing the
-M9B proposal and approving its recommended decisions. Steve then explicitly authorized the bounded implementation on August 15, 2026. M9B is now an implemented candidate awaiting its staged Gate 2 owner evaluation; it is not passed or accepted runtime behavior.
+M9B proposal and approving its recommended decisions. Steve then explicitly authorized the bounded implementation on August 15, 2026. M9B is now an implemented candidate with Gate 2 owner evaluation accepted, but it remains unaccepted runtime behavior pending all later gates and final owner acceptance.
 
 M9B is not passed or accepted runtime behavior. Until automated verification, staged desktop testing, and Steve's final manual acceptance are complete,
 the accepted Milestone 8 runtime at `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf`
@@ -147,6 +147,11 @@ M9B may promote the diagnostic cache design into a bounded persistent cache unde
 - no raw web content, prompt, generated prose, browser data, audio, or durable sequence
   of played tracks is stored.
 
+For an exact reviewed catalog card or its individually reviewed exact artist-specific alias,
+the catalog is authoritative and is selected before any cached outcome. This prevents a stale
+negative live-enrichment cache entry from masking known reviewed context. Cache-first behavior
+continues for tracks outside the reviewed catalog.
+
 Clear History must clear both the in-memory commentary/repetition state and this context
 cache, with an understandable local log/activity result. Stop or shutdown clears
 ephemeral recent-comment state but need not delete an otherwise valid context cache.
@@ -177,12 +182,15 @@ sentences. It may select, combine, paraphrase, and compress supplied facts. It m
 produce deterministic `[fact]. [reaction]`, merely recite a card, or mechanically repeat
 both title and artist when natural context does not require them.
 
-Training knowledge may help language and tone but may not introduce factual claims.
-Externally verifiable claims must be supported by exact metadata, the context card, or
-an explicitly supplied persona memory. Unsupported claims about lyrics, sound, genre,
-emotion, motives, popularity, cultural meaning, geography, history, biography, other
-works, or an artist's tendencies are prohibited. Exact `FALLBACK` is a valid response
-and is never spoken literally.
+Training knowledge may help language, tone, and ordinary subjective musical characterization.
+A host may naturally mention riffs, vocals, instrumentation, production, sound, style, or genre
+and offer modest opinion without treating those descriptions as sourced fact. Externally
+verifiable claims remain bounded to exact metadata, the context card, or an explicitly supplied
+persona memory. The model may not use remembered knowledge to invent or state specific history,
+dates, people, credits, quotations, motives, biography, geography, lyrics/meanings, popularity,
+or cultural influence. It also may not turn ordinary characterization into an unsupported claim
+that a recording invented, pioneered, defined, shaped, or was uniquely significant to a style or
+scene. Exact `FALLBACK` is a valid response and is never spoken literally.
 
 ## Validation and repetition
 
@@ -195,11 +203,19 @@ Hard discard includes:
 - title/artist substitution, metadata contradiction, Unicode corruption, or a stale
   card/opportunity;
 - a new unsupported named entity, number, date, relationship, event, or factual claim;
-- unsupported lyric, sound, genre, emotional, cultural, geographic, historical, or
-  biographical assertions;
-- invented Zoya biography; and
+- unsupported lyrics or meanings presented as fact, specific history, biography, geography,
+  cultural influence, attribution, credit, quotation, motive, or other externally verifiable
+  assertion;
+- invented Zoya biography;
+- unsupported influence or strong-superlative claims (for example, that a recording invented,
+  pioneered, defined, shaped, or was uniquely significant to a genre or scene); and
 - material semantic exaggeration or changed causality, such as turning “filming caused
   the exchange doors to close” into “the band shut down the stock exchange.”
+
+Ordinary subjective musical characterization is not a hard-discard category by itself. Terms such
+as riff, vocal, instrumentation, production, sound, style, genre, or “heavy metal” may be used
+naturally, provided they do not smuggle in a specific unsupported historical, biographical,
+credit, causal, influence, or strong-superlative claim.
 
 Artist/title omission is not a rejection when the comment remains bound to the current
 opportunity. Questions, mild verbosity, generic DJ language, “I'm picturing” phrasing,
@@ -281,6 +297,9 @@ second generate-only run is required before Gate 3.
 - At least 90% of eligible steady-state opportunities should be ready before the next
   genuine transition. Cold or unusually short-track misses are safe discards and must
   be reported separately.
+- Local rejected-candidate diagnostics must preserve the raw and normalized generated text,
+  typed validation classification/reason, reviewed-card identity/source, and available timing
+  metrics in ignored local evidence for owner inspection; they must never be transmitted.
 - Confirm zero pause/resume/toggle commands, zero ducking, zero speech, zero catch-up,
   and correct discard on track/session changes, ambiguity, Silent Mode, Stop, and stale
   opportunities.
