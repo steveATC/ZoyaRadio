@@ -3,7 +3,7 @@
 ## Status and authority
 
 Steve approved this bounded contract direction on August 15, 2026 after reviewing the
-M9B proposal and approving its recommended decisions. Steve then explicitly authorized the bounded implementation on August 15, 2026. M9B is now an implemented candidate with Gate 2 owner evaluation and the silent operational Gate 3 accepted. It remains unaccepted runtime behavior pending the separately authorized audible Gate 4 trial and final owner acceptance.
+M9B proposal and approving its recommended decisions. Steve then explicitly authorized the bounded implementation on August 15, 2026. M9B is now an implemented candidate with Gate 2 owner evaluation and the silent operational Gate 3 accepted. It remains unaccepted runtime behavior. Gate 4 is authorized but paused after its first safe, fallback-only audible attempt exposed a bounded MusicBrainz identity/cache repair; resumed Gate 4 evidence and final owner acceptance remain required.
 
 M9B is not passed or accepted runtime behavior. Until automated verification, staged desktop testing, and Steve's final manual acceptance are complete,
 the accepted Milestone 8 runtime at `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf`
@@ -87,8 +87,10 @@ stored, or sent to Ollama.
 ### Exact identity
 
 - Artist identity requires exactly one normalized exact MusicBrainz match.
-- Track-specific context requires exactly one recording bound to both the exact title
-  and confirmed artist identity.
+- Track-specific context requires one or more recordings whose title matches the requested
+  title under conservative normalization and whose nested artist-credit contains the confirmed
+  canonical artist identity. Multiple studio, live, remastered, soundtrack, or duplicate entries
+  are song-level evidence only; they do not identify the playing recording edition.
 - Search rank, popularity, and model inference are never identity tie-breakers.
 - Missing, duplicate, conflicting, malformed, or unsupported identity evidence means no
   enriched candidate.
@@ -149,7 +151,9 @@ M9B may promote the diagnostic cache design into a bounded persistent cache unde
 
 For an exact reviewed catalog card or its individually reviewed exact artist-specific alias,
 the catalog is authoritative and is selected before any cached outcome. This prevents a stale
-negative live-enrichment cache entry from masking known reviewed context. Cache-first behavior
+negative live-enrichment cache entry from masking known reviewed context. The live-identity and
+outer M9B context caches carry a repair schema marker: pre-repair negative entries are ignored
+and retried, while safely reusable confirmed entries retain their normal TTL. Cache-first behavior
 continues for tracks outside the reviewed catalog.
 
 Clear History must clear both the in-memory commentary/repetition state and this context
@@ -272,7 +276,10 @@ second generate-only run is required before Gate 3.
 ### 4. Bounded audible desktop trial
 
 - Only after Gates 1-3 pass, deliver at least five scheduled enriched comments across
-  multiple familiar tracks.
+  multiple familiar tracks. The first authorized attempt delivered five safe M8 fallback comments
+  but zero enriched comments because live context failed before 14B generation; it does not meet
+  this requirement. Gate 4 is paused pending the bounded MusicBrainz nested-credit,
+  multiple-recording, soundtrack-mapping, and cache repair, then resumes only with Steve's test.
 - Confirm the candidate is complete before ducking, only the validated Firefox session
   is ducked, captured scalar/mute state is restored exactly, Chrome/master volume remain
   untouched, normal playback is never paused, cancellation cleans up safely, and no

@@ -77,7 +77,7 @@ internal static class Milestone9CExperimentTests
         {
             using var client = new HttpClient(new QueueHandler(
                 "{\"artists\":[{\"id\":\"a1\",\"name\":\"Exact Artist\"}]}",
-                "{\"recordings\":[{\"title\":\"Exact Track\",\"artist-credit\":[{\"id\":\"a1\",\"name\":\"Exact Artist\"}]}]}",
+                "{\"recordings\":[{\"title\":\"Exact Track\",\"artist-credit\":[{\"name\":\"Exact Artist\",\"artist\":{\"id\":\"a1\",\"name\":\"Exact Artist\"}}]}]}",
                 "{\"relations\":[{\"type\":\"wikidata\",\"url\":{\"resource\":\"https://www.wikidata.org/wiki/Q1\"}}]}",
                 "{\"entities\":{\"Q1\":{\"descriptions\":{\"en\":{\"value\":\"a specific structured artist description\"}}}}}"));
             using var enricher = new MusicBrainzWikidataEnricher(MusicContextEnrichmentConfiguration.Default, new MusicContextCache(cacheDirectory, MusicContextEnrichmentConfiguration.Default), client);
@@ -86,6 +86,126 @@ internal static class Milestone9CExperimentTests
             Equal("Exact Track", result.FactCard!.MatchedTrack);
         }
         finally { if (Directory.Exists(cacheDirectory)) Directory.Delete(cacheDirectory, true); }
+    }
+    public static async Task NestedArtistCreditsAndMultipleExactRecordingsConfirmWakeUp()
+    {
+        string directory = TemporaryDirectory();
+        try
+        {
+            using var client = new HttpClient(new QueueHandler(
+                "{\"artists\":[{\"id\":\"ratm-id\",\"name\":\"Rage Against The Machine\"}]}",
+                "{\"recordings\":[{\"id\":\"wake-up-studio\",\"title\":\"Wake Up\",\"artist-credit\":[{\"name\":\"Rage Against The Machine\",\"artist\":{\"id\":\"ratm-id\",\"name\":\"Rage Against The Machine\"}}],\"releases\":[{\"id\":\"matrix-cd\",\"status\":\"Official\",\"release-group\":{\"id\":\"a3c0fafc-63a8-3cf5-95ac-d11292e04890\",\"title\":\"The Matrix: Music From the Motion Picture\",\"primary-type\":\"Album\",\"secondary-types\":[\"Soundtrack\"]}},{\"id\":\"matrix-vinyl\",\"status\":\"Official\",\"release-group\":{\"id\":\"a3c0fafc-63a8-3cf5-95ac-d11292e04890\",\"title\":\"The Matrix: Music From the Motion Picture\",\"primary-type\":\"Album\",\"secondary-types\":[\"Soundtrack\"]}}]},{\"id\":\"wake-up-live\",\"title\":\"Wake Up\",\"artist-credit\":[{\"name\":\"Rage Against The Machine\",\"artist\":{\"id\":\"ratm-id\",\"name\":\"Rage Against The Machine\"}}],\"releases\":[]}]}",
+                "{\"relations\":[{\"type\":\"wikidata\",\"url\":{\"resource\":\"https://www.wikidata.org/wiki/Q999\"}}]}",
+                "{\"entities\":{\"Q999\":{\"descriptions\":{\"en\":{\"value\":\"an American rock band\"}}}}}"));
+            using var enricher = new MusicBrainzWikidataEnricher(MusicContextEnrichmentConfiguration.Default, new MusicContextCache(directory, MusicContextEnrichmentConfiguration.Default), client);
+            MusicContextEnrichmentResult result = await enricher.EnrichAsync(new MusicContextRequest("Wake Up", "Rage Against The Machine", MusicIdentityRequirement.ArtistAndTrack), CancellationToken.None);
+
+            Equal(MusicContextMatchStatus.Confirmed, result.Status);
+            Equal("Wake Up", result.FactCard!.MatchedTrack);
+            SourceBackedFact soundtrack = result.FactCard.Facts.Single(fact => fact.SourceName == "MusicBrainz");
+            Equal("“Wake Up” appears on the soundtrack album The Matrix: Music From the Motion Picture.", soundtrack.Text);
+            Equal("https://musicbrainz.org/release-group/a3c0fafc-63a8-3cf5-95ac-d11292e04890", soundtrack.SourceUrl.AbsoluteUri);
+            False(soundtrack.Text.Contains("studio", StringComparison.OrdinalIgnoreCase));
+            False(soundtrack.Text.Contains("live", StringComparison.OrdinalIgnoreCase));
+        }
+        finally { Delete(directory); }
+    }
+
+    public static async Task WrongMusicBrainzRecordingIdentityOrTitleIsRejected()
+    {
+        string directory = TemporaryDirectory();
+        try
+        {
+            using var wrongArtistClient = new HttpClient(new QueueHandler(
+                "{\"artists\":[{\"id\":\"ratm-id\",\"name\":\"Rage Against The Machine\"}]}",
+                "{\"recordings\":[{\"title\":\"Wake Up\",\"artist-credit\":[{\"name\":\"Rage Against The Machine\",\"artist\":{\"id\":\"wrong-id\",\"name\":\"Rage Against The Machine\"}}]}]}"));
+            using var wrongArtist = new MusicBrainzWikidataEnricher(MusicContextEnrichmentConfiguration.Default, new MusicContextCache(Path.Combine(directory, "wrong-artist"), MusicContextEnrichmentConfiguration.Default), wrongArtistClient);
+            Equal(MusicContextMatchStatus.Unavailable, (await wrongArtist.EnrichAsync(new MusicContextRequest("Wake Up", "Rage Against The Machine", MusicIdentityRequirement.ArtistAndTrack), CancellationToken.None)).Status);
+
+            using var wrongTitleClient = new HttpClient(new QueueHandler(
+                "{\"artists\":[{\"id\":\"ratm-id\",\"name\":\"Rage Against The Machine\"}]}",
+                "{\"recordings\":[{\"title\":\"Wake Up (Live)\",\"artist-credit\":[{\"name\":\"Rage Against The Machine\",\"artist\":{\"id\":\"ratm-id\",\"name\":\"Rage Against The Machine\"}}]}]}"));
+            using var wrongTitle = new MusicBrainzWikidataEnricher(MusicContextEnrichmentConfiguration.Default, new MusicContextCache(Path.Combine(directory, "wrong-title"), MusicContextEnrichmentConfiguration.Default), wrongTitleClient);
+            Equal(MusicContextMatchStatus.Unavailable, (await wrongTitle.EnrichAsync(new MusicContextRequest("Wake Up", "Rage Against The Machine", MusicIdentityRequirement.ArtistAndTrack), CancellationToken.None)).Status);
+        }
+        finally { Delete(directory); }
+    }
+
+    public static async Task SoundtrackEvidenceRequiresOneDistinctOfficialGroup()
+    {
+        string directory = TemporaryDirectory();
+        try
+        {
+            using var multipleClient = new HttpClient(new QueueHandler(
+                "{\"artists\":[{\"id\":\"a1\",\"name\":\"Exact Artist\"}]}",
+                "{\"recordings\":[{\"title\":\"Exact Track\",\"artist-credit\":[{\"name\":\"Exact Artist\",\"artist\":{\"id\":\"a1\",\"name\":\"Exact Artist\"}}],\"releases\":[{\"status\":\"Official\",\"release-group\":{\"id\":\"soundtrack-one\",\"title\":\"One\",\"primary-type\":\"Soundtrack\"}},{\"status\":\"Official\",\"release-group\":{\"id\":\"soundtrack-two\",\"title\":\"Two\",\"primary-type\":\"Soundtrack\"}}]}]}",
+                "{\"relations\":[{\"type\":\"wikidata\",\"url\":{\"resource\":\"https://www.wikidata.org/wiki/Q1\"}}]}",
+                "{\"entities\":{\"Q1\":{\"descriptions\":{\"en\":{\"value\":\"a specific structured artist description\"}}}}}"));
+            using var multiple = new MusicBrainzWikidataEnricher(MusicContextEnrichmentConfiguration.Default, new MusicContextCache(Path.Combine(directory, "multiple"), MusicContextEnrichmentConfiguration.Default), multipleClient);
+            MusicContextEnrichmentResult multipleResult = await multiple.EnrichAsync(new MusicContextRequest("Exact Track", "Exact Artist", MusicIdentityRequirement.ArtistAndTrack), CancellationToken.None);
+            Equal(MusicContextMatchStatus.Confirmed, multipleResult.Status);
+            False(multipleResult.FactCard!.Facts.Any(fact => fact.SourceName == "MusicBrainz"));
+
+            using var absentClient = new HttpClient(new QueueHandler(
+                "{\"artists\":[{\"id\":\"a1\",\"name\":\"Exact Artist\"}]}",
+                "{\"recordings\":[{\"title\":\"Exact Track\",\"artist-credit\":[{\"name\":\"Exact Artist\",\"artist\":{\"id\":\"a1\",\"name\":\"Exact Artist\"}}],\"releases\":[]}]}",
+                "{\"relations\":[{\"type\":\"wikidata\",\"url\":{\"resource\":\"https://www.wikidata.org/wiki/Q1\"}}]}",
+                "{\"entities\":{\"Q1\":{\"descriptions\":{\"en\":{\"value\":\"a specific structured artist description\"}}}}}"));
+            using var absent = new MusicBrainzWikidataEnricher(MusicContextEnrichmentConfiguration.Default, new MusicContextCache(Path.Combine(directory, "absent"), MusicContextEnrichmentConfiguration.Default), absentClient);
+            MusicContextEnrichmentResult absentResult = await absent.EnrichAsync(new MusicContextRequest("Exact Track", "Exact Artist", MusicIdentityRequirement.ArtistAndTrack), CancellationToken.None);
+            Equal(MusicContextMatchStatus.Confirmed, absentResult.Status);
+            False(absentResult.FactCard!.Facts.Any(fact => fact.SourceName == "MusicBrainz"));
+        }
+        finally { Delete(directory); }
+    }
+
+    public static async Task LegacyNegativeCacheDoesNotMaskRepairedLookup()
+    {
+        string directory = TemporaryDirectory();
+        try
+        {
+            var request = new MusicContextRequest("Wake Up", "Rage Against The Machine", MusicIdentityRequirement.ArtistAndTrack);
+            var cache = new MusicContextCache(directory, MusicContextEnrichmentConfiguration.Default);
+            cache.Store(new MusicContextEnrichmentResult(request, MusicContextMatchStatus.Unavailable, null, DateTimeOffset.UtcNow, "old negative", false));
+            string cachePath = Directory.EnumerateFiles(directory, "*.json").Single();
+            string oldJson = System.Text.RegularExpressions.Regex.Replace(File.ReadAllText(cachePath), "\\s*\\\"SchemaVersion\\\"\\s*:\\s*\\\"music-context-v2\\\"\\s*,?", string.Empty);
+            File.WriteAllText(cachePath, oldJson, new UTF8Encoding(false));
+
+            using var client = new HttpClient(new QueueHandler(
+                "{\"artists\":[{\"id\":\"ratm-id\",\"name\":\"Rage Against The Machine\"}]}",
+                "{\"recordings\":[{\"title\":\"Wake Up\",\"artist-credit\":[{\"name\":\"Rage Against The Machine\",\"artist\":{\"id\":\"ratm-id\",\"name\":\"Rage Against The Machine\"}}],\"releases\":[{\"status\":\"Official\",\"release-group\":{\"id\":\"matrix\",\"title\":\"The Matrix: Music From the Motion Picture\",\"secondary-types\":[\"Soundtrack\"]}}]}]}",
+                "{\"relations\":[]}"));
+            using var enricher = new MusicBrainzWikidataEnricher(MusicContextEnrichmentConfiguration.Default, cache, client);
+            MusicContextEnrichmentResult result = await enricher.EnrichAsync(request, CancellationToken.None);
+            Equal(MusicContextMatchStatus.Confirmed, result.Status);
+            False(result.FromCache);
+            True(result.FactCard!.Facts.Any(fact => fact.SourceName == "MusicBrainz"));
+        }
+        finally { Delete(directory); }
+    }
+
+    public static async Task CollaborationMetadataRemainsSafelyUnsupported()
+    {
+        string directory = TemporaryDirectory();
+        try
+        {
+            using var client = new HttpClient(new QueueHandler("{\"artists\":[]}"));
+            using var enricher = new MusicBrainzWikidataEnricher(MusicContextEnrichmentConfiguration.Default, new MusicContextCache(directory, MusicContextEnrichmentConfiguration.Default), client);
+            MusicContextEnrichmentResult result = await enricher.EnrichAsync(new MusicContextRequest("Leraine", "Secede & Kettel", MusicIdentityRequirement.ArtistAndTrack), CancellationToken.None);
+            Equal(MusicContextMatchStatus.Unavailable, result.Status);
+            False(result.IsConfirmedWithFacts);
+        }
+        finally { Delete(directory); }
+    }
+
+    public static void EnrichmentPathHasNoDesktopMediaApis()
+    {
+        string root = RepositoryPathLocator.FindRepositoryRoot();
+        string source = File.ReadAllText(Path.Combine(root, "src", "ZoyaRadio.MediaProbe", "MusicContextEnrichment.cs"));
+        False(source.Contains("Windows.Media", StringComparison.Ordinal));
+        False(source.Contains("CoreAudio", StringComparison.Ordinal));
+        False(source.Contains("TryPauseAsync", StringComparison.Ordinal));
+        False(source.Contains("TryPlayAsync", StringComparison.Ordinal));
     }
     public static void GenericCardsFallBackAndSpecificCardsRequireNaturalLinks()
     {
@@ -549,6 +669,18 @@ internal static class Milestone9CExperimentTests
         False(command.Contains("Kokoro", StringComparison.Ordinal));
         False(command.Contains("CoreAudio", StringComparison.Ordinal));
         False(command.Contains("MusicBrainz", StringComparison.Ordinal));
+    }
+    private static string TemporaryDirectory()
+    {
+        string root = RepositoryPathLocator.FindRepositoryRoot();
+        string directory = Path.Combine(root, "artifacts", "m9c-tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        return directory;
+    }
+
+    private static void Delete(string directory)
+    {
+        if (Directory.Exists(directory)) Directory.Delete(directory, true);
     }
     private sealed class FakeEnricher : IMusicContextEnricher
     {

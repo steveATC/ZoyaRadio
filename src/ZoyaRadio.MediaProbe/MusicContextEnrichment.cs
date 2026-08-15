@@ -151,6 +151,7 @@ internal static class MusicContextEndpointPolicy
 
 internal sealed class MusicContextCache
 {
+    private const string CacheSchemaVersion = "music-context-v2";
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
     private readonly string _directory;
     private readonly MusicContextEnrichmentConfiguration _configuration;
@@ -179,6 +180,16 @@ internal sealed class MusicContextCache
                 return false;
             }
 
+            // Earlier schema entries may contain negative results produced before nested
+            // MusicBrainz artist credits and multiple exact recordings were supported.
+            // Preserve an otherwise valid confirmed entry, but never let an old negative
+            // result prevent the repaired resolver from trying again.
+            if (!string.Equals(entry.SchemaVersion, CacheSchemaVersion, StringComparison.Ordinal)
+                && entry.Result.Status != MusicContextMatchStatus.Confirmed)
+            {
+                return false;
+            }
+
             result = entry.Result with { FromCache = true };
             return true;
         }
@@ -200,7 +211,7 @@ internal sealed class MusicContextCache
         {
             File.WriteAllText(
                 temporaryPath,
-                JsonSerializer.Serialize(new CacheEntry(expiry, result with { FromCache = false }), JsonOptions),
+                JsonSerializer.Serialize(new CacheEntry(CacheSchemaVersion, expiry, result with { FromCache = false }), JsonOptions),
                 new UTF8Encoding(false));
             File.Move(temporaryPath, path, overwrite: true);
         }
@@ -256,7 +267,7 @@ internal sealed class MusicContextCache
 
     internal static string Normalize(string value) => Regex.Replace(value.Trim(), "\\s+", " ").ToUpperInvariant();
 
-    private sealed record CacheEntry(DateTimeOffset ExpiresAtUtc, MusicContextEnrichmentResult Result);
+    private sealed record CacheEntry(string? SchemaVersion, DateTimeOffset ExpiresAtUtc, MusicContextEnrichmentResult Result);
 }
 
 internal sealed class MusicBrainzWikidataEnricher : IMusicContextEnricher, IDisposable
@@ -338,37 +349,85 @@ internal sealed class MusicBrainzWikidataEnricher : IMusicContextEnricher, IDisp
         if (artist is null) return Result(request, MusicContextMatchStatus.Ambiguous, null, "More than one exact MusicBrainz artist identity remained after deterministic published-evidence checks; no enrichment was used.");
 
         string? matchedTrack = null;
+        var facts = new List<SourceBackedFact>();
         if (request.IdentityRequirement == MusicIdentityRequirement.ArtistAndTrack)
         {
             MusicBrainzRecordingSearch? recordings = await GetMusicBrainzAsync<MusicBrainzRecordingSearch>(
-                "recording?fmt=json&limit=5&query=" + Uri.EscapeDataString("recording:\"" + request.Title + "\" AND artist:\"" + request.Artist + "\""), cancellationToken);
+                "recording?fmt=json&limit=100&inc=releases%2Brelease-groups&query=" + Uri.EscapeDataString("recording:\"" + request.Title + "\" AND artist:\"" + request.Artist + "\""), cancellationToken);
             MusicBrainzRecording[] exactRecordings = (recordings?.Recordings ?? [])
-                .Where(recording => Same(recording.Title, request.Title) && (recording.ArtistCredit ?? []).Any(credit => Same(credit.Name, request.Artist) && string.Equals(credit.Id, artist.Id, StringComparison.Ordinal)))
+                .Where(recording => Same(recording.Title, request.Title) && HasConfirmedArtistCredit(recording, artist, request.Artist))
                 .ToArray();
             if (exactRecordings.Length == 0) return Result(request, MusicContextMatchStatus.Unavailable, null, "No exact MusicBrainz title-and-artist recording identity was found; no enrichment was used.");
-            if (exactRecordings.Length != 1) return Result(request, MusicContextMatchStatus.Ambiguous, null, "More than one exact MusicBrainz recording identity matched; no enrichment was used.");
-            matchedTrack = exactRecordings[0].Title;
+            matchedTrack = request.Title;
+            SourceBackedFact? soundtrackFact = TryCreateSoundtrackFact(exactRecordings, request.Title);
+            if (soundtrackFact is not null) facts.Add(soundtrackFact);
         }
 
-        MusicBrainzArtistDetails? details = await GetMusicBrainzAsync<MusicBrainzArtistDetails>("artist/" + Uri.EscapeDataString(artist.Id) + "?fmt=json&inc=url-rels", cancellationToken);
-        string? wikidataId = LinkedWikidataId(details);
-        if (wikidataId is null) return Result(request, MusicContextMatchStatus.Unavailable, null, "The confirmed MusicBrainz identity had no approved linked Wikidata identity; no enrichment was used.");
-        WikidataEntityEnvelope? wikidata = await GetWikidataAsync(wikidataId, cancellationToken);
-        if (wikidata?.Entities is null || !wikidata.Entities.TryGetValue(wikidataId, out WikidataEntity? entity)) return Result(request, MusicContextMatchStatus.Failed, null, "The linked Wikidata identity could not be read; no enrichment was used.");
-        string? description = entity.Descriptions?.TryGetValue("en", out WikidataText? english) == true ? english.Value : null;
-        if (string.IsNullOrWhiteSpace(description) || description.Length > 240 || description.Contains('\r') || description.Contains('\n')) return Result(request, MusicContextMatchStatus.Unavailable, null, "The confirmed linked identity had no concise supported structured fact; no enrichment was used.");
-        Uri wikidataUrl = new("https://www.wikidata.org/wiki/" + wikidataId, UriKind.Absolute);
-        var facts = new List<SourceBackedFact> { new($"Wikidata describes {artist.Name} as {description}.", "Wikidata", wikidataUrl, IsSpecificDescription(description)) };
-        if (TryGetInceptionYear(entity, out int year))
+        string? wikidataId = null;
+        try
         {
-            string? origin = await TryGetOriginLabelAsync(entity, cancellationToken);
-            facts.Add(new SourceBackedFact(origin is null ? $"Wikidata records that {artist.Name} began in {year}." : $"Wikidata records that {artist.Name} began in {origin} in {year}.", "Wikidata", wikidataUrl, true));
+            MusicBrainzArtistDetails? details = await GetMusicBrainzAsync<MusicBrainzArtistDetails>("artist/" + Uri.EscapeDataString(artist.Id) + "?fmt=json&inc=url-rels", cancellationToken);
+            wikidataId = LinkedWikidataId(details);
+            if (wikidataId is not null)
+            {
+                WikidataEntityEnvelope? wikidata = await GetWikidataAsync(wikidataId, cancellationToken);
+                if (wikidata?.Entities?.TryGetValue(wikidataId, out WikidataEntity? entity) == true)
+                {
+                    string? description = entity.Descriptions?.TryGetValue("en", out WikidataText? english) == true ? english.Value : null;
+                    if (!string.IsNullOrWhiteSpace(description) && description.Length <= 240 && !description.Contains('\r') && !description.Contains('\n'))
+                    {
+                        Uri wikidataUrl = new("https://www.wikidata.org/wiki/" + wikidataId, UriKind.Absolute);
+                        facts.Add(new SourceBackedFact($"Wikidata describes {artist.Name} as {description}.", "Wikidata", wikidataUrl, IsSpecificDescription(description)));
+                        if (TryGetInceptionYear(entity, out int year))
+                        {
+                            string? origin = await TryGetOriginLabelAsync(entity, cancellationToken);
+                            facts.Add(new SourceBackedFact(origin is null ? $"Wikidata records that {artist.Name} began in {year}." : $"Wikidata records that {artist.Name} began in {origin} in {year}.", "Wikidata", wikidataUrl, true));
+                        }
+                    }
+                }
+            }
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
+        catch (Exception) when (facts.Count > 0) { }
+
+        if (facts.Count == 0)
+        {
+            return Result(request, MusicContextMatchStatus.Unavailable, null, "The confirmed MusicBrainz identity had no concise supported structured fact; no enrichment was used.");
+        }
+
         if (facts.Any(fact => !fact.IsSafe())) return Result(request, MusicContextMatchStatus.Failed, null, "The linked fact did not meet M9C source-card safety rules; no enrichment was used.");
-        var card = new MusicContextFactCard(artist.Name, matchedTrack, artist.Id, wikidataId, facts);
-        return Result(request, MusicContextMatchStatus.Confirmed, card, card.HasSpecificFacts ? "Exact MusicBrainz identity and linked specific Wikidata fact confirmed." : "Exact MusicBrainz identity has only a generic linked fact; candidate safely falls back.");
+        var card = new MusicContextFactCard(artist.Name, matchedTrack, artist.Id, wikidataId ?? "none", facts);
+        return Result(request, MusicContextMatchStatus.Confirmed, card, card.HasSpecificFacts ? "Exact MusicBrainz identity and approved structured facts confirmed." : "Exact MusicBrainz identity has only a generic linked fact; candidate safely falls back.");
     }
 
+    private static bool HasConfirmedArtistCredit(MusicBrainzRecording recording, MusicBrainzArtist artist, string requestedArtist)
+        => (recording.ArtistCredit ?? []).Any(credit =>
+            string.Equals(credit.Artist?.Id, artist.Id, StringComparison.Ordinal)
+            && (Same(credit.Name, requestedArtist) || Same(credit.Artist?.Name, requestedArtist)));
+
+    private static SourceBackedFact? TryCreateSoundtrackFact(IReadOnlyList<MusicBrainzRecording> recordings, string matchedTrack)
+    {
+        MusicBrainzReleaseGroup[] groups = recordings
+            .SelectMany(recording => recording.Releases ?? [])
+            .Where(release => string.Equals(release.Status, "Official", StringComparison.OrdinalIgnoreCase))
+            .Select(release => release.ReleaseGroup)
+            .Where(group => group is not null && !string.IsNullOrWhiteSpace(group.Id) && !string.IsNullOrWhiteSpace(group.Title) && IsSoundtrack(group))
+            .Cast<MusicBrainzReleaseGroup>()
+            .GroupBy(group => group.Id, StringComparer.Ordinal)
+            .Select(group => group.First())
+            .ToArray();
+        if (groups.Length != 1) return null;
+
+        MusicBrainzReleaseGroup group = groups[0];
+        return new SourceBackedFact(
+            $"“{matchedTrack}” appears on the soundtrack album {group.Title}.",
+            "MusicBrainz",
+            new Uri("https://musicbrainz.org/release-group/" + group.Id, UriKind.Absolute));
+    }
+
+    private static bool IsSoundtrack(MusicBrainzReleaseGroup group)
+        => string.Equals(group.PrimaryType, "Soundtrack", StringComparison.OrdinalIgnoreCase)
+            || (group.SecondaryTypes ?? []).Any(type => string.Equals(type, "Soundtrack", StringComparison.OrdinalIgnoreCase));
     private async Task<MusicBrainzArtist?> ResolveDuplicateArtistAsync(IReadOnlyList<MusicBrainzArtist> candidates, MusicContextRequest request, CancellationToken cancellationToken)
     {
         var linked = new List<MusicBrainzArtist>();
@@ -486,8 +545,10 @@ internal sealed class MusicBrainzWikidataEnricher : IMusicContextEnricher, IDisp
     private sealed record MusicBrainzArtistSearch([property: JsonPropertyName("artists")] IReadOnlyList<MusicBrainzArtist>? Artists);
     private sealed record MusicBrainzArtist([property: JsonPropertyName("id")] string Id, [property: JsonPropertyName("name")] string Name);
     private sealed record MusicBrainzRecordingSearch([property: JsonPropertyName("recordings")] IReadOnlyList<MusicBrainzRecording>? Recordings);
-    private sealed record MusicBrainzRecording([property: JsonPropertyName("title")] string Title, [property: JsonPropertyName("artist-credit")] IReadOnlyList<MusicBrainzArtistCredit>? ArtistCredit);
-    private sealed record MusicBrainzArtistCredit([property: JsonPropertyName("id")] string? Id, [property: JsonPropertyName("name")] string? Name);
+    private sealed record MusicBrainzRecording([property: JsonPropertyName("title")] string Title, [property: JsonPropertyName("artist-credit")] IReadOnlyList<MusicBrainzArtistCredit>? ArtistCredit, [property: JsonPropertyName("releases")] IReadOnlyList<MusicBrainzRelease>? Releases);
+    private sealed record MusicBrainzArtistCredit([property: JsonPropertyName("name")] string? Name, [property: JsonPropertyName("artist")] MusicBrainzArtist? Artist);
+    private sealed record MusicBrainzRelease([property: JsonPropertyName("id")] string? Id, [property: JsonPropertyName("title")] string? Title, [property: JsonPropertyName("status")] string? Status, [property: JsonPropertyName("release-group")] MusicBrainzReleaseGroup? ReleaseGroup);
+    private sealed record MusicBrainzReleaseGroup([property: JsonPropertyName("id")] string? Id, [property: JsonPropertyName("title")] string? Title, [property: JsonPropertyName("primary-type")] string? PrimaryType, [property: JsonPropertyName("secondary-types")] IReadOnlyList<string>? SecondaryTypes);
     private sealed record MusicBrainzArtistDetails([property: JsonPropertyName("relations")] IReadOnlyList<MusicBrainzRelation>? Relations);
     private sealed record MusicBrainzRelation([property: JsonPropertyName("type")] string? Type, [property: JsonPropertyName("url")] MusicBrainzUrl? Url);
     private sealed record MusicBrainzUrl([property: JsonPropertyName("resource")] string? Resource);

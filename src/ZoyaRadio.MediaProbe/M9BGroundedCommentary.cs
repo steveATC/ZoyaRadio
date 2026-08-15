@@ -182,6 +182,7 @@ internal static class M9BContextCachePaths
 
 internal sealed class M9BContextCache
 {
+    private const string CacheSchemaVersion = "m9b-context-v2";
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
     private readonly string _directory;
     private readonly MusicContextEnrichmentConfiguration _configuration;
@@ -202,6 +203,8 @@ internal sealed class M9BContextCache
         {
             CacheEntry? entry = JsonSerializer.Deserialize<CacheEntry>(File.ReadAllText(path), JsonOptions);
             if (entry is null || entry.ExpiresAtUtc <= DateTimeOffset.UtcNow || !SameRequest(entry.Result.Requested, request)) return false;
+            if (!string.Equals(entry.SchemaVersion, CacheSchemaVersion, StringComparison.Ordinal)
+                && entry.Result.Status != MusicContextMatchStatus.Confirmed) return false;
             result = entry.Result with { FromCache = true, Source = M9BContextSource.Cache };
             return true;
         }
@@ -221,7 +224,7 @@ internal sealed class M9BContextCache
         string temporary = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
         try
         {
-            File.WriteAllText(temporary, JsonSerializer.Serialize(new CacheEntry(expiry, result with { FromCache = false }), JsonOptions), new UTF8Encoding(false));
+            File.WriteAllText(temporary, JsonSerializer.Serialize(new CacheEntry(CacheSchemaVersion, expiry, result with { FromCache = false }), JsonOptions), new UTF8Encoding(false));
             File.Move(temporary, path, overwrite: true);
         }
         finally
@@ -250,7 +253,7 @@ internal sealed class M9BContextCache
         && string.Equals(MusicContextCache.Normalize(left.Title), MusicContextCache.Normalize(right.Title), StringComparison.Ordinal)
         && string.Equals(MusicContextCache.Normalize(left.Artist), MusicContextCache.Normalize(right.Artist), StringComparison.Ordinal);
 
-    private sealed record CacheEntry(DateTimeOffset ExpiresAtUtc, M9BContextResolution Result);
+    private sealed record CacheEntry(string? SchemaVersion, DateTimeOffset ExpiresAtUtc, M9BContextResolution Result);
 }
 
 internal sealed class M9BContextProvider
@@ -301,7 +304,7 @@ internal sealed class M9BContextProvider
             live.FactCard.Facts.Select(fact => new M9BCatalogFact(fact.Text, fact.SourceName, fact.SourceUrl, "live-structured")).ToArray());
         var mapped = new M9BContextResolution(request, live.Status, card, live.RetrievedAtUtc, live.SafeExplanation, false, M9BContextSource.LiveEnrichment);
         _cache.Store(mapped);
-        _log.Write(mapped.IsConfirmedWithFacts ? "M9B CONTEXT: exact live MusicBrainz/Wikidata identity and structured facts confirmed." : $"M9B CONTEXT UNAVAILABLE: {mapped.SafeExplanation}");
+        _log.Write(mapped.IsConfirmedWithFacts ? "M9B CONTEXT: exact live MusicBrainz identity and approved structured facts confirmed." : $"M9B CONTEXT UNAVAILABLE: {mapped.SafeExplanation}");
         return mapped;
     }
 

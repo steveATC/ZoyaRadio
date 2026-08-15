@@ -9,8 +9,9 @@ transition observation, at least one ready candidate, at least one safely suppre
 prepared delivery, no forbidden desktop-media activity, and selected-model unload.
 
 M9B remains an implemented candidate, not passed or accepted runtime behavior. The
-accepted Milestone 8 snapshot remains the safety baseline. Gate 4 audible testing remains
-separately unauthorized, and Steve's final M9B acceptance remains outstanding.
+accepted Milestone 8 snapshot remains the safety baseline. Gate 4 is authorized but paused
+pending this bounded live-enrichment repair and Steve's resumed desktop test; final M9B
+acceptance remains outstanding.
 ## Evaluated artifact
 
 Steve reviewed this exact ignored local artifact set:
@@ -129,3 +130,34 @@ cancellation and stale-work disposal, one ready candidate before a transition, a
 prepared delivery safely suppressed. Final policy verification passed all four Release builds with 0 warnings and 0 errors, all four formatting checks, `git diff --check`, and 259 fake-driven tests with 0 failures. This acceptance does not authorize or start audible Gate 4.
 The next step must be a separately authorized bounded audible Gate 4 trial, followed by Steve's final
 acceptance decision.
+## Gate 4 first audible attempt: safe but incomplete
+
+Steve's first authorized Gate 4 run is recorded in
+`%LOCALAPPDATA%\Zoya Radio\logs\radio-behavior-20260815-140809-914.txt`.
+
+- Five prepared comments were delivered safely, all using the accepted M8 fallback route.
+- Firefox alone was ducked and restored exactly for each delivery; normal playback remained
+  unpaused, and the radio stopped cleanly.
+- Zero M9B enriched comments were delivered because all five live-context attempts became
+  unavailable before the local 14B generation path.
+- The `Wake Up` — Rage Against The Machine attempt exposed the cause: the resolver read a
+  nonexistent top-level MusicBrainz artist-credit ID and also rejected multiple exact recordings
+  even though song-level artist/title evidence was sufficient.
+
+The bounded repair now reads the nested canonical artist object, accepts one or more exact
+song-level recordings for the confirmed artist, emits a soundtrack fact only for one distinct
+official soundtrack release group, and ignores pre-repair negative cache entries. The direct
+read-only MusicBrainz lookup found 35 exact `Wake Up` recordings with nested credits and one
+distinct official soundtrack release group, `The Matrix: Music From the Motion Picture`.
+`Secede & Kettel` remains a deferred collaboration-resolution limitation; no combined-name
+workaround or special card was added.
+
+Repair verification passed all four Release builds with 0 warnings and 0 errors, all four
+formatting checks, `git diff --check`, and 266 fake-driven tests with 0 failures. The focused
+coverage includes nested artist-credit parsing, multiple exact recordings, official soundtrack
+group deduplication, legacy-negative cache invalidation, unsupported collaboration metadata,
+and the absence of desktop-media APIs from the enrichment path.
+
+This safe first attempt does not satisfy Gate 4's requirement for five enriched deliveries.
+Gate 4 remains authorized but paused until Steve resumes the same bounded desktop test after
+this repair. M9B remains unpassed.

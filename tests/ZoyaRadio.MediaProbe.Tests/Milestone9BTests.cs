@@ -272,6 +272,27 @@ internal static class Milestone9BTests
         finally { Delete(directory); }
     }
 
+    public static async Task LegacyNegativeM9BContextCacheDoesNotMaskLiveResolution()
+    {
+        string directory = TemporaryDirectory();
+        try
+        {
+            var request = new MusicContextRequest("Unreviewed Runtime Title", "Unreviewed Runtime Artist", MusicIdentityRequirement.ArtistAndTrack);
+            var cache = new M9BContextCache(directory, MusicContextEnrichmentConfiguration.Default);
+            cache.Store(new M9BContextResolution(request, MusicContextMatchStatus.Unavailable, null, DateTimeOffset.UtcNow, "legacy negative", false, M9BContextSource.LiveEnrichment));
+            string cachePath = Directory.EnumerateFiles(directory, "*.json").Single();
+            string oldJson = System.Text.RegularExpressions.Regex.Replace(File.ReadAllText(cachePath), "\\s*\\\"SchemaVersion\\\"\\s*:\\s*\\\"m9b-context-v2\\\"\\s*,?", string.Empty);
+            File.WriteAllText(cachePath, oldJson, new UTF8Encoding(false));
+
+            var live = new FakeM9BLiveResolver();
+            var provider = new M9BContextProvider(M9BContextCatalog.Load(), live, cache, new FakeLog());
+            M9BContextResolution result = await provider.ResolveAsync(new MediaSnapshot(request.Title, request.Artist, null), CancellationToken.None);
+            Equal(1, live.Calls);
+            False(result.FromCache);
+            Equal(M9BContextSource.LiveEnrichment, result.Source);
+        }
+        finally { Delete(directory); }
+    }
     public static async Task RejectedGenerationDiagnosticsPreserveTypedLocalEvidence()
     {
         string directory = TemporaryDirectory();
