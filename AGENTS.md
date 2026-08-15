@@ -72,3 +72,11 @@ Consult `docs/CURRENT_ARCHITECTURE.md` and `docs/DECISIONS.md` for the exact cur
 - Report verification actually performed and its results, manual checks still required, and known issues or risks discovered.
 - Report final Git status, any authorized commit created, and confirmation that nothing was pushed unless pushing was explicitly requested.
 - Keep logs, instructions, failures, and manual procedures understandable to Steve as a non-programmer without sacrificing technical accuracy.
+
+## Next-action handoff
+
+- For substantial work where a follow-on action exists or the next step could reasonably be unclear, finish the final report with a concise recommended handoff: **Next step type** (`Decision`, `Research`, `Documentation`, `Implementation`, `Manual Test`, or `Evaluation`), **Owner** (for example, Steve, Codex/Work, or Research), **Why this comes next**, and **Action required**.
+- State what must not happen yet when a tempting follow-on action is unauthorized, and include a paste-ready suggested next prompt when Codex/Work is the next actor and that would materially help Steve.
+- The classification is guidance, not authorization: Codex must not silently begin the handoff action unless it is already inside the explicitly assigned scope. Documentation does not authorize implementation, and research does not authorize a decision or implementation.
+- Keep automated verification and Steve's real-desktop/manual acceptance as separate evidence. Qualitative work may correctly end with **Evaluation — Steve**, with no prompt or code change until Steve has evaluated the result.
+- Do not add this ceremony to tiny edits or trivial questions; it exists to help Steve understand the appropriate project workflow while preserving one bounded task at a time.
