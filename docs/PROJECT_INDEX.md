@@ -14,7 +14,7 @@ This is the front door to the canonical Zoya Radio documentation. The local Git 
 | Latest accepted automated result | 178 passed, 0 failed at `b56c03d` |
 | Accepted internal packaged baseline | `0.8.0-alpha.1`; owner packaged-desktop acceptance recorded August 11, 2026 |
 | Deferred distribution evidence | Clean Windows 10/11 and invited private-alpha testing; not blockers to internal development |
-| Next project step | M9B Gate 2 is owner-accepted, but four safe Gate 3 desktop attempts and the final reviewed-context smoke missed readiness. Further Gate 3 desktop trials and Gate 4 are prohibited pending a separately approved future direction. |
+| Next project step | M9B Gates 2 and 3 are owner-accepted. A separately authorized bounded audible Gate 4 trial is the next step; final M9B acceptance remains outstanding. |
 | Snapshot ID | `zoya-radio-2026-08-11-m8-b56c03d1` |
 
 Update this table whenever an accepted implementation commit becomes the new source snapshot.
@@ -124,6 +124,6 @@ Repository-only does not mean non-authoritative. README and the milestone record
 - [Milestone 9A contract](MILESTONE_9A_CONTRACT.md) - approved experiment, candidate prompt boundary, benchmark, and non-goals
 - [Milestone 9A evaluation](MILESTONE_9A_TEST.md) - blinded review procedure and the recorded rejected-candidate outcome
 - [Milestone 9B contract](MILESTONE_9B_CONTRACT.md) - approved grounded-context integration scope; candidate implementation awaiting staged acceptance
-- [Milestone 9B Gate 2 evaluation](MILESTONE_9B_TEST.md) - completed owner-quality evidence, dated repetition exception, and remaining silent/audible gates
+- [Milestone 9B Gate 2/3 evaluation](MILESTONE_9B_TEST.md) - completed owner-quality and silent operational evidence; audible Gate 4 remains separately unauthorized
 - [Milestone 9C contract](MILESTONE_9C_CONTRACT.md) - bounded source-backed experiment and non-integration boundary
 - [Milestone 9C evaluation](MILESTONE_9C_TEST.md) - completed M9C.6 owner evidence and basis for the approved M9B direction

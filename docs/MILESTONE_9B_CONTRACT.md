@@ -3,7 +3,7 @@
 ## Status and authority
 
 Steve approved this bounded contract direction on August 15, 2026 after reviewing the
-M9B proposal and approving its recommended decisions. Steve then explicitly authorized the bounded implementation on August 15, 2026. M9B is now an implemented candidate with Gate 2 owner evaluation accepted, but it remains unaccepted runtime behavior pending all later gates and final owner acceptance.
+M9B proposal and approving its recommended decisions. Steve then explicitly authorized the bounded implementation on August 15, 2026. M9B is now an implemented candidate with Gate 2 owner evaluation and the silent operational Gate 3 accepted. It remains unaccepted runtime behavior pending the separately authorized audible Gate 4 trial and final owner acceptance.
 
 M9B is not passed or accepted runtime behavior. Until automated verification, staged desktop testing, and Steve's final manual acceptance are complete,
 the accepted Milestone 8 runtime at `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf`
@@ -182,57 +182,31 @@ sentences. It may select, combine, paraphrase, and compress supplied facts. It m
 produce deterministic `[fact]. [reaction]`, merely recite a card, or mechanically repeat
 both title and artist when natural context does not require them.
 
-Training knowledge may help language, tone, and ordinary subjective musical characterization.
-A host may naturally mention riffs, vocals, instrumentation, production, sound, style, or genre
-and offer modest opinion without treating those descriptions as sourced fact. Externally
-verifiable claims remain bounded to exact metadata, the context card, or an explicitly supplied
-persona memory. The model may not use remembered knowledge to invent or state specific history,
-dates, people, credits, quotations, motives, biography, geography, lyrics/meanings, popularity,
-or cultural influence. It also may not turn ordinary characterization into an unsupported claim
-that a recording invented, pioneered, defined, shaped, or was uniquely significant to a style or
-scene. Exact `FALLBACK` is a valid response and is never spoken literally.
+Training knowledge may support natural host language, familiar low-risk music knowledge, and colorful but modest editorial opinion. The reviewed card remains the factual/editorial anchor, rather than a list of every word or low-stakes association Zoya may use. Riffs, vocals, instrumentation, production, sound, style, genre, popularity/cultural observations, ordinary radio-host adjectives such as “iconic” or “legendary,” low-risk music-related names, and modest exaggeration are permitted.
 
+The model should avoid fabricating precise dates, quotations, credits, historical incidents, or severe causal claims that conflict with the supplied context. Exact `FALLBACK` remains a valid response and is never spoken literally.
 ## Validation and repetition
 
-Validation separates hard safety/grounding failures from advisory quality signals.
+Hard discard is reserved for high-confidence technical or safety failures:
 
-Hard discard includes:
+- empty or malformed output, multiple answers, prompt/control/meta text, literal URLs, or the absolute safe maximum being exceeded;
+- Unicode corruption/substitution, explicit contradiction of the current title or artist, or stale/mismatched card/opportunity;
+- invented Zoya biography presented as real;
+- explicit material contradiction of a supplied context fact; or
+- the precise severe exchange-door exaggeration rule, where a supplied fact says doors closed but output claims the band shut down the exchange.
 
-- empty, malformed, multi-answer, control/meta, prompt-leaking, unsafe-length, or
-  literal-URL output;
-- title/artist substitution, metadata contradiction, Unicode corruption, or a stale
-  card/opportunity;
-- a new unsupported named entity, number, date, relationship, event, or factual claim;
-- unsupported lyrics or meanings presented as fact, specific history, biography, geography,
-  cultural influence, attribution, credit, quotation, motive, or other externally verifiable
-  assertion;
-- invented Zoya biography;
-- unsupported influence or strong-superlative claims (for example, that a recording invented,
-  pioneered, defined, shaped, or was uniquely significant to a genre or scene); and
-- material semantic exaggeration or changed causality, such as turning “filming caused
-  the exchange doors to close” into “the band shut down the stock exchange.”
-
-Ordinary subjective musical characterization is not a hard-discard category by itself. Terms such
-as riff, vocal, instrumentation, production, sound, style, genre, or “heavy metal” may be used
-naturally, provided they do not smuggle in a specific unsupported historical, biographical,
-credit, causal, influence, or strong-superlative claim.
-
-Artist/title omission is not a rejection when the comment remains bound to the current
-opportunity. Questions, mild verbosity, generic DJ language, “I'm picturing” phrasing,
-fact recitation, and formulaic fact-then-reaction construction are advisory quality
-signals unless they also create a grounding failure.
-
+Ordinary musical characterization, low-risk names/attributions, popularity/cultural language, `iconic`, `legendary`, `shaped`, precise details not present in the card, and modest colorful exaggeration are not automatic hard discards. They may remain advisory diagnostics for owner inspection. Advisory means editorially imperfect but still usable: the runtime may make at most one bounded regeneration; if the second result remains advisory, it is retained as the prepared candidate. There is no unbounded retry.
 The runtime retains at most six accepted enriched-comment fingerprints and selected
 fact identities in process memory. It detects exact repeats, high-confidence repeated
 openings/templates, repeated questions/signature phrases, and reuse of the same fact for
-the same identity. A duplicate or advisory result permits at most one regeneration;
-another unsuitable result selects the accepted M8 fallback or silence. There is no
-unbounded retry or persistent listening history.
+the same identity. A duplicate or advisory result permits at most one regeneration.
+After that bounded regeneration, a remaining advisory result is retained as a prepared
+candidate; hard, stale, invalid, or otherwise unsafe work still selects the accepted M8
+fallback or silence. There is no unbounded retry or persistent listening history.
 
-Deterministic checks cannot prove every paraphrase true. M9B therefore combines strict
-entity/number/date/card checks, conservative material-exaggeration rules, focused fake
-tests, and Steve's staged qualitative acceptance. It must not claim a general semantic
-truth verifier.
+Deterministic checks cannot prove every paraphrase true. M9B therefore combines focused
+technical/safety checks, advisory diagnostics, fake tests, and Steve's staged qualitative
+acceptance. It must not claim a general semantic truth verifier.
 
 ## Acceptance gates
 
@@ -290,20 +264,11 @@ second generate-only run is required before Gate 3.
 
 ### 3. Silent desktop preparation trial
 
-- Observe at least 12 genuine transitions with Firefox playing and all M9B preparation
-  enabled but speech and ducking disabled.
-- Record cold-load time, warm-generation latency, RAM/VRAM residency where observable,
-  cache behavior, candidate readiness, cancellation, and unload behavior.
-- At least 90% of eligible steady-state opportunities should be ready before the next
-  genuine transition. Cold or unusually short-track misses are safe discards and must
-  be reported separately.
-- Local rejected-candidate diagnostics must preserve the raw and normalized generated text,
-  typed validation classification/reason, reviewed-card identity/source, and available timing
-  metrics in ignored local evidence for owner inspection; they must never be transmitted.
-- Confirm zero pause/resume/toggle commands, zero ducking, zero speech, zero catch-up,
-  and correct discard on track/session changes, ambiguity, Silent Mode, Stop, and stale
-  opportunities.
-
+- Observe at least 12 genuine transitions with Firefox playing and all M9B preparation enabled but speech and ducking disabled.
+- Record cold-load time, warm-generation latency, RAM/VRAM residency where observable, cache behavior, candidate availability/readiness, advisory and hard-result counts, cancellation, stale-work disposal, and unload behavior.
+- The operational gate requires at least one candidate ready before a transition and at least one resulting prepared delivery safely suppressed. Candidate availability and readiness percentage remain diagnostics, not a lexical-validator pass threshold.
+- Confirm zero pause/resume/toggle commands, zero ducking, zero speech, zero catch-up, zero application/master-volume changes, and correct discard on track/session changes, ambiguity, Silent Mode, Stop, and stale opportunities.
+- Local rejected-candidate diagnostics preserve raw/normalized generated text, typed classification/reason, reviewed-card identity/source, advisory flags, and available timing metrics in ignored local evidence only.
 ### 4. Bounded audible desktop trial
 
 - Only after Gates 1-3 pass, deliver at least five scheduled enriched comments across

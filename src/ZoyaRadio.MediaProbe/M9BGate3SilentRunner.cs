@@ -711,6 +711,7 @@ internal static class M9BGate3Artifacts
         text.AppendLine($"- Eligible steady-state opportunities: {verdict.EligibleSteadyStateOpportunities}");
         text.AppendLine($"- Readiness rate: {verdict.ReadinessRate:P0} ({evidence.ReadyCandidates}/{verdict.EligibleSteadyStateOpportunities})");
         text.AppendLine($"- Hard-discard failures: {verdict.HardDiscardFailures}");
+        text.AppendLine($"- Advisory results: {verdict.AdvisoryResults}");
         text.AppendLine($"- Enrichment-unavailable results: {verdict.EnrichmentUnavailableResults}");
         text.AppendLine($"- Forbidden media/audio activity: {evidence.ForbiddenActivityCount}");
         text.AppendLine($"- Final Gate 3 verdict: {(verdict.Passed ? "PASS" : "FAIL")} — {string.Join("; ", verdict.Reasons)}");

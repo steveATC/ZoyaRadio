@@ -5,6 +5,7 @@ internal sealed record M9BGate3Verdict(
     int EligibleSteadyStateOpportunities,
     double ReadinessRate,
     int HardDiscardFailures,
+    int AdvisoryResults,
     int EnrichmentUnavailableResults,
     IReadOnlyList<string> Reasons)
 {
@@ -12,6 +13,8 @@ internal sealed record M9BGate3Verdict(
     {
         int unavailable = evidence.Preparations.Count(item => item.OutcomeKind == M9BGate3PreparationOutcome.EnrichmentUnavailable);
         int hardDiscards = evidence.Preparations.Count(item => item.OutcomeKind == M9BGate3PreparationOutcome.HardDiscard);
+        int advisory = evidence.Preparations.Sum(item => (item.GenerationDiagnostics ?? [])
+            .Count(diagnostic => diagnostic.ValidationKind == M9BCommentValidationKind.Advisory));
         int readyRecords = evidence.Preparations.Count(item => item.OutcomeKind == M9BGate3PreparationOutcome.Ready && item.CandidateReady);
         int eligible = evidence.Preparations.Count(item => IsEligibleSteadyState(item.OutcomeKind));
         double readinessRate = eligible == 0 ? 0 : (double)readyRecords / eligible;
@@ -27,13 +30,14 @@ internal sealed record M9BGate3Verdict(
             reasons.Add("ready-candidate summary does not match typed preparation evidence");
         }
 
-        if (eligible == 0)
+        if (readyRecords == 0)
         {
-            reasons.Add("zero eligible steady-state opportunities");
+            reasons.Add("no candidate became ready before a transition");
         }
-        else if (readinessRate < .90)
+
+        if (evidence.SuppressedDeliveries == 0)
         {
-            reasons.Add($"readiness {readinessRate:P0} is below 90%");
+            reasons.Add("no prepared delivery was safely suppressed");
         }
 
         if (evidence.SelectedModelUnloaded is not true)
@@ -51,6 +55,7 @@ internal sealed record M9BGate3Verdict(
             eligible,
             readinessRate,
             hardDiscards,
+            advisory,
             unavailable,
             reasons);
     }

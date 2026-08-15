@@ -25,9 +25,9 @@ internal static class Milestone9BTests
         M9BCatalogCard card = FirstCard();
         var media = new MediaSnapshot(card.Title, card.Artist, null);
         CommentPrompt prompt = M9BWholeCommentPromptFactory.Create(media, card.ToContextCard(), []);
-        Contains(prompt.SystemInstruction, "only source for externally verifiable history");
-        Contains(prompt.SystemInstruction, "ordinary host vocabulary and modest subjective musical characterization");
-        Contains(prompt.SystemInstruction, "force title/artist repetition");
+        Contains(prompt.SystemInstruction, "typed context card as the factual and editorial anchor");
+        Contains(prompt.SystemInstruction, "familiar low-risk music knowledge and natural host opinion");
+        Contains(prompt.SystemInstruction, "Do not force title/artist repetition");
         Contains(prompt.MetadataPrompt, card.Title);
         M9BCommentValidation validation = M9BCommentValidator.Validate(
             "That answer to Neil Young arrived with enough history to make a simple song introduction feel almost suspiciously well prepared.",
@@ -38,27 +38,43 @@ internal static class Milestone9BTests
         Equal(M9BCommentValidationKind.Valid, validation.Kind);
     }
 
-    public static void FallbackAndUnsafeAssertionsAreHandledDeterministically()
+    public static void FallbackAndTechnicalFailuresAreHandledDeterministically()
     {
         M9BCatalogCard card = FirstCard();
         var media = new MediaSnapshot(card.Title, card.Artist, null);
         Equal(M9BCommentValidationKind.Fallback, M9BCommentValidator.Validate("FALLBACK", media, card.ToContextCard(), [], []).Kind);
-        Equal(M9BCommentValidationKind.HardDiscard, M9BCommentValidator.Validate("David Bowie released this in 1999.", media, card.ToContextCard(), [], []).Kind);
-        Equal(M9BCommentValidationKind.Advisory, M9BCommentValidator.Validate("The riff makes this a heavy metal storm.", media, card.ToContextCard(), [], []).Kind);
+        Equal(M9BCommentValidationKind.Advisory, M9BCommentValidator.Validate("David Bowie released this in 1999.", media, card.ToContextCard(), [], []).Kind);
+        Equal(M9BCommentValidationKind.HardDiscard, M9BCommentValidator.Validate("This is Sweet Home Alabama by Black Sabbath.", media, card.ToContextCard(), [], []).Kind);
         M9BCatalogCard rage = M9BContextCatalog.Load().Cards.Single(item => item.Id == "M9C6-11");
         Equal(M9BCommentValidationKind.HardDiscard, M9BCommentValidator.Validate("Rage Against the Machine shut down the New York Stock Exchange.", new MediaSnapshot(rage.Title, rage.Artist, null), rage.ToContextCard(), [], []).Kind);
     }
 
-    public static void OrdinaryMusicalCharacterizationIsAllowedButUnsupportedInfluenceIsNot()
+    public static void OwnerApprovedMusicalLanguageRemainsDeliverable()
     {
         M9BCatalogCard master = M9BContextCatalog.Load().Cards.Single(card => card.Id == "M9C6-06");
         var media = new MediaSnapshot(master.Title, master.Artist, null);
         Equal(M9BCommentValidationKind.Advisory, M9BCommentValidator.Validate(
             "That riff is pure heavy metal menace.", media, master.ToContextCard(), [], []).Kind);
-        Equal(M9BCommentValidationKind.HardDiscard, M9BCommentValidator.Validate(
+        Equal(M9BCommentValidationKind.Advisory, M9BCommentValidator.Validate(
             "This riff invented heavy metal in 1986.", media, master.ToContextCard(), [], []).Kind);
-        Equal(M9BCommentValidationKind.HardDiscard, M9BCommentValidator.Validate(
+        Equal(M9BCommentValidationKind.Advisory, M9BCommentValidator.Validate(
             "Sweet Silence Studios played a key role in shaping Metallica's sound.", media, master.ToContextCard(), [], []).Kind);
+    }
+    public static void OwnerApprovedFinalSmokeFixturesRemainDeliverable()
+    {
+        int count = 0;
+        foreach ((MediaSnapshot media, M9BContextCard card, string output) in OwnerApprovedFinalSmokeFixtures())
+        {
+            M9BCommentValidation validation = M9BCommentValidator.Validate(output, media, card, [], []);
+            if (validation.Kind is not (M9BCommentValidationKind.Valid or M9BCommentValidationKind.Advisory))
+            {
+                throw new InvalidOperationException($"Owner-approved smoke fixture was not deliverable: {validation.Kind}; {output}");
+            }
+
+            count++;
+        }
+
+        Equal(12, count);
     }
     public static void QuestionsClichesAndImaginedScenesRemainAdvisory()
     {
@@ -168,16 +184,17 @@ internal static class Milestone9BTests
         {
             var generator = new M9BFakeGenerator(modelPresent: true, responses:
             ["I'm picturing Sweet Home Alabama sitting beside Neil Young's response—does anyone mind if I call that wonderfully direct?",
-             "Sweet Home Alabama turns its response to Neil Young into a piece of correspondence with impressively direct mailing-label energy."]);
+             "Picture this: Sweet Home Alabama replying to Neil Young with a response that has the subtlety of a certified letter."]);
             M9BCommentSelection selected = await CreateService(generator, directory).TrySelectAsync(Context(), true, CancellationToken.None);
-            if (selected.Selection is null) throw new InvalidOperationException($"Expected a regenerated candidate. Reason: {selected.Reason}");
+            if (selected.Selection is null) throw new InvalidOperationException($"Expected a retained advisory candidate. Reason: {selected.Reason}");
             if (!selected.UsedRegeneration) throw new InvalidOperationException("Expected exactly one advisory regeneration.");
+            Equal(CommentTextSource.GroundedAi, selected.Selection.Source);
+            Equal(M9BCommentSelectionKind.Ready, selected.OutcomeKind);
             Equal(2, generator.GenerateCalls);
             Equal(1, generator.UnloadCalls);
         }
         finally { Delete(directory); }
     }
-
     public static async Task RedirectedLiveSourceResponseIsRefused()
     {
         string directory = TemporaryDirectory();
@@ -260,12 +277,12 @@ internal static class Milestone9BTests
         string directory = TemporaryDirectory();
         try
         {
-            var generator = new M9BFakeGenerator(true, ["This recording invented modern music and remains legendary."]);
+            var generator = new M9BFakeGenerator(true, ["This is Sweet Home Alabama by Black Sabbath."]);
             M9BCommentSelection selection = await CreateService(generator, directory).TrySelectAsync(Context(), true, CancellationToken.None);
             Equal(M9BCommentSelectionKind.HardDiscard, selection.OutcomeKind);
             Equal(M9BContextSource.ReviewedCatalog, selection.ContextSource);
             IReadOnlyList<M9BGenerationDiagnostic> selectedDiagnostics = selection.GenerationDiagnostics ?? throw new InvalidOperationException("Expected local generation diagnostics.");
-            Equal("This recording invented modern music and remains legendary.", selectedDiagnostics.Single().RawOutput);
+            Equal("This is Sweet Home Alabama by Black Sabbath.", selectedDiagnostics.Single().RawOutput);
             Equal(M9BCommentValidationKind.HardDiscard, selectedDiagnostics.Single().ValidationKind);
 
             var diagnostics = new[]
@@ -316,41 +333,34 @@ internal static class Milestone9BTests
     {
         M9BCatalogCard card = FirstCard();
         CommentPrompt prompt = M9BWholeCommentPromptFactory.Create(new MediaSnapshot(card.Title, card.Artist, null), card.ToContextCard(), []);
-        Contains(prompt.SystemInstruction, "ordinary host vocabulary and modest subjective musical characterization");
-        Contains(prompt.SystemInstruction, "invented, defined, shaped, pioneered");
+        Contains(prompt.SystemInstruction, "familiar low-risk music knowledge and natural host opinion");
+        Contains(prompt.SystemInstruction, "Avoid inventing precise dates, quotations, credits, historical incidents, or severe causal claims");
         Contains(prompt.SystemInstruction, "return exactly FALLBACK");
     }
 
-    public static void Gate3VerdictUsesTypedEvidenceAndAcceptanceThresholds()
+    public static void Gate3VerdictUsesOperationalAcceptanceCriteria()
     {
-        M9BGate3Verdict zeroReady = M9BGate3Verdict.Evaluate(Gate3Evidence(12, true, 0, 0, Record(M9BGate3PreparationOutcome.ModelFallback)));
+        M9BGate3Verdict zeroReady = M9BGate3Verdict.Evaluate(Gate3Evidence(12, true, 0, 0, 1, Record(M9BGate3PreparationOutcome.ModelFallback)));
         False(zeroReady.Passed);
-        Contains(string.Join("; ", zeroReady.Reasons), "below 90%");
+        Contains(string.Join("; ", zeroReady.Reasons), "no candidate became ready");
 
-        M9BGate3Verdict belowThreshold = M9BGate3Verdict.Evaluate(Gate3Evidence(12, true, 0, 0,
-            Enumerable.Range(0, 8).Select(_ => Record(M9BGate3PreparationOutcome.Ready)).Append(Record(M9BGate3PreparationOutcome.HardDiscard)).ToArray()));
-        False(belowThreshold.Passed);
-        Equal(1, belowThreshold.HardDiscardFailures);
+        M9BGate3Verdict noSuppression = M9BGate3Verdict.Evaluate(Gate3Evidence(12, true, 0, 0, 0, Record(M9BGate3PreparationOutcome.Ready)));
+        False(noSuppression.Passed);
+        Contains(string.Join("; ", noSuppression.Reasons), "no prepared delivery was safely suppressed");
 
-        M9BGate3Verdict thresholdPass = M9BGate3Verdict.Evaluate(Gate3Evidence(12, true, 0, 0,
-            Enumerable.Range(0, 9).Select(_ => Record(M9BGate3PreparationOutcome.Ready)).Append(Record(M9BGate3PreparationOutcome.HardDiscard)).ToArray()));
-        True(thresholdPass.Passed);
-        Equal(10, thresholdPass.EligibleSteadyStateOpportunities);
-        Equal(0.9, thresholdPass.ReadinessRate);
-
-        False(M9BGate3Verdict.Evaluate(Gate3Evidence(12, false, 0, 0, Record(M9BGate3PreparationOutcome.Ready))).Passed);
-        False(M9BGate3Verdict.Evaluate(Gate3Evidence(12, true, 1, 0, Record(M9BGate3PreparationOutcome.Ready))).Passed);
-
-        M9BGate3Verdict separated = M9BGate3Verdict.Evaluate(Gate3Evidence(12, true, 0, 0,
+        M9BGate3Verdict operationalPass = M9BGate3Verdict.Evaluate(Gate3Evidence(12, true, 0, 0, 1,
             Record(M9BGate3PreparationOutcome.Ready),
+            Record(M9BGate3PreparationOutcome.HardDiscard),
             Record(M9BGate3PreparationOutcome.Cancelled),
-            Record(M9BGate3PreparationOutcome.StaleDiscarded),
-            Record(M9BGate3PreparationOutcome.EnrichmentUnavailable),
-            Record(M9BGate3PreparationOutcome.HardDiscard)));
-        Equal(2, separated.EligibleSteadyStateOpportunities);
-        Equal(1, separated.HardDiscardFailures);
-        Equal(1, separated.EnrichmentUnavailableResults);
-        False(separated.Passed);
+            Record(M9BGate3PreparationOutcome.StaleDiscarded)));
+        True(operationalPass.Passed);
+        Equal(2, operationalPass.EligibleSteadyStateOpportunities);
+        Equal(0.5, operationalPass.ReadinessRate);
+        Equal(1, operationalPass.HardDiscardFailures);
+
+        False(M9BGate3Verdict.Evaluate(Gate3Evidence(11, true, 0, 0, 1, Record(M9BGate3PreparationOutcome.Ready))).Passed);
+        False(M9BGate3Verdict.Evaluate(Gate3Evidence(12, false, 0, 0, 1, Record(M9BGate3PreparationOutcome.Ready))).Passed);
+        False(M9BGate3Verdict.Evaluate(Gate3Evidence(12, true, 1, 0, 1, Record(M9BGate3PreparationOutcome.Ready))).Passed);
     }
     public static void Gate3RunnerIsSilentAndFirefoxOnly()
     {
@@ -408,17 +418,54 @@ internal static class Milestone9BTests
         bool? unloaded,
         int forbiddenActivityCount,
         int sessionSafetyDisposals,
+        int suppressedDeliveries,
         params M9BGate3PreparationRecord[] preparations) => new(
         transitions,
         preparations.Length,
         preparations.Count(item => item.CandidateReady),
-        0,
+        suppressedDeliveries,
         preparations.Count(item => item.OutcomeKind == M9BGate3PreparationOutcome.Cancelled),
         preparations.Count(item => item.OutcomeKind == M9BGate3PreparationOutcome.StaleDiscarded),
         sessionSafetyDisposals,
         forbiddenActivityCount,
         unloaded,
         preparations);
+    private static IEnumerable<(MediaSnapshot Media, M9BContextCard Card, string Output)> OwnerApprovedFinalSmokeFixtures()
+    {
+        M9BContextCatalog catalog = M9BContextCatalog.Load();
+        M9BCatalogCard lynyrd = catalog.Cards.Single(card => card.Id == "M9C6-01");
+        M9BCatalogCard sabbath = catalog.Cards.Single(card => card.Id == "M9C6-02");
+        M9BCatalogCard metallica = catalog.Cards.Single(card => card.Id == "M9C6-06");
+        M9BCatalogCard cash = catalog.Cards.Single(card => card.Id == "M9C6-16");
+
+        foreach (string output in new[]
+        {
+            "It's interesting to know that \"Sweet Home Alabama\" was written as a response to Neil Young's \"Southern Man,\" and you can really feel that back-and-forth in the lyrics. The opening riff is instantly recognizable, and it's no wonder this song became one of their biggest hits.",
+            "It's fascinating how \"Sweet Home Alabama\" came about as a reply to Neil Young's \"Southern Man\"—a fiery back-and-forth that really captured the spirit of the time. That opening riff still slaps after all these years.",
+            "It's interesting to know that \"Sweet Home Alabama\" was written as a response to Neil Young's \"Southern Man,\" and you can really hear that fiery spirit in Ed King's iconic guitar riff.",
+        }) yield return (new MediaSnapshot("Sweet Home Alabama", "Lynyrd Skynyrd", null), lynyrd.ToContextCard(), output);
+
+        foreach (string output in new[]
+        {
+            "It's fascinating how \"Paranoid\" came together so quickly as a last-minute addition to the album—yet it went on to become Black Sabbath's only top-five UK single.",
+            "It's fascinating how \"Paranoid\" came together so quickly—almost like it was destined to become one of Black Sabbath's most iconic tracks.",
+            "It’s fascinating how \"Paranoid\" came together so quickly as a last-minute addition to the album—yet it ended up being one of Black Sabbath’s most iconic tracks.",
+        }) yield return (new MediaSnapshot("Paranoid (2009 Remaster)", "Black Sabbath", null), sabbath.ToContextCard(), output);
+
+        foreach (string output in new[]
+        {
+            "It's fascinating to think that \"Master of Puppets\" was recorded at Sweet Silence Studios in Copenhagen — a place that helped shape some of metal's most iconic sounds.",
+            "You know, it's interesting how this track was recorded in Copenhagen — a city not typically associated with metal, but somehow it fits perfectly. The way the guitars cut through the mix, it's like they're pulling the strings of the whole album.",
+            "I guess it's no surprise that \"Master of Puppets\" was recorded in Copenhagen—it's got that edge, that raw energy that feels like it was born in a place where metal really takes hold.",
+        }) yield return (new MediaSnapshot("Master of Puppets", "Metallica", null), metallica.ToContextCard(), output);
+
+        foreach (string output in new[]
+        {
+            "You know, there's something haunting about Cash's voice echoing through those prison walls, making a song like \"Cocaine Blues\" feel both raw and real.",
+            "You know, it's wild to think that a song like \"Cocaine Blues\" was played in a place like Folsom State Prison — it's almost like the setting gave the track an extra layer of raw, real energy.",
+            "You know, there's something haunting about hearing Johnny Cash sing \"Cocaine Blues\" from the very place where he recorded it — Folsom State Prison. The raw, gravelly tone of his voice just adds to the weight of those words.",
+        }) yield return (new MediaSnapshot("Cocaine Blues (Live at Folsom State Prison, Folsom, CA - January 1968)", "Johnny Cash", null), cash.ToContextCard(), output);
+    }
     private static M9BCatalogCard FirstCard() => M9BContextCatalog.Load().Cards.Single(card => card.Id == "M9C6-01");
     private static RadioPreparationContext Context() => new(new MediaSnapshot("Sweet Home Alabama", "Lynyrd Skynyrd", null), DateTimeOffset.UtcNow, [], []);
     private static M9BGroundedCommentService CreateService(M9BFakeGenerator generator, string directory)

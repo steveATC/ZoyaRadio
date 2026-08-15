@@ -381,7 +381,7 @@ internal static class M9BCommentValidator
 {
     private static readonly Regex UrlPattern = new("https?://|www\\.", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
     private static readonly Regex MetaPattern = new("as an ai|ignore (all )?previous|system prompt|<m9b_", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-    private static readonly Regex UnsupportedInfluencePattern = new("\\b(invented|pioneered|defined|redefined|greatest|most influential|legendary|iconic|key role|shap(?:ed|ing) (?:the )?(?:sound|scene)|significant (?:moment|spot))\\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
     private static readonly Regex SemanticExaggerationPattern = new("\\b(shut down|shut the .*exchange|caused the .*exchange to close)\\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
     private static readonly Regex ClichePattern = new("\\b(absolute banger|timeless classic|turn it up|stay tuned|you'?re listening to|what a track)\\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
     private static readonly Regex ImaginedPattern = new("\\b(i'?m picturing|i can see|picture this)\\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
@@ -424,22 +424,14 @@ internal static class M9BCommentValidator
             return new M9BCommentValidation(M9BCommentValidationKind.HardDiscard, normalized, "Output materially exaggerates the supplied exchange-door fact.", []);
         }
 
-        if (UnsupportedInfluencePattern.IsMatch(normalized))
+        if (HasExplicitCurrentMetadataContradiction(normalized, media))
         {
-            return new M9BCommentValidation(M9BCommentValidationKind.HardDiscard, normalized, "Output makes an unsupported influence or strong-superlative claim.", []);
-        }
-
-        if (HasUnsupportedNumber(normalized, media, card))
-        {
-            return new M9BCommentValidation(M9BCommentValidationKind.HardDiscard, normalized, "Output introduces an unsupported number or date.", []);
-        }
-
-        if (HasUnsupportedKnownEntity(normalized, media, card))
-        {
-            return new M9BCommentValidation(M9BCommentValidationKind.HardDiscard, normalized, "Output introduces a known entity not present in the supplied card.", []);
+            return new M9BCommentValidation(M9BCommentValidationKind.HardDiscard, normalized, "Output explicitly contradicts the current title or artist.", []);
         }
 
         var flags = new List<string>();
+        if (ContainsNumberOutsideCard(normalized, media, card)) flags.Add("Contains a precise number or date outside the supplied card.");
+        if (ContainsKnownEntityOutsideCard(normalized, media, card)) flags.Add("Contains a music-related named entity outside the supplied card.");
         if (words < 12 || words > 45) flags.Add("Outside the normal 12-45 spoken-word target.");
         if (Regex.Matches(normalized, "[.!?]+(?=\\s|$)").Count > 2) flags.Add("More than two sentences.");
         if (normalized.TrimEnd().EndsWith("?", StringComparison.Ordinal)) flags.Add("Rhetorical question.");
@@ -462,21 +454,36 @@ internal static class M9BCommentValidator
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(card.Identity + "\u001F" + card.MatchedTrack + "\u001F" + source)));
     }
 
-    private static bool HasUnsupportedNumber(string text, MediaSnapshot media, M9BContextCard card)
+    private static bool HasExplicitCurrentMetadataContradiction(string text, MediaSnapshot media)
     {
-        string allowed = string.Join(" ", new[] { media.Title, media.Artist, card.MatchedArtist, card.MatchedTrack }.Concat(card.Facts.Select(fact => fact.Text)));
-        foreach (Match number in Regex.Matches(text, "\\b\\d{1,4}\\b"))
+        if (string.IsNullOrWhiteSpace(media.Title) || string.IsNullOrWhiteSpace(media.Artist)) return false;
+        string escapedTitle = Regex.Escape(media.Title);
+        Match directAttribution = Regex.Match(
+            text,
+            $"\\b(?:this is|that was|now playing)\\s+[\\\"“]?\\s*{escapedTitle}\\s*[\\\"”]?\\s+by\\s+(?<artist>[^.!?]+)",
+            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        if (directAttribution.Success
+            && !directAttribution.Groups["artist"].Value.Trim().StartsWith(media.Artist, StringComparison.OrdinalIgnoreCase))
         {
-            if (!allowed.Contains(number.Value, StringComparison.Ordinal)) return true;
+            return true;
         }
 
-        return false;
+        if (!Regex.IsMatch(text, "\\b(?:this is|that was|now playing)\\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)) return false;
+        return M9BContextCatalog.Load().Cards.Any(card =>
+            !string.Equals(card.Title, media.Title, StringComparison.OrdinalIgnoreCase)
+            && text.Contains(card.Title, StringComparison.OrdinalIgnoreCase));
     }
 
-    private static bool HasUnsupportedKnownEntity(string text, MediaSnapshot media, M9BContextCard card)
+    private static bool ContainsNumberOutsideCard(string text, MediaSnapshot media, M9BContextCard card)
     {
         string allowed = string.Join(" ", new[] { media.Title, media.Artist, card.MatchedArtist, card.MatchedTrack }.Concat(card.Facts.Select(fact => fact.Text)));
-        string[] known = ["Neil Young", "Belchior", "Chet Atkins", "David Bowie", "Michael Moore", "Wyclef Jean", "Paulo Coelho", "Ozzy Osbourne", "Vinny Appice", "New York Stock Exchange", "Folsom State Prison"];
+        return Regex.Matches(text, "\\b\\d{1,4}\\b").Any(number => !allowed.Contains(number.Value, StringComparison.Ordinal));
+    }
+
+    private static bool ContainsKnownEntityOutsideCard(string text, MediaSnapshot media, M9BContextCard card)
+    {
+        string allowed = string.Join(" ", new[] { media.Title, media.Artist, card.MatchedArtist, card.MatchedTrack }.Concat(card.Facts.Select(fact => fact.Text)));
+        string[] known = ["Neil Young", "Belchior", "Chet Atkins", "David Bowie", "Michael Moore", "Wyclef Jean", "Paulo Coelho", "Ozzy Osbourne", "Vinny Appice", "New York Stock Exchange", "Folsom State Prison", "Ed King"];
         return known.Any(entity => text.Contains(entity, StringComparison.OrdinalIgnoreCase)
             && !allowed.Contains(entity, StringComparison.OrdinalIgnoreCase));
     }
@@ -699,8 +706,12 @@ internal sealed class M9BGroundedCommentService
 
                 if (validation.Kind == M9BCommentValidationKind.Advisory)
                 {
-                    return Result(null, "M9B regeneration remained advisory/duplicate; preserving M8 fallback.", true, false,
-                        generation.Metrics, M9BCommentSelectionKind.AdvisoryFallback, diagnostics);
+                    return Result(
+                        new CommentSelection(validation.NormalizedText, CommentTextSource.GroundedAi,
+                            validation.NormalizedText.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length,
+                            "M9B advisory candidate retained after bounded regeneration.", generation, false),
+                        "M9B advisory candidate is ready after bounded regeneration.", true, false, generation.Metrics,
+                        M9BCommentSelectionKind.Ready, diagnostics);
                 }
 
                 return Result(

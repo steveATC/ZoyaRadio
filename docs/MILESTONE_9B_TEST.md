@@ -3,15 +3,14 @@
 ## Status
 
 Steve accepted M9B Gate 2 on August 15, 2026 with the narrow same-card repetition
-exception recorded below. M9B remains an implemented candidate, not passed or accepted
-runtime behavior. The accepted Milestone 8 snapshot remains the safety baseline.
+exception recorded below. Steve also accepted the cumulative Gate 3 evidence under the
+later operational policy recorded in the M9B contract: the silent gate now requires safe
+transition observation, at least one ready candidate, at least one safely suppressed
+prepared delivery, no forbidden desktop-media activity, and selected-model unload.
 
-Gate 3 has now had four safe silent desktop attempts, all of which failed candidate readiness
-and therefore did not pass. The bounded repair's final reviewed-context, loopback-only smoke
-also reached only 7/12 validator-ready samples. The one permitted prompt-only revision has been
-used. Further Gate 3 desktop trials and audible Gate 4 are prohibited pending a separately
-approved future direction.
-
+M9B remains an implemented candidate, not passed or accepted runtime behavior. The
+accepted Milestone 8 snapshot remains the safety baseline. Gate 4 audible testing remains
+separately unauthorized, and Steve's final M9B acceptance remains outstanding.
 ## Evaluated artifact
 
 Steve reviewed this exact ignored local artifact set:
@@ -87,7 +86,7 @@ Steve explicitly accepted Gate 2 with this narrow repetition exception on August
 - waive Gate 3 timing/cancellation/playback-isolation evidence; or
 - authorize audible Gate 4 testing.
 
-## Gate 3 attempts and bounded repair: safe but failed
+## Gate 3 history, repair, and accepted operational evidence
 
 Four separately authorized silent desktop trials completed 12 genuine Firefox transitions
 without speech, ducking, playback control, volume change, catch-up, or stale delivery:
@@ -110,24 +109,23 @@ candidate diagnostics locally with typed classification/reason and timing, and k
 on the bounded cache/live-resolution path. It does not make a catalog match fuzzy or contact live
 enrichment for a reviewed card.
 
-Steve separately clarified the qualitative policy: ordinary subjective musical characterization
-is permitted. Terms such as riffs, vocals, instrumentation, production, sound, style, genre, and
-“heavy metal” are not automatic hard-discard conditions. Specific historical incidents, dates,
-people, credits, quotations, motives, lyrics/meanings presented as fact, biography, influence, and
-strong-superlative claims still require supplied context and remain rejectable when unsupported.
-The final prompt/validator change applies that policy directly; it is not merely prompt avoidance.
+The fixed local reviewed-card smoke at `artifacts\m9b\gate3-smoke\20260815-124500-256\`
+resolved all four exact aliases from `ReviewedCatalog`, verified selected-model unload, and made no
+Firefox, GSMTC, audio, speech, ducking, playback, volume, GUI, cache, or live-enrichment call. Its
+former mechanical classifier marked 7/12 samples validator-ready (58%); the earlier fixed-plan smoke
+at `artifacts\m9b\gate3-smoke\20260815-124201-165\` marked 10/12. Those are retained diagnostic
+measurements, not a Gate 3 acceptance threshold.
 
-The required one bounded prompt-only revision was then measured with the fixed local reviewed-card
-smoke plan at `artifacts\m9b\gate3-smoke\20260815-124500-256\`. All four exact aliases resolved
-from `ReviewedCatalog`, selected-model unload verified, and the smoke made no Firefox, GSMTC,
-audio, speech, ducking, playback, volume, GUI, cache, or live-enrichment call. It produced 7/12
-validator-ready samples (58%): Sweet Home Alabama 1/3, Paranoid (2009 Remaster) 1/3, Master of
-Puppets 2/3, and the exact Johnny Cash Folsom title 3/3. This is below the 90% Gate 3 readiness
-threshold. The preceding fixed-plan smoke at `artifacts\m9b\gate3-smoke\20260815-124201-165\`
-produced 10/12 before the owner-approved validator policy correction.
+Steve reviewed the twelve final smoke outputs and accepted all 12 as suitable for Zoya to speak.
+The revised policy allows familiar low-risk music knowledge, natural host opinion, ordinary musical
+characterization, low-risk names/attributions, popularity/cultural observations, ordinary host
+adjectives, and modest exaggeration. The validator now hard-discards only high-confidence technical
+or safety failures; advisory results get at most one regeneration and remain deliverable if still
+advisory after that bound. Raw rejected outputs remain available for owner inspection.
 
-These are safe failures, not Gate 3 acceptance. The final smoke artifact retains the full raw local
-output and typed result for every sample; it demonstrates that deterministic checks still cannot
-prove all semantic grounding. The one permitted prompt-only revision has been consumed. Do not run
-another desktop Gate 3 trial, do not tune the prompt/validator again under this repair, and do not
-start audible Gate 4.
+Under that explicit operational policy, Gate 3 is accepted from the cumulative evidence: 48 genuine
+silent transitions, zero forbidden playback/audio/volume activity, selected-model unload, observed
+cancellation and stale-work disposal, one ready candidate before a transition, and a resulting
+prepared delivery safely suppressed. Final policy verification passed all four Release builds with 0 warnings and 0 errors, all four formatting checks, `git diff --check`, and 259 fake-driven tests with 0 failures. This acceptance does not authorize or start audible Gate 4.
+The next step must be a separately authorized bounded audible Gate 4 trial, followed by Steve's final
+acceptance decision.
