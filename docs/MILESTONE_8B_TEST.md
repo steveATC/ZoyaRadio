@@ -22,9 +22,28 @@ M8B's internal-development acceptance does not certify the package for clean mac
 
 - Genuine clean Windows 10 22H2 x64 validation: pending/deferred.
 - Genuine clean Windows 11 x64 validation: pending/deferred.
-- Invited private-alpha tester validation: pending/deferred.
+- Invited private-alpha tester validation: started but incomplete; the post-acceptance compatibility observation below is not full distribution validation.
 - The package remains an unsigned portable private-alpha candidate and must not be described as clean-machine certified, broadly compatible, publicly released, code-signed, SmartScreen-reputable, or validated for third-party distribution.
 - Future tester reports may require bounded compatibility or packaging repairs, but their absence no longer blocks internal development.
+
+## Post-acceptance invited-tester compatibility observation
+
+Mortorro's external tester machine produced the following bounded evidence while YouTube Music was playing in Firefox:
+
+```text
+AVAILABLE WINDOWS MEDIA SESSIONS: 1
+SESSION 1
+  SourceAppUserModelId: 308046B0AF4A39CB
+  Title: Simple Man
+  Artist: Lynyrd Skynyrd
+  Album: <not provided>
+  Playback: Playing
+NO FIREFOX TARGET FOUND: automatic behavior was not armed.
+```
+
+Firefox media-control integration was enabled, including `media.hardwaremediakeys.enabled = true`. Windows GSMTC was therefore available and exposed one plausible Playing Firefox session with correct music metadata, but the current exact `firefox.exe` source-identity rule safely rejected its different raw identifier.
+
+This observation establishes a compatibility defect in the current Firefox GSMTC identity assumption. It does not establish a general replacement identity rule, whether the observed identifier is stable across machines or installations, or whether another tester's earlier zero-session result has the same cause. A future bounded repair must preserve positive Firefox identification and safe silence; this record does not authorize that repair or reopen M8.
 
 ## Accepted internal package files
 
@@ -130,7 +149,7 @@ Deferred distribution validation still includes:
 
 - genuine clean Windows 10 22H2 x64 testing;
 - genuine clean Windows 11 x64 testing;
-- invited private-alpha tester evidence.
+- completion of invited private-alpha tester evidence; testing has begun and produced the bounded Firefox GSMTC identity compatibility observation recorded above.
 
 These checks remain useful compatibility and distribution-certification evidence, but they are not blockers to continued internal feature development.
 

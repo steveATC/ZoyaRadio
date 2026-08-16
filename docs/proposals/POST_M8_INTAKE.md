@@ -6,9 +6,10 @@ This document records proposals, refinements, disagreements, examples, research 
 
 - Every proposal in this document remains **unapproved** unless an explicit note says otherwise. No proposal card below is marked approved.
 - Labels such as **Explicitly preferred** record preference inside the Brainstorming discussion only; they are not accepted Git decisions or approved project requirements.
-- Milestone 8 is the next named gate. It is planned and unstarted, has no approved detailed scope, and this intake neither defines nor contributes to its scope.
-- Before M8 implementation, Steve must approve a bounded contract defining its goal, non-goals, allowed dependencies, safety requirements, automated verification, and manual acceptance evidence.
-- The proposals are to be evaluated only after the bounded M8 contract is approved, M8 is implemented and manually accepted, and a known-good Git checkpoint is created.
+- Milestone 8 was implemented and accepted for continued internal development under its bounded contract. Milestone 9 later concluded as prototype evidence without promoting its experimental commentary path into accepted runtime behavior.
+- The post-M8 review stage this intake anticipated has now begun. Review still does not approve, schedule, or authorize any proposal automatically.
+- Every promoted outcome still requires an explicit Steve decision and the appropriate canonical decision, roadmap, contract, or implementation task.
+- A separate [future personal-station vision](FUTURE_PERSONAL_STATION_VISION.md) preserves the broader product experience and illustrative station concepts without making them current scope.
 - Research can support, weaken, or complicate a proposal. It cannot approve a product decision.
 - The local Git repository and its canonical documentation—especially the latest project-state and decision documents—remain authoritative for current implementation, milestone status, tests, and accepted architecture.
 - This file contains no implementation instructions, milestone assignments, deadlines, or authorization for Codex to make changes.
@@ -17,20 +18,21 @@ This document records proposals, refinements, disagreements, examples, research 
 
 The Brainstorming chat described the following as **historically demonstrated during the first-generation build**: Firefox/YouTube Music metadata observation; safe targeting and control of the Firefox media session; local Qwen comment generation with fixed fallback; a warm/dry host persona; automatic comment opportunities using a random 2–5-transition interval; bounded recent-track and recent-comment state; Silent Mode and history clearing; stale-comment abandonment; local Kokoro/Nicole speech prepared while music continued; Windows TTS fallback; cancellation and playback recovery. These statements summarize evidence discussed in the chat; they are not a substitute for checking the current repository.
 
-The same discussion suggested usability, configuration, packaging, and UI work as a possible M8 direction. That history is preserved as Brainstorming only: it may be considered as a candidate when Steve later defines a bounded M8 contract, but it is not an approved M8 requirement or existing interface. **This intake and every proposal below neither define nor contribute to M8 scope.**
+The same discussion suggested usability, configuration, packaging, and UI work as a possible M8 direction. That is historical origin, not current status: canonical documents record what M8 actually accepted. Unpromoted material in this intake remains Brainstorming only and cannot retroactively enlarge M8 or authorize later work.
 
 | Boundary | Meaning in this intake |
 |---|---|
 | Current implementation | Whatever the current local repository and canonical project documents demonstrate now; historical chat evidence is secondary. |
-| Milestone 8 | The next named gate: planned and unstarted, with no approved detailed scope. It requires a separately approved bounded contract, and this intake has no authority to define it. |
-| Post-M8 proposals | Candidates for later review, experimentation, research, acceptance, rejection, or parking. |
-| Future product vision | Long-range possibilities that may require a second-generation architecture or substantial production tooling. |
+| Accepted M8 baseline | The internal-development baseline recorded by canonical project and milestone documents; this intake cannot alter it. |
+| Concluded M9 exploration | Prototype evidence and unresolved limitations recorded by canonical M9 documents; no experimental M9 path became accepted runtime behavior merely by appearing here. |
+| Post-M8 proposals | Candidates now available for explicit review, research, experimentation, acceptance, rejection, or parking. |
+| Future product vision | Long-range, unapproved possibilities preserved separately where useful; they are not requirements or milestone scope. |
 
 ## 2. Purpose and Review Process
 
-The Brainstorming conversation accumulated more design material than could safely be promoted while M8 remained unscoped and unstarted. This document preserves that material without letting enthusiasm become scope. It should make the original chat unnecessary as a memory aid while leaving formal decisions to review after a separately contracted, implemented, manually accepted, and checkpointed M8.
+The Brainstorming conversation accumulated more design material than could safely be promoted while M8 was still ahead. This document preserves that material without letting enthusiasm become scope. M8 has since been accepted and the anticipated review stage has begun, but formal decisions still belong in canonical project documentation.
 
-After M8 is manually accepted and checkpointed, each proposal should receive one of the following outcomes:
+During review, each proposal may receive one of the following outcomes:
 
 - **Accept for near-term planning**
 - **Accept for later development**
@@ -39,15 +41,13 @@ After M8 is manually accepted and checkpointed, each proposal should receive one
 - **Reject**
 - **Park**
 
-No outcome is assigned here. The Brainstorming discussion preferred a workflow boundary, not approval of any feature. Corrected to the canonical M8 state, the sequence is:
+No outcome is assigned merely by being listed here. The first four historical steps were completed: M8 received a bounded contract, was implemented and manually accepted, a known-good checkpoint was created, and implementation paused for review. The current planning sequence is therefore:
 
-1. define and approve a bounded M8 contract;
-2. implement and manually accept M8;
-3. create a known-good Git checkpoint;
-4. pause implementation;
-5. review this intake, the research, canonical architecture, and real post-M8 experience;
-6. assign proposal outcomes;
-7. only then define later architecture and milestones.
+1. review this intake, the research, canonical architecture, the accepted M8 baseline, the concluded M9 evidence, and real listening experience;
+2. merge overlaps and identify dependencies or research gaps;
+3. have Steve explicitly assign proposal outcomes;
+4. record accepted direction in the appropriate canonical documents;
+5. only then define bounded later milestones or implementation tasks.
 
 The post-M8 review should compare each card with:
 
@@ -88,10 +88,20 @@ The post-M8 review should compare each card with:
 | CONTEXT-02 | Optional weather packets | Context / factual enrichment | Early developed concept | Optional location and provider | Directly discussed |
 | CONTEXT-03 | Optional sourced news packets and separate host reactions | Context / research | Early idea; unresolved | Retrieval, provenance, shelf life | Directly discussed |
 | LOCAL-01 | Language, locale, host identity, and cultural adaptation | Localization | Developed concept | Localized assets and evaluation | Explicitly preferred |
-| UI-01 | Simple user controls with advanced complexity kept internal | UI / configuration | Competing alternatives | A future approved interface baseline; possible M8-contract candidate only | Directly discussed |
+| UI-01 | Simple user controls with advanced complexity kept internal | UI / configuration | Competing alternatives | Accepted M8 interface baseline and CONFIG-01 | Directly discussed |
+| SESSION-01 | Listening Session Lifecycle | Product contract / state | Gap-audit proposal; foundational | Deterministic media and application lifecycle evidence | Architecture-gap review |
+| CAP-01 | Runtime Capability Registry and graceful degradation | Product contract / capabilities | Gap-audit proposal; foundational | Installed providers, assets, languages, and resource policy | Architecture-gap review |
+| CONFIG-01 | Versioned Station / Listener Profile Model | Product contract / configuration | Gap-audit proposal; foundational | Validation, defaults, and capability model | Architecture-gap review |
+| TRUST-01 | Untrusted Content and Instruction Boundary | Trust / safety | Gap-audit proposal; foundational | Typed inputs and deterministic execution authority | Architecture-gap review |
+| OBS-01 | Editorial Decision Trace / Radio Explainability | Runtime operations / evaluation | Gap-audit proposal; foundational | Scheduler and structured decision reasons | Architecture-gap review |
+| RESOURCE-01 | Preparation Budget / Runtime Quality Governor | Runtime operations / resources | Gap-audit proposal | Capability registry and preparation estimates | Architecture-gap review |
+| DATA-01 | Persistent Data Lifecycle, Migration, and Recovery | Trust / persistence | Gap-audit proposal | Future durable storage | Architecture-gap review |
+| ASSET-01 | Creative Asset Manifest and Provenance | Trust / assets | Gap-audit proposal | Typed inventory and Sound Packs | Architecture-gap review |
+| POLICY-01 | Station Editorial Policy | Product contract / editorial safety | Gap-audit proposal | Configuration and all content formats | Architecture-gap review |
+| FEEDBACK-01 | Listener Corrections and Preference Signals | Runtime evaluation / personalization | Gap-audit proposal; lower priority | Structured feedback and memory controls | Architecture-gap review |
 | RESEARCH-01 | Empirical radio-production research programme | Research | Research-backed | Comparable recordings and methodology | Explicitly preferred |
 | RESEARCH-02 | Model, voice, cadence, and resource experiments | Research / testing | Needs experiment | Repeatable benchmark tasks | Directly discussed |
-| WORKFLOW-01 | Post-M8 checkpoint, consolidation, and role-separated workflow | Workflow | Developed concept | Approved M8 contract, manual acceptance, checkpoint, and canonical docs | Explicitly preferred |
+| WORKFLOW-01 | Post-M8 checkpoint, consolidation, and role-separated workflow | Workflow | Historical boundary completed; review active | Canonical docs and explicit proposal decisions | Explicitly preferred |
 
 ## 4. Cross-Cutting Principles Discussed
 
@@ -109,6 +119,10 @@ The post-M8 review should compare each card with:
 | Localization is not translation | Established project principle | Language, locale, host identity, voice, and cultural reference are distinct. Locale should inform without stereotyping. |
 | Memory should create continuity, not clutter | Established project principle | Useful jokes can persist and compress into terse callbacks; one-off material should not automatically become permanent. |
 | Inventory variety and editorial cadence are different | Research-supported Brainstorming direction | Adding more callers or IDs should reduce repetition, not automatically increase how often that format airs. |
+| Configuration, seeds, and earned history are different | Future product-vision refinement | Listener-defined facts configure the station; optional premises may inspire it; only observed or aired events become earned history. |
+| Available capabilities constrain creative plans | Architecture-gap proposal | The system should know what this installation can render or retrieve before commissioning expensive or impossible material. |
+| Untrusted text remains data | Architecture-gap safety proposal | Metadata, web evidence, listener text, memory, and model output cannot redefine system authority or directly execute playback/system actions. |
+| Formats are capabilities, not obligations | Future product-vision refinement | Installed inventory does not create airtime; a station may disable calls, commercials, imaging, or long-form speech and remain music-first. |
 | Research describes behavior; it does not prescribe product decisions | Established workflow principle | GTA and real-radio material can reveal abstract grammar, never authorize copying or automatically define defaults. |
 
 ## 5. Detailed Proposal Cards
@@ -169,7 +183,7 @@ ARCH-02, ARCH-03, RADIO-01, PROD-01, PROD-02, VOICE-01, WORKFLOW-01.
 
 **Conversation conclusion**
 
-Preferred in Brainstorming but still unapproved. Review is deliberately deferred until a bounded M8 contract is approved, implemented, manually accepted, and checkpointed; this intake does not place architecture consolidation inside M8. The mature radio might be hybrid and modular, but its smallest coherent form was not settled.
+Preferred in Brainstorming but still unapproved. The bounded M8 implementation and checkpoint are complete, so architecture consolidation is now eligible for explicit review. The mature radio might be hybrid and modular, but its smallest coherent form is still not settled.
 
 ### [ARCH-02] Prepared-content binding, shelf life, and lifecycle
 
@@ -987,65 +1001,68 @@ Experiment first. Improve inputs, prompts, repetition constraints, and architect
 
 ### [VOICE-01] Provider-neutral Voice Direction
 
-**Status:** Unapproved post-M8 proposal  
-**Area:** Voice  
-**Discussion maturity:** Developed concept  
-**Origin:** Steve noted that real hosts, commercials, callers, and IDs depend on tone, cadence, pace, whispering, shouting, and other performance qualities that basic TTS may not reproduce.
+**Status:** Unapproved post-M8 proposal<br>
+**Area:** Voice<br>
+**Discussion maturity:** Developed concept<br>
+**Origin:** Steve noted that hosts, commercials, callers, and IDs depend on tone,
+cadence, pace, whispering, shouting, and other performance qualities that basic TTS
+may not reproduce. Later sonic-identity discussion clarified that fixed imaging and
+runtime commentary have different constraints.
 
 **Proposal**
 
-Represent semantic performance intent separately from text and mixing: speaker, tone/emotion, pace, intensity, emphasis, conversational style, and supported paralinguistic behavior such as hesitation, laughter, or whispering. Keep this intent provider-neutral. A Voice Renderer translates it into the selected local or cloud backend's controls and degrades gracefully when capabilities are absent.
+Represent semantic performance intent separately from the canonical script, voice
+identity, and production treatment. Illustrative intent may describe emotion, energy,
+pace, delivery style, emphasis, attitude, or optional paralinguistic behavior. Those
+examples are not an approved schema. A recognizable host voice should be able to
+remain the same identity while performing warmly, deadpan, irritated, excited,
+intimately, conspiratorially, or in announcer style.
 
-Actual playback gain, compression, filtering, and position in the mix remain Audio Production responsibilities. Turning down ordinary speech is not whispering; amplifying it is not shouting.
+A provider-neutral Voice Renderer translates supported intent into a selected local
+or optional cloud backend and reports or gracefully degrades unsupported capabilities.
+Backend-specific punctuation or script adjustment may remain a renderer technique,
+but deliberately mangled text should not be the authoritative representation of
+emotion.
 
-**Problem or opportunity**
+**Prepared imaging versus runtime speech**
 
-The same words can become different radio objects through performance. Binding the scene schema to one provider would make future improvements expensive and brittle.
+Reusable station imaging can render offline, audition several takes, use a heavier
+expressive backend, receive production treatment, and store the accepted result as a
+local asset. Dynamic host commentary usually renders near airtime and must respect
+latency, resources, local-first policy, and Safe Playback. The two paths need not use
+the same renderer or provider.
 
-**Illustrative behavior**
+**Responsibility boundaries**
 
-*Illustrative only:* a caller line requests lazy, smug, medium-slow delivery; an ID requests controlled, ominous intensity. Nicole may provide a natural baseline while a richer backend realizes more of the intent.
+- Creative text determines what is said.
+- Voice identity determines who is recognizably speaking.
+- Voice Direction describes how the line should be performed.
+- The renderer realizes the supported performance.
+- Audio Production handles level matching, compression, EQ/filtering, saturation,
+  spatial treatment, FX, music placement, and ducking.
 
-**Possible system responsibility**
-
-- Creative Direction / LLM
-- Voice Direction
-- TTS / Voice Renderer
-- Audio Production / Mixing
-
-**AI responsibility**
-
-AI may propose performance intent. Local or cloud TTS realizes it within declared capabilities.
-
-**Runtime or prepared**
-
-Hybrid; ordinary lines may render near runtime, while important IDs/ads may be produced and curated ahead of time.
+Turning down ordinary speech is not whispering; amplifying it is not shouting.
 
 **Dependencies**
 
-- Provider-neutral direction vocabulary.
-- Renderer capability reporting.
-- Consistent character voice identity.
+- Provider-neutral direction vocabulary and renderer capability reporting.
+- Stable voice identity across useful performance ranges.
+- CAP-01 capability awareness, PROD-01 production, and comparative evaluation.
 
-**Risks and tradeoffs**
+**Risks and open questions**
 
-- Expressive instructions are not guaranteed to be followed.
-- Backend changes may alter character identity.
-- Rich voice APIs introduce cost, privacy, and latency.
+- Expressive instructions may be ignored or interpreted inconsistently.
+- Backend changes may alter identity, cost, privacy, latency, language quality, or
+  licensing suitability.
+- Which minimum vocabulary transfers usefully across providers?
+- Which unsupported directions degrade safely, and which make a prepared take
+  unacceptable?
 
-**Open questions**
-
-- What minimum direction vocabulary is useful across providers?
-- Which failures are acceptable degradation versus scene rejection?
-- How is a stable identity preserved across local and cloud voices?
-
-**Related proposals**
-
-VOICE-02, PROD-01, PROD-03, AI-01, LOCAL-01, RESEARCH-02.
-
-**Conversation conclusion**
-
-Explicitly preferred architectural principle. Current Nicole remains a successful baseline, not a criticism target; expressive voice is a future replaceable capability.
+**Related proposals:** VOICE-02, PROD-01, PROD-03, CAP-01, AI-01, LOCAL-01,
+ASSET-01, RESEARCH-02.<br>
+**Conversation conclusion:** Explicitly preferred provider-neutral principle. Nicole
+remains a successful baseline rather than a permanent ceiling; future model choices
+require empirical comparison and no named provider is approved here.
 
 ### [VOICE-02] Bounded multi-voice cast and acoustic role separation
 
@@ -1235,65 +1252,75 @@ Explicitly preferred conceptual grammar. Commercials are transition-owned replac
 
 ### [PROD-03] Sonic identity and offline Station Sound Packs
 
-**Status:** Unapproved post-M8 proposal  
-**Area:** Production / branding  
-**Discussion maturity:** Developed concept  
-**Origin:** Steve proposed a recognizable combination of musical cues and announcer performance; discussion rejected generating an unrelated jingle every time.
+**Status:** Unapproved post-M8 proposal<br>
+**Area:** Production / branding<br>
+**Discussion maturity:** Developed concept<br>
+**Origin:** Steve proposed a recognizable combination of musical cues and announcer
+performance; later discussion clarified a progressive setup workflow instead of
+generating unrelated jingles repeatedly or exposing audio-engineering controls.
 
 **Proposal**
 
-Create a coherent Station Sound Pack: a master sonic motif, full IDs, short stings, transition sweeps, caller/commercial bumpers, internal beds, branded FX, and recurring announcer profiles. Recognition should come from controlled repetition and related variations, not endless novelty.
+Create station sonic identity during initial setup, customization, an explicit later
+imaging refresh, or another offline preparation stage—not normally while music is
+playing. A plausible progressive workflow is:
 
-AI-generated music or sound may help produce candidates during setup/customization or another offline stage. Selected assets should be curated, stored locally, and played as ordinary audio at runtime. Live music generation while gaming was not preferred.
+1. prepare a very small number of meaningful master identities or IDs;
+2. let the listener audition subjective alternatives such as A or B;
+3. select one direction as the station's sonic DNA;
+4. derive a coherent family of related assets;
+5. curate and store accepted results locally;
+6. let runtime treat them as ordinary reusable typed assets.
 
-**Problem or opportunity**
+The listener chooses what sounds like the station. They should not normally configure
+compressor ratios, EQ curves, reverb, pitch contours, or loudness targets.
 
-Station identity can persist acoustically even when Zoya is silent. Pre-produced assets provide consistent quality, low runtime cost, and recognition.
+A future Sound Pack might contain a master motif, full and micro IDs, stings,
+bumpers, sweeps, beds, branded FX, announcer profiles, and intensity or late-night
+variants. This list is illustrative, not a frozen v1 schema. Recognition should come
+from controlled repetition and related variation rather than endless novelty.
 
-**Illustrative behavior**
+**Default, custom, and shared material**
 
-*Illustrative only:* one motif appears as a full guitar-led ID, a one-second sting, a piano variation, a phone bumper, and a commercial transition. The exact creative example is not a required sound.
+A curated default Zoya Radio pack may be reusable across users. Custom generation is
+more relevant when station name, identity, locale, host, or sound changes. Generic,
+properly licensed production utilities—rings, paper, doors, room tone, crowds,
+vinyl/radio noise, impacts—may be shared; motifs, station-name performances,
+distinctive stings, and branded cues are more likely station-specific. Localization
+should inform identity without forcing stereotypes.
 
-**Possible system responsibility**
+**Preparation and runtime boundary**
 
-- Offline Content Preparation
-- Human curation
-- Audio Production / Mixing
-- Scheduling / Anti-Annoyance
+Offline creation may use local tools, optional services, human production, or
+user-supplied assets. Candidates may take longer, produce multiple takes, and use
+different voice/audio systems from runtime commentary. Once accepted, scheduling
+mainly cares that an asset is valid, available, typed, appropriate, and safe—not how
+it was made. Provenance, licence/consent information where relevant, and master-to-
+variant relationships belong to preparation/library management through ASSET-01.
 
-**AI responsibility**
-
-Optional offline AI generation. Runtime selection needs no AI.
-
-**Runtime or prepared**
-
-Produced entirely ahead of time; selected live from prepared assets.
+An explicit future “Refresh Station Imaging” workflow may add variants while
+preserving recognizable continuity rather than replacing the identity blindly.
 
 **Dependencies**
 
-- Asset creation/selection workflow.
-- Rights/licensing clarity.
-- PROD-01 and imaging cadence.
+- Candidate audition/selection and asset-library workflow.
+- Rights, consent, provenance, local storage, loudness QA, and fatigue evaluation.
+- PROD-01, VOICE-01/02, ASSET-01, CAP-01, and imaging cadence.
 
-**Risks and tradeoffs**
+**Risks and open questions**
 
-- Generative-audio workloads can be heavy and rights may be unclear.
-- Poorly related variants weaken identity.
-- Too much imaging becomes commercial-radio clutter.
+- Generative workloads may be heavy and licence/distribution suitability unclear.
+- Weakly related variants dilute identity; too much imaging becomes clutter.
+- Is one curated default pack sufficient initially?
+- How much customization is useful without turning station setup into a production
+  console?
+- How should motif continuity survive later refreshes?
 
-**Open questions**
-
-- Is one default pack enough initially, or is customization central?
-- How are assets evaluated for loudness, recognition, and fatigue?
-- Which parts may be user-supplied?
-
-**Related proposals**
-
-ARCH-03, RADIO-01, VOICE-01, VOICE-02, PROD-01, LOCAL-01, UI-01.
-
-**Conversation conclusion**
-
-Preferred future production model: curated, recognizable, reusable, and offline—not procedurally regenerated during ordinary listening.
+**Related proposals:** ARCH-03, RADIO-01, VOICE-01/02, PROD-01, LOCAL-01, UI-01,
+CONFIG-01, CAP-01, ASSET-01.<br>
+**Conversation conclusion:** Preferred future model: progressive, curated,
+recognizable, reusable, provider-neutral, and offline. It is product vision, not an
+approved provider, asset schema, or implementation task.
 
 ### [FORMAT-01] Fictional commercials and recurring advertisers
 
@@ -1761,9 +1788,10 @@ Live configuration over prepared profiles.
 
 **Dependencies**
 
-- The separately approved M8 contract and, after acceptance, the actual checkpointed interface if that contract includes one; this intake assumes no pre-existing configuration baseline for M8.
+- The accepted checkpointed interface as the current baseline; canonical documents govern what it actually provides.
+- CONFIG-01 as the future station definition independent of screens.
 - Clear mapping from user concepts to internal rules.
-- Transparent data deletion and API-cost behavior.
+- Transparent data deletion, privacy, network, and optional API-cost behavior.
 
 **Risks and tradeoffs**
 
@@ -1773,7 +1801,7 @@ Live configuration over prepared profiles.
 
 - Which settings belong in ordinary setup versus advanced configuration?
 - Is “Host presence” enough, or are content-type toggles also essential?
-- If the future bounded M8 contract includes controls, which accepted checkpointed controls later overlap this proposal?
+- Which accepted M8 controls should remain unchanged, and which future concepts belong only in setup or advanced configuration?
 
 **Related proposals**
 
@@ -1781,7 +1809,7 @@ RADIO-01, HOST-01, AI-01, FORMAT-01/02/03, CONTEXT-01/02/03, LOCAL-01.
 
 **Conversation conclusion**
 
-User control was preferred in Brainstorming, but neither an exact control set nor an M8 UI is approved. Post-M8 review must examine the accepted M8 result—if its bounded contract includes an interface—before suggesting additions.
+User control was preferred in Brainstorming. M8 now supplies the accepted current interface baseline, while every additional control or setup concept in this card remains unapproved and must be judged against that real baseline.
 
 ### [RESEARCH-01] Empirical radio-production research programme
 
@@ -1902,82 +1930,305 @@ AI-01, VOICE-01, RADIO-01/02/04, KNOWLEDGE-01, LOCAL-01, UI-01.
 
 Experiment first. No current backend should be treated as a permanent ceiling or discarded without comparative evidence.
 
-### [WORKFLOW-01] Post-M8 checkpoint, consolidation, and role-separated workflow
+### Supporting-layer architecture gap audit
 
-**Status:** Unapproved post-M8 proposal  
-**Area:** Workflow  
-**Discussion maturity:** Developed concept  
-**Origin:** After extensive brainstorming and research, the discussion preferred first defining and approving a bounded M8 contract, then implementing and manually accepting it before pausing to reconcile future structure. This remains an unapproved workflow proposal.
+The cards below surround the already-developed Radio Engine rather than replace it.
+The gap review considered SESSION-01, CAP-01, CONFIG-01, TRUST-01, and OBS-01 the
+most foundational concerns. That is a review priority signal only, not roadmap order
+or implementation authorization.
+
+### [SESSION-01] Listening Session Lifecycle
+
+**Status:** Unapproved post-M8 proposal<br>
+**Area:** Product contract / state<br>
+**Discussion maturity:** Foundational architecture gap<br>
+**Origin:** Session memory, mood, habits, cooldowns, chains, and later memory promotion all depend on a session identity, but process lifetime is not necessarily the right definition.
 
 **Proposal**
 
-First define and approve a bounded M8 contract; then implement and manually accept only that contract. Create a clearly identified known-good Git checkpoint/tag/version, pause implementation instead of inventing M9, and review this intake, the research reports, canonical architecture, and real post-M8 experience. Only then should proposal outcomes be assigned and later architecture or milestones be defined.
+Define deterministic future lifecycle rules for cold start, warm resume, temporary
+pause, prolonged idle, target disappearance and reacquisition, sleep/wake, process
+restart while music continues, crash recovery, long interruption, explicit shutdown,
+expiry, and termination. Exact timeout values remain unresolved.
 
-Organize chats by job rather than feature: durable Project Management, Radio Research, Design/Brainstorming, and task-focused Codex implementation. Preserve the evidence flow: raw reference → Research findings → Design interpretation → Steve/Project Management decision → implementation later. The local repository remains canonical; uploaded project files are snapshots unless explicitly maintained otherwise.
+Session identity may constrain scheduling, temporary memory, repetition detection,
+moods, chains, cooldowns, research relevance, and durable-memory promotion. This
+card defines the missing responsibility; it does not claim the current process
+lifetime is wrong or prescribe persistence.
 
-**Problem or opportunity**
+**Related proposals:** MEMORY-01/02, RADIO-01/04, ARCH-02, DATA-01, OBS-01.<br>
+**Review conclusion:** Foundational gap; decide semantics before session-dependent
+features multiply.
 
-This avoids two failures: treating M8 as the end of all future potential, and using unapproved post-M8 proposals to define or endlessly expand the still-uncontracted M8 gate.
+### [CAP-01] Runtime Capability Registry and graceful degradation
 
-**Illustrative behavior**
+**Status:** Unapproved post-M8 proposal<br>
+**Area:** Product contract / capabilities<br>
+**Discussion maturity:** Foundational architecture gap<br>
+**Origin:** Future formats may assume models, languages, voices, FX, Sound Packs,
+retrieval, providers, or hardware capacity that are not present on every installation.
 
-*Illustrative only:* no separate chat for each caller, memory topic, commercial, or voice. Research Work cannot change roadmap status; Brainstorming cannot authorize implementation; Codex receives a later approved narrow task.
+**Proposal**
 
-**Possible system responsibility**
+Maintain a deterministic description of what the installation can actually perform
+now. Creative and production planning should be constrained before expensive work
+begins: supported host languages, distinct voices, expressive delivery, factual
+retrieval, required prepared assets, and scene-rendering capability are illustrative
+questions, not a frozen schema.
 
-- Human project governance
-- Project Management / Work
-- Radio Research / Research Work
-- Canonical repository documentation
+Unsupported plans should degrade to simpler supported material or silence. The card
+does not select providers, define an API, or allow availability to create airtime
+rights.
 
-**AI responsibility**
+**Related proposals:** AI-01, VOICE-01/02, PROD-01/03, LOCAL-01, RESOURCE-01,
+CONFIG-01.<br>
+**Review conclusion:** Foundational gap; system-wide capability awareness is broader
+than any one renderer's fallback behavior.
 
-No product-runtime AI. These are collaboration and decision controls.
+### [CONFIG-01] Versioned Station / Listener Profile Model
 
-**Runtime or prepared**
+**Status:** Unapproved post-M8 proposal<br>
+**Area:** Product contract / configuration<br>
+**Discussion maturity:** Foundational architecture gap<br>
+**Origin:** UI controls can edit a station, but they are not themselves the canonical
+station definition.
 
-Offline workflow.
+**Proposal**
 
-**Dependencies**
+Define a future validated, versioned profile model independent of the UI. Conceptual
+content may include station, listener, host, language, locale, Station Sound, Host
+Presence, format policy, editorial boundaries, voice/provider policy, factual
+enrichment and network permissions, memory policy, and Sound Pack selection.
 
-- A separately approved bounded M8 contract.
-- M8 implementation and manual acceptance against that contract.
-- A reliable known-good Git checkpoint.
-- Access to canonical repository documentation.
-- Distilled research and this intake.
+Future lifecycle concerns include defaults, validation, migration, unavailable
+optional capabilities, old-profile compatibility, and possible import/export or
+backup. This card deliberately does not choose a schema, storage technology, or final
+UI. The broader listener experience is described in
+[FUTURE_PERSONAL_STATION_VISION.md](FUTURE_PERSONAL_STATION_VISION.md).
 
-**Risks and tradeoffs**
+**Related proposals:** UI-01, LOCAL-01, POLICY-01, CAP-01, DATA-01, PROD-03.<br>
+**Review conclusion:** Foundational gap; configuration must outlive any particular
+screen layout.
 
-- A long consolidation can become architecture theatre.
-- Uploaded snapshots may drift from the repository.
-- “Second-generation architecture” language may tempt a rewrite before the smallest change is understood.
+### [TRUST-01] Untrusted Content and Instruction Boundary
 
-**Open questions**
+**Status:** Unapproved post-M8 proposal<br>
+**Area:** Trust / safety<br>
+**Discussion maturity:** Foundational architecture gap<br>
+**Origin:** Source-backed facts address truth, but retrieval and user-controlled text
+also create an instruction-boundary problem.
 
-- What exact canonical documents should the review update?
-- Which proposals can be merged or rejected before any new architecture is drawn?
-- How will the checkpoint and later experimental branches be named in the repository?
+**Proposal**
 
-**Related proposals**
+Treat Windows metadata, listener-entered text, web/research material, news, evidence
+packets, retrieved documents, memories, station mythology, and other external text as
+data—not governing instructions. Webpages cannot redefine Zoya's system authority;
+memories cannot issue executable commands; model output cannot directly control
+playback, volume, scheduling, or arbitrary system operations.
 
-All proposal cards; especially ARCH-01, RESEARCH-01, RESEARCH-02.
+Deterministic components retain execution and safety authority. Any future
+AI-proposed operational intent should cross a constrained, typed validation boundary
+rather than become arbitrary executable instruction.
 
-**Conversation conclusion**
+**Related proposals:** KNOWLEDGE-01/02, AI-01, ARCH-01, CONFIG-01, DATA-01,
+POLICY-01.<br>
+**Review conclusion:** Foundational safety gap; factual support and instruction trust
+are separate questions.
 
-Explicitly preferred in Brainstorming: define and approve a bounded M8 contract; implement and manually accept M8; checkpoint; stop implementation; review the intake, research, architecture, and experience; assign outcomes; only then define later architecture or milestones. It is not an approved project decision or permission to assign work in this intake.
+### [OBS-01] Editorial Decision Trace / Radio Explainability
+
+**Status:** Unapproved post-M8 proposal<br>
+**Area:** Runtime operations / evaluation<br>
+**Discussion maturity:** Foundational architecture gap<br>
+**Origin:** Execution logs can describe phases, but a richer scheduler must also
+explain why an opportunity aired, deferred, failed, or resolved to silence.
+
+**Proposal**
+
+Record a local-only structured editorial trace: opportunity, candidate formats,
+eligibility, cooldown/anti-annoyance exclusions, relevant evidence or memory
+references, capability/resource exclusions, selected format or silence, preparation
+result, safety veto, and final aired/discarded/deferred outcome.
+
+This is deterministic decision evidence for tuning, debugging, and qualitative
+evaluation. It is not remote telemetry, surveillance analytics, or disclosure of a
+model's private chain-of-thought.
+
+**Related proposals:** RADIO-01, ARCH-02, RESEARCH-02, RESOURCE-01, FEEDBACK-01.<br>
+**Review conclusion:** Foundational operational gap; reasons should be concise,
+structured, and understandable without pretending to expose hidden reasoning.
+
+### [RESOURCE-01] Preparation Budget / Runtime Quality Governor
+
+**Status:** Unapproved post-M8 proposal<br>
+**Area:** Runtime operations / resources<br>
+**Discussion maturity:** Architecture gap<br>
+**Origin:** Local-first preparation must balance quality, gaming impact, scene
+complexity, and the time remaining before a safe opportunity disappears.
+
+**Proposal**
+
+A deterministic future governor may choose a reasonable quality tier from remaining
+preparation time, expected model/TTS cost, multi-voice complexity, current resource
+policy or pressure, available local/cloud capabilities, and simpler fallback formats.
+It should decide what is worth attempting before creative work begins.
+
+No exact CPU/GPU thresholds or algorithms are proposed. Preparation cost never earns
+airtime; a missed deadline still permits abandonment or silence.
+
+**Related proposals:** CAP-01, AI-01, VOICE-01/02, PROD-01, ARCH-02, RADIO-01.<br>
+**Review conclusion:** Important when richer production arrives; benchmark before
+turning it into scheduler policy.
+
+### [DATA-01] Persistent Data Lifecycle, Migration, and Recovery
+
+**Status:** Unapproved post-M8 proposal<br>
+**Area:** Trust / persistence<br>
+**Discussion maturity:** Architecture gap<br>
+**Origin:** Durable memory, knowledge caches, profiles, recurring entities, and
+prepared assets introduce infrastructure concerns beyond semantic content expiry.
+
+**Proposal**
+
+Future persistent storage should account for atomic writes, schema migration,
+cross-version compatibility, corruption detection and safe fallback, interrupted
+upgrade recovery, orphaned record/asset cleanup, cache cleanup, and possible
+backup/export/delete-all operations.
+
+This responsibility is distinct from ARCH-02: a commercial can be semantically stale
+even when stored perfectly, while valid content can be lost through storage failure.
+No database or file format is selected here.
+
+**Related proposals:** ARCH-02, MEMORY-02, KNOWLEDGE-02, CONFIG-01, ASSET-01,
+FEEDBACK-01.<br>
+**Review conclusion:** Becomes necessary before durable systems become user-valued
+state.
+
+### [ASSET-01] Creative Asset Manifest and Provenance
+
+**Status:** Unapproved post-M8 proposal<br>
+**Area:** Trust / assets<br>
+**Discussion maturity:** Architecture gap<br>
+**Origin:** Future production may retain IDs, jingles, beds, FX, voices, commercial
+music, generated audio, human recordings, user assets, and Sound Pack variants.
+
+**Proposal**
+
+Preserve enough future asset metadata to understand origin, creator/provider,
+generated or human-made status, licence/consent and redistribution status where
+relevant, station/pack association, version, and useful derivation/processing history.
+The exact manifest is unresolved.
+
+This complements rather than duplicates ARCH-03 typed inventory and PROD-03 Sound
+Packs: typing says what an asset can do; provenance says what it is, where it came
+from, and how it may be used.
+
+**Related proposals:** ARCH-03, PROD-01/03, VOICE-02, DATA-01, FORMAT-01/02.<br>
+**Review conclusion:** Important before generated or distributable creative
+libraries grow.
+
+### [POLICY-01] Station Editorial Policy
+
+**Status:** Unapproved post-M8 proposal<br>
+**Area:** Product contract / editorial safety<br>
+**Discussion maturity:** Architecture gap<br>
+**Origin:** Host personality does not reliably constrain every caller, commercial,
+ID, story, deterministic template, or other station format.
+
+**Proposal**
+
+Define one station-wide editorial-policy layer capable of constraining all formats.
+Illustrative dimensions include profanity, sexual or graphic content, treatment of
+religion, listener teasing, family/child-safe operation, and topic-specific respect
+boundaries. These are examples, not selected defaults or a universal morality model.
+
+Structured policy should guide creative components without becoming a raw system
+prompt editor or weakening deterministic authority.
+
+**Related proposals:** HOST-01, FORMAT-01/02, CONFIG-01, TRUST-01, LOCAL-01,
+[future personal-station vision](FUTURE_PERSONAL_STATION_VISION.md).<br>
+**Review conclusion:** Apply editorial boundaries consistently across the station,
+not by copying fragile prose into every prompt.
+
+### [FEEDBACK-01] Listener Corrections and Preference Signals
+
+**Status:** Unapproved post-M8 proposal<br>
+**Area:** Runtime evaluation / personalization<br>
+**Discussion maturity:** Lower-priority architecture gap<br>
+**Origin:** A mature personal station may need direct corrections and preferences
+without converting all feedback into permanent free-form prompt text.
+
+**Proposal**
+
+Potential future signals include good, too long, do not repeat, wrong fact, caller is
+annoying, more/less like this, too loud, and retire this recurring joke. Useful input
+should become inspectable structured signals with suitable scope, retention, editing,
+and deletion—not surveillance analytics or online engagement scoring.
+
+This card does not determine whether feedback adjusts scheduling, memory, knowledge,
+production, or profiles; those effects require explicit policy.
+
+**Related proposals:** MEMORY-01/02, KNOWLEDGE-01/02, OBS-01, CONFIG-01, DATA-01.<br>
+**Review conclusion:** Preserve as a later personalization concern after the governed
+state it would modify is understood.
+
+### [WORKFLOW-01] Post-M8 checkpoint, consolidation, and role-separated workflow
+
+**Status:** Unapproved proposal-history record; workflow partly completed<br>
+**Area:** Workflow<br>
+**Discussion maturity:** Developed concept with historical steps completed<br>
+**Origin:** Brainstorming preferred a bounded M8 contract, manual acceptance, a
+known-good checkpoint, and a deliberate pause before broader planning.
+
+**Proposal and current position**
+
+The historical sequence was followed: M8 received a bounded contract, was implemented
+and manually accepted, and a checkpoint was created. M9 subsequently explored
+commentary enrichment and closed as prototype evidence without becoming accepted
+runtime behavior. The project is now in the review and consolidation stage this card
+anticipated.
+
+Continue organizing work by job rather than feature: durable Project Management,
+Radio Research, Design/Brainstorming, and bounded Codex implementation tasks. Preserve
+the evidence flow: raw reference → research findings → design interpretation →
+Steve/canonical project decision → bounded implementation later. The local repository
+remains authoritative; copied chat or project files are snapshots unless deliberately
+maintained.
+
+**Boundary**
+
+Review may merge, reject, research, experiment with, or recommend proposals. It does
+not approve them. Accepted direction must be promoted explicitly into canonical
+decisions and roadmap documentation before a later contract or implementation task.
+
+**Risks and open questions**
+
+- Consolidation can become architecture theatre instead of producing decisions.
+- “Second-generation architecture” language can tempt a rewrite before bounded needs
+  are understood.
+- Which proposal groups should be accepted, researched, parked, or rejected first?
+
+**Related proposals:** All cards; especially ARCH-01, RESEARCH-01/02, SESSION-01,
+CONFIG-01, and OBS-01.<br>
+**Conversation conclusion:** The checkpoint-and-pause boundary served its purpose.
+The active next activity is explicit review and roadmap formation, not silent
+implementation from this intake.
 
 ## 6. Proposed Parameters and User Controls
 
-“Current status” below records how the item appeared in the discussion, not current repository truth. No existing or approved M8 interface is assumed. After M8 is separately contracted, implemented, accepted, and checkpointed, the review may compare this table with the actual result before proposing additions.
+“Current status” below distinguishes accepted baseline concepts from later Brainstorming proposals; canonical implementation documents remain authoritative. The table is now an input to review, not an assumed interface specification.
 
 | Parameter | Purpose | Candidate values or behavior | Current status | Dependencies | Open questions |
 |---|---|---|---|---|---|
-| Start / stop | Operate the radio safely | Running / stopped | Brainstorming candidate for a possible bounded M8 contract; not approved | Separately approved M8 contract, if included | Should this be contracted for M8 or considered later? |
-| Silent Mode | Stop host output while observation continues | On / off; missed opportunities do not accumulate | Historically demonstrated; Brainstorming suggested a future user-facing control, not an approved M8 requirement | Scheduler and any separately approved interface contract | Does it silence IDs, deterministic lines, calls, and ads equally? |
+| Start / stop | Operate the radio safely | Running / stopped | Accepted baseline concept; canonical M8/current docs govern exact behavior | Current interface and Safe Playback | What later setup, diagnostics, or recovery states need separate treatment? |
+| Silent Mode | Stop host output while observation continues | On / off; missed opportunities do not accumulate | Accepted baseline concept; canonical M8/current docs govern exact behavior | Current interface and scheduler | Should future IDs, calls, ads, and other formats obey one silence policy or typed policies? |
 | Temporary “shut up” | Suppress speech for a period | 15/30/60 minutes or until re-enabled | Future user control discussed | Scheduler / clock | Presets or free duration? |
 | Say something now | Request a host comment | Button/hotkey; still safety-checked | Discussed for UI | Opportunity system | Should it override cadence but not safety/content validity? |
 | Five Queens story | Request private-context interlude | Button/hotkey; separate from automatic 5Q use | Discussed; feature deferred | FORMAT-03 | Should it pause music or wait for a boundary? |
 | Clear history | Delete recent session/comment history | Clear session; possible separate durable-memory controls | Historically demonstrated in bounded form | MEMORY-01/02 | Which layers are cleared? |
+| Station / listener profile | Preserve configuration independently of UI | Validated, versioned profile | Future architecture-gap proposal | CONFIG-01, DATA-01, CAP-01 | Which concepts belong in one profile versus referenced packs/policies? |
+| Editorial policy | Apply station-wide content boundaries | Structured station policy | Future architecture-gap proposal | POLICY-01, CONFIG-01, TRUST-01 | Which dimensions are useful without creating a morality-settings maze? |
+| Listener feedback | Correct or shape station behavior | Structured, inspectable signals | Lower-priority future proposal | FEEDBACK-01, OBS-01, MEMORY-02 | Which feedback changes a session, a profile, knowledge, or durable memory? |
 | Listener name | Natural direct address | User-provided or blank | Explicitly discussed | Host prompt/localization | How often may it be used? |
 | Host name / identity | Choose station-host identity | Zoya; possible future alternatives | Future advanced option; not approved | LOCAL-01 | One host across locales or distinct hosts? |
 | Language | Output language | Supported-language list | Directly discussed | Templates, prompts, voices | What constitutes supported? |
@@ -2074,11 +2325,11 @@ The relationships below are dependencies, not an implementation sequence.
 
 ```mermaid
 flowchart TD
-    M8C["Separately approved bounded M8 contract"] --> M8A["Implemented and manually accepted M8"]
-    M8A --> CHECKPOINT["Known-good Git checkpoint"]
-    CHECKPOINT --> REVIEW["Post-M8 proposal and evidence review"]
-    REVIEW --> UI["Possible later UI profiles and optional providers"]
-    OBS["Media Observation"] --> STATE["Session State"]
+    M8["Accepted M8 checkpoint"] --> REVIEW["Current proposal and evidence review"]
+    M9["Concluded M9 prototype evidence"] --> REVIEW
+    REVIEW --> DECIDE["Explicit Steve decisions and canonical promotion"]
+
+    OBSERVE["Media Observation"] --> STATE["Session State"]
     STATE --> OPP["Opportunity Analysis"]
     MEM["Memory and Context Retrieval"] --> OPP
     FACT["Factual and optional context providers"] --> MEM
@@ -2087,7 +2338,7 @@ flowchart TD
     SCHED -->|prepared or deterministic unit| SCENE["Scene Compilation"]
     DIR --> VOICE["Voice Direction and Rendering"]
     VOICE --> SCENE
-    ASSETS["Prepared FX, IDs, beds, sound packs"] --> SCENE
+    ASSETS["Prepared FX, IDs, beds, Sound Packs"] --> SCENE
     SCENE --> SAFE["Safety Validation"]
     SAFE --> MIX["Audio Production and external-music control"]
     MIX --> STATE
@@ -2095,7 +2346,10 @@ flowchart TD
 
 ### Major dependency groups
 
-- **M8 governance boundary:** first approve a bounded M8 contract, implement and manually accept it, then checkpoint. UI-01, LOCAL-01, optional location, backend selection, content-type enablement, and privacy controls remain unapproved post-M8 proposals unless Steve separately includes any item in that future contract.
+- **Current governance boundary:** M8 is accepted and M9 exploration is concluded. Review may now recommend outcomes, but unpromoted proposal material remains unauthorized until Steve records it through canonical decisions, roadmap scope, and a bounded task or contract.
+- **Product contract / identity support:** SESSION-01, CONFIG-01, CAP-01, and POLICY-01 define future station/session meaning and available behavior around the engine.
+- **Trust / persistence support:** TRUST-01, DATA-01, and ASSET-01 address instruction authority, durable storage integrity, and creative-asset provenance.
+- **Runtime operations / evaluation support:** RESOURCE-01, OBS-01, and FEEDBACK-01 address preparation budgets, explainable editorial decisions, and structured listener input.
 - **Richer session state:** RADIO-01, HOST-02, RADIO-04, MEMORY-02, and relevance-based knowledge all depend on reliable observed history.
 - **Common scheduling foundation:** IDs, deterministic announcements, creative comments, calls, ads, time, weather, and news should not become independent loops competing for airtime.
 - **Pre-production tools:** PROD-03, recurring ads, branded FX, and some voice roles require creation, curation, loudness QA, and local storage before runtime.
@@ -2187,8 +2441,8 @@ flowchart TD
 | Category frequency tied to number of assets | More content should increase variety, not editorial frequency | Separate inventory size from cadence |
 | Each time/weather/news source becomes a standalone feature loop | Competing loops would create bloat and airtime pressure | Common context eligibility and one scheduler |
 | Separate chat for every subsystem/topic | Would fragment context and decisions | Durable chats by role: Project Management, Research, Brainstorming; task-focused Codex |
-| Use this intake to define M8 or feed post-M8 architecture into M8 implementation | Creates scope pressure and risks canonizing untested ideas before a bounded contract exists | Approve a bounded M8 contract, implement and accept only it, checkpoint, pause, and review proposals afterward |
-| Immediately define “M9” or a second implementation phase | Architecture and proposal outcomes are not yet agreed | Intake and post-M8 design review first |
+| Use this intake to retroactively enlarge M8 or directly authorize later implementation | Proposal history is not accepted scope | M8 remained bounded and accepted separately; now promote only explicit review outcomes through canonical documents |
+| Define a new implementation milestone merely because an exploration ended | Architecture and proposal outcomes are not yet agreed | Complete intake/vision review and explicit roadmap formation before another bounded implementation milestone |
 | Copy GTA scripts/characters/branding because the grammar is useful | Copyright and product-identity conflict | Extract only abstract production and behavioral patterns |
 
 ## 14. Unresolved Questions for the Post-M8 Design Review
@@ -2244,7 +2498,7 @@ flowchart TD
 
 ### UI/configuration
 
-- If the bounded M8 contract includes controls, which accepted checkpointed controls overlap these proposals?
+- Which accepted M8 controls already satisfy part of these proposals, and which future setup/configuration concepts remain genuinely missing?
 - Which belong in first-run setup, ordinary settings, or an advanced panel?
 - Is one Host Presence profile sufficient for ordinary users?
 - How should API cost, privacy, location, history, and deletion be communicated?
@@ -2310,4 +2564,14 @@ flowchart TD
 | UI-01 | Simple controls | Early Brainstorming suggestions for possible M8 controls—not approved requirements—plus later Low/Normal/High host-presence discussion and warning against ten knobs | K-Rose/K-DST show frequency slider inadequacy | RADIO-01, AI-01, LOCAL-01 |
 | RESEARCH-01 | Radio research | Complete GTA archive discovery; Research Work methodology; “grammar, not content” discipline | K-Rose, K-DST, V-Rock, RadioSanAndreas | RADIO-01/02, WORKFLOW-01 |
 | RESEARCH-02 | Comparative experiments | Repeated calls to compare prompts/models/TTS/resources empirically before assuming limits | M3–M7 tests and research caveats | AI-01, VOICE-01, RADIO-01 |
-| WORKFLOW-01 | Post-M8 consolidation | Brainstorming preference: define/approve a bounded M8 contract; implement/manual accept; checkpoint; stop; reconcile research/design/experience; assign outcomes; only then define later work | All reports as inputs, not decisions | All proposals |
+| SESSION-01 | Listening session lifecycle | Gap audit found no deterministic definition spanning resume, idle, target loss, sleep, restart, crash, and shutdown | Architecture-gap review | MEMORY-01/02, RADIO-01, DATA-01 |
+| CAP-01 | Capability registry | Gap audit found plans could assume unavailable models, voices, languages, retrieval, assets, or resources | Architecture-gap review | VOICE-01, PROD-03, RESOURCE-01, CONFIG-01 |
+| CONFIG-01 | Versioned station/listener profile | Future-station discussion separated canonical configuration from whichever UI edits it | Future personal-station vision | UI-01, LOCAL-01, POLICY-01, DATA-01 |
+| TRUST-01 | Untrusted-content boundary | Web enrichment and user/retrieved text exposed instruction trust as separate from factual support | M9 enrichment evidence; architecture-gap review | KNOWLEDGE-01/02, AI-01, CONFIG-01 |
+| OBS-01 | Editorial decision trace | Manual evaluations needed reasons for selection, silence, discard, fallback, and safety veto beyond phase logs | M9 evaluation experience; architecture-gap review | RADIO-01, RESOURCE-01, FEEDBACK-01 |
+| RESOURCE-01 | Preparation budget | Local-first preparation, richer scenes, and missed airtime require a quality/deadline decision before work begins | M3-M9 latency/resource experience | CAP-01, AI-01, VOICE-01, ARCH-02 |
+| DATA-01 | Persistent data lifecycle | Durable memories, caches, profiles, and assets add migration/recovery concerns distinct from semantic expiry | Architecture-gap review | ARCH-02, MEMORY-02, CONFIG-01, ASSET-01 |
+| ASSET-01 | Creative asset provenance | Sound Packs and prepared voices/FX need origin, rights, association, version, and derivation context | Sonic-identity refinement | ARCH-03, PROD-03, DATA-01 |
+| POLICY-01 | Station editorial policy | Illustrative station designs showed boundaries must apply beyond one host prompt to every format | Future personal-station vision | HOST-01, FORMAT-01/02, CONFIG-01, TRUST-01 |
+| FEEDBACK-01 | Listener corrections/signals | Personalized radio may need structured correction, retirement, duration, loudness, and preference input | Architecture-gap review | MEMORY-01/02, OBS-01, CONFIG-01 |
+| WORKFLOW-01 | Post-M8 consolidation | Historical checkpoint boundary completed; current stage is evidence/proposal review followed by explicit Steve decisions and canonical promotion | All reports remain inputs, not decisions | All proposals |

@@ -59,10 +59,11 @@ Update this table whenever an accepted implementation commit becomes the new sou
 
 **Supplemental proposal history:**
 
-- [Post-M8 proposal intake](proposals/POST_M8_INTAKE.md)
+- [Post-M8 proposal intake](proposals/POST_M8_INTAKE.md) - unapproved architecture and feature proposal inventory under active review.
+- [Future personal-station vision](proposals/FUTURE_PERSONAL_STATION_VISION.md) - unapproved product-vision and illustrative station-design record; not milestone or implementation scope.
 - [Historical M9B grounded-context integration proposal](proposals/M9B_GROUNDED_CONTEXT_INTEGRATION_DRAFT.md) - promoted into the approved M9B contract on August 15, 2026.
 
-The intake and historical M9B draft preserve proposal material only. They do not govern current implementation or supersede the approved M9B contract. Unpromoted proposal material remains unapproved until Steve explicitly adopts it through the project's decision and roadmap process.
+The intake, future personal-station vision, and historical M9B draft preserve proposal material only. They do not govern current implementation or supersede the approved M9B contract. Unpromoted proposal material remains unapproved until Steve explicitly adopts it through the project's decision and roadmap process.
 
 **Canonical in Git but repository-only in the current shared snapshot:**
 
@@ -88,7 +89,7 @@ Repository-only does not mean non-authoritative. README and the milestone record
 | Approved M9B grounded-context integration scope and staged acceptance gates | [MILESTONE_9B_CONTRACT.md](MILESTONE_9B_CONTRACT.md) |
 | Milestone 9 overall outcome and closure decision | [MILESTONE_9_CLOSURE.md](MILESTONE_9_CLOSURE.md) |
 | External research provenance and status | [RESEARCH_INDEX.md](RESEARCH_INDEX.md) |
-| What the Design / Brainstorming conversation proposed | [POST_M8_INTAKE.md](proposals/POST_M8_INTAKE.md), as a non-authoritative historical intake only |
+| What the Design / Brainstorming conversation proposed | [POST_M8_INTAKE.md](proposals/POST_M8_INTAKE.md) and [FUTURE_PERSONAL_STATION_VISION.md](proposals/FUTURE_PERSONAL_STATION_VISION.md), as non-authoritative proposal/design records only |
 | Milestone-specific manual evidence and regression procedures | Existing `MILESTONE_*_TEST.md` records |
 
 ## Information classes

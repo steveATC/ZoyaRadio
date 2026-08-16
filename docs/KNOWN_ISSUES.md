@@ -16,6 +16,13 @@ This file separates unresolved defects from accepted platform limits and deferre
 - The refresh handling is functionally accepted, but the repeated output is a non-blocking logging-quality defect.
 - Logging reduction was deliberately deferred rather than mixed into the accepted safety repair.
 
+### Firefox GSMTC source identity differs on an invited tester machine
+
+- On Mortorro's external tester machine, package `0.8.0-alpha.1` acquired the Windows global media-session manager and enumerated exactly one Playing session while YouTube Music was playing in Firefox. The session exposed correct metadata for `Simple Man` by Lynyrd Skynyrd, but its raw `SourceAppUserModelId` was `308046B0AF4A39CB` rather than `firefox.exe`.
+- Firefox's **Control media via keyboard, headset or virtual device** setting was enabled and `media.hardwaremediakeys.enabled` was `true`. Zoya therefore reached GSMTC successfully but safely reported `NO FIREFOX TARGET FOUND` because the accepted implementation matches only the literal `firefox.exe` source identifier case-insensitively.
+- This proves a portability defect in the current Firefox GSMTC identity assumption. It does not establish whether `308046B0AF4A39CB` is universal, installation-specific, path-derived, registration-derived, or one of several possible Firefox identities. It also does not establish that a different tester's earlier zero-session result has the same cause.
+- A future repair must discover a positive, bounded Firefox identity rule without accepting unrelated browsers or applications as fallback targets. No magic-string repair, implementation change, M8 reopening, or future milestone is authorized by this observation.
+
 ### `Borrowed Umbrella` grounding defect
 
 - Manual Milestone 4 testing found `qwen3:4b-instruct` sometimes invented `Borrowed Umbrella` for unrelated Cyrillic metadata.

@@ -10,7 +10,7 @@
 | Manual acceptance date | 2026-08-11 |
 | Latest accepted automated result | 178 passed, 0 failed at accepted internal implementation `b56c03d` |
 | Accepted internal packaged baseline | `0.8.0-alpha.1` |
-| Deferred distribution validation | Clean Windows 10/11 and invited private-alpha testing; not blockers to internal development |
+| Deferred distribution validation | Clean Windows 10/11 validation remains incomplete. Invited testing has begun and produced a concrete Firefox GSMTC identity compatibility defect; it is not a blocker to internal development. |
 | Current concluded exploration | Milestone 9, closed as prototype/design evidence; M9B has no final runtime acceptance claim. |
 | Next project step | Project-planning discussion before any future implementation authorization. |
 | Deferred milestone | Milestone 6 |
@@ -41,7 +41,7 @@ Full implemented behavior is in [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.m
 - The original M8A candidate was implemented at `f123ddd9de484de590ba596abf812314b265390c`; the accepted Radio-activity correction is `41b7824201c5c163a0fe0752bd4b3e70c68b9bdc`.
 - Steve manually accepted M8A on August 11, 2026. The accepted evidence and preserved regression procedure are in [MILESTONE_8A_TEST.md](MILESTONE_8A_TEST.md).
 - Steve accepted the extracted M8B `0.8.0-alpha.1` package on August 11, 2026. M8B and Milestone 8 are closed for continued internal development at implementation commit `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf`.
-- Clean Windows 10/11 and invited-tester validation remain pending and deferred as distribution evidence. The accepted internal package is not clean-machine certified, broadly compatible, publicly released, or validated for third-party distribution.
+- Clean Windows 10/11 validation remains pending and deferred as distribution evidence. Invited testing has begun but is incomplete; Mortorro's machine exposed a concrete Firefox GSMTC identity compatibility defect recorded in [KNOWN_ISSUES.md](KNOWN_ISSUES.md). The accepted internal package is not clean-machine certified, broadly compatible, publicly released, or validated for third-party distribution.
 - M8 acceptance did not itself authorize post-M8 work. Steve subsequently approved the bounded M9A and M9C experiments, then explicitly authorized the bounded M9B implementation on August 15, 2026. M9B is now a candidate, not an accepted replacement for the M8 baseline.
 
 ## Milestone 9A candidate status
@@ -88,7 +88,7 @@ Full implemented behavior is in [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.m
 - The neural candidate contains Nicole only and no eSpeak files. Offline preparation passes for ordinary English, punctuation/numbers, repeated preparation/disposal, pre-cancellation, and deliberate Windows fallback. An unusual/OOV sample safely selects Windows TTS when KokoroSharp attempts its absent eSpeak helper.
 - PDBs are retained in ignored private-symbol output and excluded from the tester ZIP. Firefox, Ollama, Qwen, logs, generated audio, user data, and non-x64 native assets are excluded.
 - Automated and package checks produced no audible speech, contacted no real Ollama service, and controlled no browser, media session, playback, or volume.
-- Genuine clean Windows 10 22H2, clean Windows 11, and invited testing remain pending/deferred distribution evidence. See [MILESTONE_8B_TEST.md](MILESTONE_8B_TEST.md).
+- Genuine clean Windows 10 22H2 and clean Windows 11 remain pending/deferred distribution evidence. Invited testing has begun but remains incomplete and has produced the recorded Firefox GSMTC identity compatibility defect. See [MILESTONE_8B_TEST.md](MILESTONE_8B_TEST.md).
 
 ## M8B owner packaged-desktop acceptance
 
@@ -134,7 +134,7 @@ Full implemented behavior is in [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.m
 - Milestone 8 is closed for continued internal development, and `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf` is the latest accepted internal implementation snapshot.
 - M9A was rejected, M9C supplied successful experimental evidence, and M9B supplied bounded integration/safety evidence without final runtime acceptance. Steve concluded M9 as a prototype phase; no further M9 testing or feature work is authorized. The accepted M8 safety baseline remains controlling. See [MILESTONE_9_CLOSURE.md](MILESTONE_9_CLOSURE.md).
 - The next action is project planning: define product areas, roadmap sequencing, and future milestone contracts before code changes begin.
-- Clean-machine and invited-tester checks remain deferred compatibility/distribution evidence. A later defect may require a bounded repair, but missing tester feedback does not block internal development.
+- Clean-machine checks remain deferred compatibility/distribution evidence. Invited testing has begun and already produced one recorded Firefox GSMTC identity compatibility defect; incomplete tester coverage and this unapproved repair do not reopen M8 or block internal development.
 - The earlier 20:49 observer stall remains intermittent, unresolved, and unreproduced by the accepted Firefox-plus-Chrome run.
 - Wrapper-refresh diagnostics are excessively repetitive; this is a deferred non-blocking logging-quality issue.
 - Other accepted limitations and deferred improvements are maintained in [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
