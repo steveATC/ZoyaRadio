@@ -86,7 +86,14 @@ These decisions summarize accepted project rules and rationale already evidenced
 - Clean Windows 10 22H2, clean Windows 11, and invited private-alpha testing remain useful compatibility and distribution evidence but are deliberately deferred and do not block internal feature development.
 - The accepted internal baseline must not be described as clean-machine certified, broadly compatible, publicly released, code-signed, SmartScreen-reputable, or validated for third-party distribution.
 - A later tester failure may require a bounded compatibility or packaging repair; the absence of tester feedback is not evidence of compatibility.
-- M9A was rejected for runtime consideration. M9C is closed as successful experimental evidence. Steve explicitly authorized the bounded M9B implementation on August 15, 2026; M9B is now an implemented candidate awaiting staged owner acceptance, not accepted runtime behavior.
+- M9A was rejected for runtime consideration. M9C is closed as successful experimental evidence. M9B was implemented as a bounded candidate and supplied accepted Gate 2/3 evidence, but did not reach its final audible acceptance requirement.
+
+## Milestone 9 closure
+
+- Steve concluded Milestone 9 on August 15, 2026 as an exploration/prototype phase. This is a closure decision, not an acceptance of M9B as finished runtime behavior.
+- No further M9 Gate 4 test, M9 repair, feature expansion, or runtime promotion is authorized. The implemented M9B candidate is retained unchanged for future product planning; the accepted M8 safety baseline remains controlling.
+- M9 established source-backed-context, stronger-local-model, and safe-delivery evidence, while also establishing that remote metadata availability and current whole-card caching are future product-design concerns. Artist/track fact separation, context selection, source resilience, and a future product role for M9B remain deferred rather than implicitly approved.
+- The detailed outcome is recorded in [MILESTONE_9_CLOSURE.md](MILESTONE_9_CLOSURE.md).
 
 ## Approved Milestone 9A experimental boundaries
 
@@ -129,7 +136,7 @@ These decisions summarize accepted project rules and rationale already evidenced
 - Enrichment failures retain a concise typed private reason identifying the bounded lookup stage, timeout versus HTTP status, safe `Retry-After` availability, and cached-negative status. Raw HTTP bodies, broad retries, and exception dumps remain prohibited.
 - All accepted M8 targeting, scheduling, cancellation, Silent Mode, speech, Firefox-only ducking, exact restoration, shutdown, local-first, and safe-silence invariants remain controlling.
 - Steve accepted the recorded M9B Gate 2 generate-only review on August 15, 2026 with a narrow same-card repetition exception. The exception recognizes that three outputs from each identical song/card amplified repeated templates; it does not relax grounding, hard-discard, repetition-state, fallback, silence, silent-desktop, audible-desktop, or final-acceptance requirements.
-- M9B must pass fake-driven engineering checks, a familiar-track generate-only review, a silent desktop preparation trial, a bounded audible trial, and explicit Steve acceptance. Steve accepted the cumulative silent operational Gate 3 evidence after the documented policy amendment. The latest authorized Gate 4 run safely delivered three enriched comments and three fallback comments, while one 26.3-second enriched preparation failed safely after a delivery-time timeout and exact restoration. It did not meet the five-enriched-delivery requirement; Gate 4 is authorized but paused while Steve decides whether and when to resume it. No intermediate gate alone makes it accepted runtime behavior.
+- M9B passed fake-driven engineering checks, a familiar-track generate-only review, and the revised silent operational Gate 3. The latest authorized Gate 4 run safely delivered three enriched comments and three fallback comments, while one 26.3-second enriched preparation failed safely after a delivery-time timeout and exact restoration. It did not meet the five-enriched-delivery requirement. Steve then concluded M9 without final M9B runtime acceptance; no intermediate gate or retained implementation changes that status.
 
 ## Approved Milestone 8 boundaries
 

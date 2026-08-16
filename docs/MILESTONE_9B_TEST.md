@@ -9,9 +9,7 @@ transition observation, at least one ready candidate, at least one safely suppre
 prepared delivery, no forbidden desktop-media activity, and selected-model unload.
 
 M9B remains an implemented candidate, not passed or accepted runtime behavior. The
-accepted Milestone 8 snapshot remains the safety baseline. Gate 4 is authorized but paused
-pending this bounded live-enrichment repair and Steve's resumed desktop test; final M9B
-acceptance remains outstanding.
+accepted Milestone 8 snapshot remains the safety baseline. Gate 4 is historically recorded as paused pending the bounded live-enrichment repair and Steve's resumed desktop test. Steve subsequently concluded M9 without final M9B acceptance; no further M9 Gate 4 test is authorized. See [MILESTONE_9_CLOSURE.md](MILESTONE_9_CLOSURE.md).
 ## Evaluated artifact
 
 Steve reviewed this exact ignored local artifact set:
@@ -159,7 +157,7 @@ group deduplication, legacy-negative cache invalidation, unsupported collaborati
 and the absence of desktop-media APIs from the enrichment path.
 
 This safe first attempt does not satisfy Gate 4's requirement for five enriched deliveries.
-Gate 4 remains authorized but paused until Steve resumes the same bounded desktop test after
+At that point, Gate 4 remained authorized but paused until Steve resumed the same bounded desktop test after
 this repair. M9B remains unpassed.
 
 ## Gate 4 latest audible run: evidence and paused repair
@@ -198,6 +196,6 @@ speech. It preserves the delivery-time timeout/restoration path as defense in de
 
 The repair's fake-driven verification passed all four Release builds with 0 warnings and 0 errors,
 all four formatting checks, `git diff --check`, and 278 tests with 0 failures. It did not run the
-radio, contact live enrichment/Ollama, produce speech, or alter desktop media. Gate 4 remains
+radio, contact live enrichment/Ollama, produce speech, or alter desktop media. At that point, Gate 4 remained
 incomplete because five successful enriched deliveries have not yet been observed. Steve has paused
 further testing; the next action is Steve's decision whether and when to resume the same bounded

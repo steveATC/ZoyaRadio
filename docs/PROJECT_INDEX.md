@@ -14,7 +14,8 @@ This is the front door to the canonical Zoya Radio documentation. The local Git 
 | Latest accepted automated result | 178 passed, 0 failed at `b56c03d` |
 | Accepted internal packaged baseline | `0.8.0-alpha.1`; owner packaged-desktop acceptance recorded August 11, 2026 |
 | Deferred distribution evidence | Clean Windows 10/11 and invited private-alpha testing; not blockers to internal development |
-| Next project step | M9B Gates 2 and 3 are owner-accepted. Gate 4 is authorized but paused after its latest seven-opportunity run; the bounded text-lifecycle, over-duration, and typed enrichment-diagnostic repair is verified, and Steve must decide whether and when to resume it. Final M9B acceptance remains outstanding. |
+| Current concluded exploration | Milestone 9, closed as prototype/design evidence; M9B Gate 4 was not passed and M9B is not accepted runtime behavior. |
+| Next project step | Project-planning discussion: define product areas, boundaries, roadmap, and future milestones before authorizing implementation. |
 | Snapshot ID | `zoya-radio-2026-08-11-m8-b56c03d1` |
 
 Update this table whenever an accepted implementation commit becomes the new source snapshot.
@@ -32,9 +33,10 @@ Update this table whenever an accepted implementation commit becomes the new sou
 - [MILESTONE_8B_TEST.md](MILESTONE_8B_TEST.md) - accepted owner packaged-desktop evidence plus deferred clean-machine and invited-tester procedures.
 - [MILESTONE_9A_CONTRACT.md](MILESTONE_9A_CONTRACT.md) - approved bounded structured-commentary experiment and historical non-integration boundary.
 - [MILESTONE_9A_TEST.md](MILESTONE_9A_TEST.md) - rejected candidate record.
-- [MILESTONE_9B_CONTRACT.md](MILESTONE_9B_CONTRACT.md) - approved bounded grounded-context runtime-integration scope; candidate implementation awaiting staged acceptance.
+- [MILESTONE_9B_CONTRACT.md](MILESTONE_9B_CONTRACT.md) - approved bounded grounded-context runtime-integration scope and historical staged acceptance gates; M9 closed without final runtime acceptance.
 - [MILESTONE_9C_CONTRACT.md](MILESTONE_9C_CONTRACT.md) - approved isolated source-backed enrichment experiment.
 - [MILESTONE_9C_TEST.md](MILESTONE_9C_TEST.md) - completed experiment history, M9C.6 owner evidence, selected direction, and deferred integration issues.
+- [MILESTONE_9_CLOSURE.md](MILESTONE_9_CLOSURE.md) - final M9 outcome, evidence summary, closure decision, and deferred follow-on work.
 - [RESEARCH_INDEX.md](RESEARCH_INDEX.md) - research inventory and the boundary between evidence and recommendations.
 
 ## ChatGPT Project-source availability
@@ -84,6 +86,7 @@ Repository-only does not mean non-authoritative. README and the milestone record
 | Approved M9A experimental scope and non-integration boundary | [MILESTONE_9A_CONTRACT.md](MILESTONE_9A_CONTRACT.md) |
 | Approved M9C source-backed experimental scope and non-integration boundary | [MILESTONE_9C_CONTRACT.md](MILESTONE_9C_CONTRACT.md) |
 | Approved M9B grounded-context integration scope and staged acceptance gates | [MILESTONE_9B_CONTRACT.md](MILESTONE_9B_CONTRACT.md) |
+| Milestone 9 overall outcome and closure decision | [MILESTONE_9_CLOSURE.md](MILESTONE_9_CLOSURE.md) |
 | External research provenance and status | [RESEARCH_INDEX.md](RESEARCH_INDEX.md) |
 | What the Design / Brainstorming conversation proposed | [POST_M8_INTAKE.md](proposals/POST_M8_INTAKE.md), as a non-authoritative historical intake only |
 | Milestone-specific manual evidence and regression procedures | Existing `MILESTONE_*_TEST.md` records |
@@ -123,7 +126,8 @@ Repository-only does not mean non-authoritative. README and the milestone record
 - [Milestone 8B acceptance](MILESTONE_8B_TEST.md) - accepted internal package and owner desktop evidence, with deferred distribution-validation procedures
 - [Milestone 9A contract](MILESTONE_9A_CONTRACT.md) - approved experiment, candidate prompt boundary, benchmark, and non-goals
 - [Milestone 9A evaluation](MILESTONE_9A_TEST.md) - blinded review procedure and the recorded rejected-candidate outcome
-- [Milestone 9B contract](MILESTONE_9B_CONTRACT.md) - approved grounded-context integration scope; candidate implementation awaiting staged acceptance
-- [Milestone 9B Gate 2/3 evaluation](MILESTONE_9B_TEST.md) - completed owner-quality and silent operational evidence; audible Gate 4 is authorized but currently paused
+- [Milestone 9B contract](MILESTONE_9B_CONTRACT.md) - approved grounded-context integration scope and historical staged acceptance gates; final runtime acceptance was not reached
+- [Milestone 9B Gate 2/3 evaluation](MILESTONE_9B_TEST.md) - completed owner-quality, silent operational, and incomplete audible evidence
 - [Milestone 9C contract](MILESTONE_9C_CONTRACT.md) - bounded source-backed experiment and non-integration boundary
 - [Milestone 9C evaluation](MILESTONE_9C_TEST.md) - completed M9C.6 owner evidence and basis for the approved M9B direction
+- [Milestone 9 closure](MILESTONE_9_CLOSURE.md) - concluded prototype outcome; no further M9 work authorized

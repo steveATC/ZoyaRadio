@@ -3,10 +3,10 @@
 ## Status and authority
 
 Steve approved this bounded contract direction on August 15, 2026 after reviewing the
-M9B proposal and approving its recommended decisions. Steve then explicitly authorized the bounded implementation on August 15, 2026. M9B is now an implemented candidate with Gate 2 owner evaluation and the silent operational Gate 3 accepted. It remains unaccepted runtime behavior. The latest Gate 4 run delivered three enriched M9B comments and three M8/fixed fallbacks, while one 26.3-second M9B preparation timed out safely and restored Firefox exactly. Gate 4 remains authorized but paused while Steve decides whether and when to resume it; final owner acceptance remains required.
+M9B proposal and approving its recommended decisions. Steve then explicitly authorized the bounded implementation on August 15, 2026. M9B is now an implemented candidate with Gate 2 owner evaluation and the silent operational Gate 3 accepted. It remains unaccepted runtime behavior. The latest Gate 4 run delivered three enriched M9B comments and three M8/fixed fallbacks, while one 26.3-second M9B preparation timed out safely and restored Firefox exactly. On August 15, Steve concluded Milestone 9 without final M9B acceptance; no further Gate 4 test is authorized. See [MILESTONE_9_CLOSURE.md](MILESTONE_9_CLOSURE.md).
 
-M9B is not passed or accepted runtime behavior. Until automated verification, staged desktop testing, and Steve's final manual acceptance are complete,
-the accepted Milestone 8 runtime at `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf`
+M9B is not passed or accepted runtime behavior. The M9 closure ends its staged evaluation; any future acceptance discussion requires a separately approved future milestone.
+The accepted Milestone 8 runtime at `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf`
 remains controlling.
 
 ## Goal
@@ -281,7 +281,7 @@ second generate-only run is required before Gate 3.
 - Only after Gates 1-3 pass, deliver at least five scheduled enriched comments across
   multiple familiar tracks. The latest authorized attempt delivered three enriched M9B comments,
   three M8/fixed fallbacks, and one safely failed 26.3-second M9B preparation. It does not meet
-  this requirement. Gate 4 is authorized but paused while Steve decides whether and when to resume the bounded desktop test.
+  this requirement. At that point Gate 4 was paused; M9 was later concluded without final M9B acceptance, as recorded in [MILESTONE_9_CLOSURE.md](MILESTONE_9_CLOSURE.md).
 - Confirm the candidate is complete before ducking, only the validated Firefox session
   is ducked, captured scalar/mute state is restored exactly, Chrome/master volume remain
   untouched, normal playback is never paused, cancellation cleans up safely, and no

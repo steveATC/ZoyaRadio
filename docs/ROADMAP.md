@@ -19,7 +19,7 @@ This document records accepted milestone status and approved direction. It does 
 | 8A - Control application | Passed | Shared controller/runtime, WinForms frontend, read-only activity status, LocalAppData logs, safe controls, and protected shutdown accepted on August 11, 2026. |
 | 8B - Private-alpha distribution | Passed - internal-development gate | Version `0.8.0-alpha.1`, package integrity/neural self-tests, and Steve's packaged-desktop behavior accepted; clean-machine and invited-tester distribution validation deferred. |
 | 9A - Structured host commentary experiment | Completed - candidate rejected | Blinded qualitative review found the structured candidate preferable to the baseline in aggregate but still unsuitable for runtime; normal radio remains unchanged. |
-| 9B - Grounded context integration | Gates 2 and 3 accepted; Gate 4 authorized but paused | The latest seven-opportunity run delivered three enriched M9B comments and three M8/fixed fallbacks; one 26.3-second M9B preparation failed safely after timeout/restoration. The text-lifecycle, duration, and typed enrichment-diagnostic repair is verified. Steve decides whether and when to resume Gate 4; final M9B acceptance remains pending. |
+| 9B - Grounded context integration | Concluded without final runtime acceptance | Gates 2 and 3 were accepted; Gate 4 did not meet its five-enriched-delivery requirement. The candidate and evidence are retained for future planning, but no further M9 testing or promotion is authorized. |
 | 9C - Source-backed commentary experiments | Completed - direction selected | M9C.6 selected grounded 14B whole-comment synthesis as integration evidence; diagnostic paths remain outside normal radio. |
 
 Milestone 8 is closed for continued internal development after M8A and M8B owner acceptance. Clean Windows 10/11 and invited-tester evidence remain deferred compatibility/distribution gates and do not certify this package for broad or public distribution.
@@ -71,7 +71,7 @@ The latest accepted internal implementation snapshot is commit `b56c03d1c913ba18
 
 Milestone-specific evidence and preserved regression instructions remain in the existing `MILESTONE_*_TEST.md` documents.
 
-## Approved near-term direction
+## Milestone 9 conclusion
 
 Steve approved the bounded [Milestone 8 contract](MILESTONE_8_CONTRACT.md) on August 10, 2026. Its historical approval-time sequence used two authorization gates:
 
@@ -85,9 +85,13 @@ Steve accepted M8A, separately authorized M8B, and accepted the extracted M8B pa
 - M9A did not pass; its structured candidate remains rejected.
 - Steve completed the separate bounded [Milestone 9C contract](MILESTONE_9C_CONTRACT.md). M9C.6 validated grounded whole-comment synthesis with local `qwen3:14b-q4_K_M`; its owner review is recorded in [MILESTONE_9C_TEST.md](MILESTONE_9C_TEST.md).
 - M9C is closed as successful experimental evidence. Its selected direction is not normal radio behavior.
-- Steve explicitly authorized the bounded [Milestone 9B contract](MILESTONE_9B_CONTRACT.md) on August 15, 2026 and accepted generate-only Gate 2 with the recorded narrow repetition exception in [MILESTONE_9B_TEST.md](MILESTONE_9B_TEST.md). He later accepted Gate 3 under its revised operational criteria: cumulative silent evidence includes 48 genuine transitions, one ready candidate, safely suppressed prepared delivery, cancellation/stale-work disposal, selected-model unload, and zero forbidden desktop-media activity. The historical 7/12 validator-ready smoke result remains a diagnostic metric, not a gate threshold. The latest authorized Gate 4 run confirmed live MusicBrainz enrichment for `Ouro De Tolo` and `T.N.T.`, delivered three enriched M9B comments and three M8/fixed fallbacks, and restored Firefox exactly without pausing playback. One known 26.3-second M9B preparation timed out safely after ducking; the verified repair now rejects any over-limit prepared audio before Core Audio enumeration. Gate 4 is authorized but paused for Steve's decision whether and when to resume it; final M9B acceptance remains pending.
+- Steve explicitly authorized the bounded [Milestone 9B contract](MILESTONE_9B_CONTRACT.md) on August 15, 2026 and accepted generate-only Gate 2 with the recorded narrow repetition exception in [MILESTONE_9B_TEST.md](MILESTONE_9B_TEST.md). He later accepted Gate 3 under its revised operational criteria. Gate 4 did not meet its five-enriched-delivery requirement: it established safe live enrichment, safe fallback, and protected playback behavior, but remote source availability remained variable. Steve therefore concluded M9 as an exploration/prototype phase rather than continuing its audible test loop. M9B is not accepted runtime behavior. See [MILESTONE_9_CLOSURE.md](MILESTONE_9_CLOSURE.md).
 - Research remains evidence only and proposal history remains non-authoritative except for exact decisions Steve separately promoted into canonical milestone contracts.
 - Milestone 6 remains deferred unless Steve separately promotes it.
+
+## Next direction
+
+No implementation direction is approved after M9. The next work is a project-planning discussion to define product areas, dependencies, roadmap order, and future milestone contracts. Brainstorming remains non-authoritative until Steve explicitly promotes a bounded decision.
 
 ## Deferred and future boundaries
 

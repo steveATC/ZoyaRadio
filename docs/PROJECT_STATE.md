@@ -11,7 +11,8 @@
 | Latest accepted automated result | 178 passed, 0 failed at accepted internal implementation `b56c03d` |
 | Accepted internal packaged baseline | `0.8.0-alpha.1` |
 | Deferred distribution validation | Clean Windows 10/11 and invited private-alpha testing; not blockers to internal development |
-| Next project step | M9B Gate 4 is authorized but paused after its latest seven-opportunity run. The bounded M9B text-lifecycle, over-duration, and typed enrichment-diagnostic repair is verified; Steve must decide whether and when to resume Gate 4. Final M9B acceptance remains outstanding. |
+| Current concluded exploration | Milestone 9, closed as prototype/design evidence; M9B has no final runtime acceptance claim. |
+| Next project step | Project-planning discussion before any future implementation authorization. |
 | Deferred milestone | Milestone 6 |
 
 The local Git repository is authoritative. See [PROJECT_INDEX.md](PROJECT_INDEX.md) for the documentation authority and snapshot rules.
@@ -76,7 +77,8 @@ Full implemented behavior is in [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.m
 - The bounded Gate 4 live-enrichment repair was then verified separately: all four Release builds passed with 0 warnings and 0 errors, all four formatting checks and `git diff --check` passed, and the complete fake-driven suite passed 266 tests with 0 failures. The additional coverage proves nested MusicBrainz artist-credit parsing, accepting multiple exact song-level recordings, one-official-soundtrack-group deduplication, safe invalidation of legacy negative caches, unsupported collaboration refusal, and enrichment-path desktop-media isolation. The subsequent observability/pre-delivery repair passed the same checks with 278 fake-driven tests and adds private M9B text-lifecycle logging, definitive pre-duck measured-duration rejection, and typed MusicBrainz/Wikidata failure diagnostics.
 - The one authorized generate-only 14B artifact is `artifacts/m9b/20260815-095443-189/`: 48/48 requests, zero generation failures, 33 displayable candidates, 15 mechanical hard discards, 68.75% availability, 624.9 ms median/819.7 ms p95/3328.0 ms maximum latency, and selected-model unload verified.
 - Steve accepted Gate 2 on August 15, 2026 with a narrow same-card repetition exception. Of 32 scored displayable candidates, factual acceptability was 5.00, context integration 4.72, personality 4.44, spoken naturalness 4.38, variety 3.72, and overall desire 3.84. The 10 scored candidates without a repeated-template flag averaged 4.90 overall and variety; Raul Seixas candidate 3 was intentionally unscored as a near-copy. The full decision is in [MILESTONE_9B_TEST.md](MILESTONE_9B_TEST.md).
-- Four silent Gate 3 attempts recorded 48 genuine transitions with zero forbidden desktop-media activity. The post-repair evidence includes one ready candidate before a transition, safe suppression of prepared delivery, cancellation/stale-work disposal, and selected-model unload. The reviewed-context smoke's former 7/12 (58%) validator-ready figure remains diagnostic; Steve accepted all 12 final outputs and Gate 3 under the revised operational criteria. Gate 4 is authorized but paused pending Steve's decision whether and when to resume the bounded owner test.
+- Four silent Gate 3 attempts recorded 48 genuine transitions with zero forbidden desktop-media activity. The post-repair evidence includes one ready candidate before a transition, safe suppression of prepared delivery, cancellation/stale-work disposal, and selected-model unload. The reviewed-context smoke's former 7/12 (58%) validator-ready figure remains diagnostic; Steve accepted all 12 final outputs and Gate 3 under the revised operational criteria.
+- Steve concluded Milestone 9 on August 15, 2026 as a successful exploration/prototype phase. M9B's original Gate 4 requirement was not met, so M9B is not accepted runtime behavior and no further M9 Gate 4 test is authorized. The complete outcome and deferred work are in [MILESTONE_9_CLOSURE.md](MILESTONE_9_CLOSURE.md); the implemented candidate remains unchanged pending future product planning.
 
 ## M8B accepted engineering verification
 
@@ -130,7 +132,8 @@ Full implemented behavior is in [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.m
 ## Next step and deferred observations
 
 - Milestone 8 is closed for continued internal development, and `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf` is the latest accepted internal implementation snapshot.
-- M9A was rejected and M9C supplied successful experimental evidence. Steve accepted M9B Gate 2 with a narrow repetition exception and later accepted Gate 3 under the revised operational criteria. The latest Gate 4 run safely delivered three enriched M9B and three fallback comments, while one over-duration enriched preparation failed safely. Gate 4 is authorized but paused for Steve's decision whether and when to resume it, and final acceptance remains outstanding while the accepted M8 safety baseline stays controlling.
+- M9A was rejected, M9C supplied successful experimental evidence, and M9B supplied bounded integration/safety evidence without final runtime acceptance. Steve concluded M9 as a prototype phase; no further M9 testing or feature work is authorized. The accepted M8 safety baseline remains controlling. See [MILESTONE_9_CLOSURE.md](MILESTONE_9_CLOSURE.md).
+- The next action is project planning: define product areas, roadmap sequencing, and future milestone contracts before code changes begin.
 - Clean-machine and invited-tester checks remain deferred compatibility/distribution evidence. A later defect may require a bounded repair, but missing tester feedback does not block internal development.
 - The earlier 20:49 observer stall remains intermittent, unresolved, and unreproduced by the accepted Firefox-plus-Chrome run.
 - Wrapper-refresh diagnostics are excessively repetitive; this is a deferred non-blocking logging-quality issue.

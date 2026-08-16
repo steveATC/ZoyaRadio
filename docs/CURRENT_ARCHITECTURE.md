@@ -1,6 +1,6 @@
 # Current architecture
 
-This document describes the accepted Milestone 8 runtime implementation at commit `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf`, plus the implemented-but-unaccepted M9B grounded-context candidate and preserved isolated M9A/M9C diagnostics. M9B Gates 2 and 3 are owner-accepted; the accepted M8 safety baseline remains controlling until separately authorized Gate 4 and final M9B acceptance.
+This document describes the accepted Milestone 8 runtime implementation at commit `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf`, plus the implemented-but-unaccepted M9B grounded-context candidate and preserved isolated M9A/M9C diagnostics. M9B Gates 2 and 3 are owner-accepted, but M9 was concluded without final M9B runtime acceptance; the accepted M8 safety baseline remains controlling.
 
 ## Platform and local dependencies
 
@@ -91,7 +91,7 @@ The project-local Microsoft .NET SDK 8.0.423 is in ignored `.dotnet/`. Microsoft
 - `M9BGroundedCommentService` asks only selected local `qwen3:14b-q4_K_M` for one complete grounded comment. Its prompt treats exact metadata and the typed card as the factual/editorial anchor while permitting familiar low-risk music knowledge and natural host opinion. Hard discard is limited to high-confidence technical/safety failures; advisory/repetition candidates receive at most one regeneration, and a remaining advisory candidate is retained for delivery. Rejected attempts retain raw/normalized local diagnostics with typed reasons for owner inspection. The selected model is unloaded in protected cleanup.
 - `M9BTransitionCommentProvider` is an optional Track-A preparation wrapper around the accepted M8 provider. It prepares enrichment and 14B text before speech preparation and before Track-B delivery/ducking. M8 4B/fixed fallback remains eligible when M9B is missing, disabled, late, invalid, stale, or unavailable. No M9B web request or model operation starts after ducking. Private runtime logs distinguish selected, prepared, delivered, and discarded M9B text without retaining prompts or raw source content.
 - Prepared audio carries its measured WAV duration. A duration strictly above the configured automatic maximum is discarded and disposed before Core Audio enumeration, ducking, or speech; the exact limit is permitted. Delivery-time timeout/restoration remains a defense in depth for unexpected stalls or measurement disagreement.
-- An enriched fingerprint/fact identity enters M9B's six-entry ephemeral state only after completed delivery. Clear History clears that state and the context cache; shutdown clears only the ephemeral state. Gates 2 and 3 are owner-accepted. Gate 4 is authorized but paused after its latest seven-opportunity run; final M9B acceptance remains unapproved.
+- An enriched fingerprint/fact identity enters M9B's six-entry ephemeral state only after completed delivery. Clear History clears that state and the context cache; shutdown clears only the ephemeral state. Gates 2 and 3 are owner-accepted. Gate 4 did not meet its final requirement, and M9 was concluded without M9B runtime acceptance; no further M9 work is authorized.
 ## Control application and lifecycle
 
 ## Isolated Milestone 9A diagnostic candidate
@@ -185,7 +185,7 @@ Normal automatic delivery contains no GSMTC pause, play, or toggle command. `Try
 
 ## Current boundaries
 
-The implementation has no browser scraping, cookies, account access, unofficial YouTube API, cloud AI/TTS, telemetry, tray icon, global media keys, endpoint/master-volume manipulation, persistent listening-history database, track-position tracking, duration tracking, installer, code signing, public release, clean-machine certification, or invited-tester validation. Milestone 8 is closed only for continued internal development; compatibility and third-party distribution claims remain deferred. The rejected M9A and diagnostic M9C candidates remain isolated; only the bounded M9B candidate is integrated, and it is not yet accepted runtime behavior.
+The implementation has no browser scraping, cookies, account access, unofficial YouTube API, cloud AI/TTS, telemetry, tray icon, global media keys, endpoint/master-volume manipulation, persistent listening-history database, track-position tracking, duration tracking, installer, code signing, public release, clean-machine certification, or invited-tester validation. Milestone 8 is closed only for continued internal development; compatibility and third-party distribution claims remain deferred. The rejected M9A and diagnostic M9C candidates remain isolated; only the bounded M9B candidate is integrated, and it remains unaccepted runtime behavior after M9's conclusion.
 
 ## Windows API basis
 
