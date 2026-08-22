@@ -95,6 +95,41 @@ These decisions summarize accepted project rules and rationale already evidenced
 - M9 established source-backed-context, stronger-local-model, and safe-delivery evidence, while also establishing that remote metadata availability and current whole-card caching are future product-design concerns. Artist/track fact separation, context selection, source resilience, and a future product role for M9B remain deferred rather than implicitly approved.
 - The detailed outcome is recorded in [MILESTONE_9_CLOSURE.md](MILESTONE_9_CLOSURE.md).
 
+## Approved post-M9 capability direction
+
+- Steve approved the capability-first roadmap in [POST_M9_CAPABILITY_ROADMAP.md](POST_M9_CAPABILITY_ROADMAP.md) on August 21, 2026. Roadmap approval establishes direction only; every implementation milestone still requires a separately approved bounded contract and explicit request.
+- M10A pure deterministic opportunity kernel, M10B prepared-material lifecycle/binding, and M10C strict M8 runtime parity are the immediate foundation sequence. The first live migration reproduces accepted M8 behavior before adding formats.
+- Formats mature as clients and vertical tests of reusable capabilities. A commercial, call, rant, liner, ID, callback, or chained bit is not considered mature merely because one fixture can play.
+- Exact cadence, cooldown, retention, promotion, and decay values remain conservative milestone-local experimental defaults until real listening evidence supports durable policy.
+- The deterministic engine and Editorial Arbiter own opportunity eligibility, preparation/airtime choice, music pressure, spacing, priority, treatment compatibility, reservation, final revalidation, and silence. Randomness is bounded to editorially equivalent alternatives and cannot itself create the reason to interrupt music.
+- M11A establishes only the arbitration mechanism, typed reasons, and incremental relevance extension points. It evaluates relevance from state actually available at M11A and does not impose a speculative universal relevance framework.
+- Creative Context reports compact established state. Creative Direction describes what a potential segment should accomplish. Content Generation writes exact words/renderable content. One early local-model call may perform direction and generation together, but these responsibilities remain conceptually separate.
+- Creative AI never controls scheduling, priority, timing, cooldown, playback, safety, expiry, memory commits, or whether generated material earns airtime. Silence and direct music continuation remain valid winners.
+
+## Approved knowledge, memory, and continuity boundaries
+
+- Music Knowledge, Listening Intelligence, and Station Lore are separate data domains. A bounded Creative Context Assembler may combine selected canonical facts/state, but must not expose raw provider payloads or raw long-term listening events to prompts.
+- Music Knowledge is source-agnostic. Provider-specific Source Adapters parse source semantics; a conservative deterministic Entity/Identity Resolver establishes positive correspondence; fact-type-specific Evidence/Fact Reconciliation preserves provenance, disagreement, and categorical evidence state.
+- Source outage, timeout/rate limit, parser/schema failure, ambiguous identity, unsupported representation, corrupt cache, stale evidence, confirmed no fact, and confirmed fact are distinct typed outcomes. Temporary or technical failure never becomes negative factual evidence.
+- Identity requires strict positive resolution using stable IDs, source-declared relationships, structured credits, approved aliases/edition relationships, and safe normalization. Unrestricted fuzzy matching and generic display-suffix stripping are not approved.
+- Genre/style may retain multiple source-specific tags plus only demonstrated deterministic parent mappings. Unknown remains unknown; an LLM does not decide or store factual genre classification.
+- Session Listening Intelligence precedes durable affinity. It retains observed-track count, usable-classification count, category count, and both all-observed and classified-only proportions so sparse metadata cannot appear artificially dominant.
+- Short-lived/session state may be detailed. Durable Listening Intelligence, if later accepted, remains compact derived state such as reinforced artist/track/tag relevance, last reinforcement, coarse strength, and trend; it is not an indefinite chronological listening diary. Reinforcement/decay equations remain experimental until evidence supports them.
+- Raw Creative Director alternatives are ephemeral. A proposal reaches persistent pending Station Lore only for a deterministic reason such as Steve approval, selection into a still-valid prepared item, or an authorized complete-airtime effect. Rejected, expired, discarded, unaired, or partially heard material creates no canon.
+- Open threads create creative possibility, never scheduling obligation. Threads may become dormant, expire, or retire; the Arbiter may reject every continuation indefinitely.
+- Airtime effects begin with the smallest typed, idempotent effects demonstrated by real clients. No generic generated-lore transaction system is approved in advance.
+
+## Approved voice, locale, delivery, and release sequencing
+
+- Nicole remains the accepted default for the current Zoya build, but host identity, voice identity, renderer/backend, and fallback are separate concepts. Host Voice Foundation precedes broad cast work; cast/role capability is added when calls/commercials demonstrate need.
+- Language and locale are separate from host/voice identity. Full station configuration remains late, but English/Nicole assumptions must not become inseparable from the engine; bounded EN/PT-BR and pronunciation/cultural-fit experiments may occur earlier.
+- Delivery treatment is independent from content format and duration. Content may declare allowed, preferred, or required treatments, and an opportunity must provide a compatible treatment. No rule equivalent to `duration > X => pause Firefox` is approved.
+- The current automatic no-pause invariant remains controlling until an isolated exact-target hold diagnostic passes a major manual safety gate. An opt-in `HoldAndReplace` primitive requires a separate later decision and authorization; M15A does not authorize M15B.
+- Narrow production capabilities such as one telephone filter, bed, effect, fade, normalization step, or multi-voice pre-render may upgrade a demonstrated client before the full sonic-identity system.
+- Distribution/Firefox compatibility work occurs when Steve decides the experience is worth distributing. Opportunistic Firefox evidence may be gathered earlier, but private alpha does not gate richer internal formats, production, or sonic identity.
+- General configuration is extracted last from dimensions proven useful by the mature opinionated Zoya station; no speculative station builder is approved now.
+- None of these roadmap decisions changes implemented behavior. The accepted M8 safety baseline remains controlling until a later bounded milestone is implemented, verified, and explicitly accepted.
+
 ## Approved Milestone 9A experimental boundaries
 
 - M9A is a generate-only comparison experiment, not an accepted change to ordinary radio behavior.

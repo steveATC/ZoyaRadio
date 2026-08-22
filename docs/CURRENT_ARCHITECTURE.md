@@ -1,6 +1,13 @@
 # Current architecture
 
-This document describes the accepted Milestone 8 runtime implementation at commit `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf`, plus the implemented-but-unaccepted M9B grounded-context candidate and preserved isolated M9A/M9C diagnostics. M9B Gates 2 and 3 are owner-accepted, but M9 was concluded without final M9B runtime acceptance; the accepted M8 safety baseline remains controlling.
+This document describes the accepted Milestone 8 live runtime at commit `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf`, the accepted but runtime-unreachable M10A deterministic opportunity kernel at implementation commit `93ece64bf5cb21e67378d9ae024c6f45568fe86e`, the implemented-but-unaccepted M9B grounded-context candidate, and preserved isolated M9A/M9C diagnostics. M9 was concluded without final M9B runtime acceptance; the accepted M8 safety baseline remains controlling for live behavior.
+
+## Accepted M10A deterministic foundation
+
+- `DeterministicOpportunityKernel` is a pure immutable reducer over explicit state, typed inputs, typed decisions/reasons, supplied timestamps, and supplied transition targets.
+- It reproduces accepted M8 scheduling/state decisions and is covered by 14 focused parity/golden traces. Steve accepted M10A on August 22, 2026 after the complete suite passed 292 tests with 0 failures.
+- No production launcher, controller, host, runtime, UI, playback, or audio path references the kernel. M10A therefore changes no observable application behavior and does not replace the accepted M8 runtime.
+- The kernel performs no clock, random, Windows, file, network, AI, speech, audio, playback, or persistence access. M10B lifecycle work remains unimplemented and unauthorized.
 
 ## Platform and local dependencies
 
@@ -185,7 +192,7 @@ Normal automatic delivery contains no GSMTC pause, play, or toggle command. `Try
 
 ## Current boundaries
 
-The implementation has no browser scraping, cookies, account access, unofficial YouTube API, cloud AI/TTS, telemetry, tray icon, global media keys, endpoint/master-volume manipulation, persistent listening-history database, track-position tracking, duration tracking, installer, code signing, public release, clean-machine certification, or invited-tester validation. Milestone 8 is closed only for continued internal development; compatibility and third-party distribution claims remain deferred. The rejected M9A and diagnostic M9C candidates remain isolated; only the bounded M9B candidate is integrated, and it remains unaccepted runtime behavior after M9's conclusion.
+The implementation has no browser scraping, cookies, account access, unofficial YouTube API, cloud AI/TTS, telemetry, tray icon, global media keys, endpoint/master-volume manipulation, persistent listening-history database, track-position tracking, duration tracking, installer, code signing, public release, clean-machine certification, or invited-tester validation. Milestone 8 is closed only for continued internal development; compatibility and third-party distribution claims remain deferred. The rejected M9A and diagnostic M9C candidates remain isolated; only the bounded M9B candidate is integrated, and it remains unaccepted runtime behavior after M9's conclusion. The accepted M10A kernel is also isolated and unreachable from live runtime; no M10B lifecycle or runtime migration exists.
 
 ## Windows API basis
 

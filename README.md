@@ -2,7 +2,7 @@
 
 Zoya Radio is a private, local-first Windows application with an accepted WinForms control frontend and preserved console diagnostics. It observes Firefox media, prepares short locally generated comments, speaks with the accepted Nicole voice, and can deliver prepared comments over proportionally ducked Firefox audio.
 
-Milestones 0 through 5, Milestone 7, Milestones 7.5A-7.5B, and Milestone 8 have passed their required internal-development acceptance. Milestone 6 is deliberately deferred. Steve accepted packaged version `0.8.0-alpha.1` on August 11, 2026, making commit `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf` the latest accepted internal implementation with 178 automated tests passed and 0 failed. Milestone 9A was rejected for runtime consideration. Milestone 9C is closed as successful experimental evidence. Steve then explicitly authorized the bounded M9B implementation. M9B Gates 2 and 3 are owner-accepted. The latest authorized Gate 4 run prepared four M9B comments, delivered three enriched comments and three M8/fixed fallbacks, and safely rejected one known over-duration M9B preparation after a delivery-time timeout/restoration. Gate 4 remains authorized but paused while Steve decides whether and when to resume it; M9B is not yet accepted runtime behavior. Clean Windows 10/11 and invited-tester validation remain deferred distribution evidence, so the package is not a clean-machine-certified or public release.
+Milestones 0 through 5, Milestone 7, Milestones 7.5A-7.5B, Milestone 8, and M10A have passed their required acceptance. Milestone 6 is deliberately deferred. Steve accepted packaged version `0.8.0-alpha.1` on August 11, 2026; `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf` remains the accepted live-runtime/package snapshot with 178 automated tests passed and 0 failed. Milestone 9 is closed as prototype/design evidence: M9A was rejected, M9C produced useful experimental evidence, and M9B did not receive final runtime acceptance. The accepted M8 safety baseline remains controlling. Steve accepted M10A on August 22, 2026 after its complete 292-test suite passed; the pure deterministic kernel remains unreachable from live runtime and is committed as `93ece64bf5cb21e67378d9ae024c6f45568fe86e`. Clean Windows 10/11 and invited-tester validation remain deferred distribution evidence, so the package is not a clean-machine-certified or public release.
 
 Start with [docs/PROJECT_INDEX.md](docs/PROJECT_INDEX.md) for the canonical documentation map. Current status is in [docs/PROJECT_STATE.md](docs/PROJECT_STATE.md), and implemented behavior is in [docs/CURRENT_ARCHITECTURE.md](docs/CURRENT_ARCHITECTURE.md).
 
@@ -157,7 +157,7 @@ This fixed benchmark compares the accepted prompt with a structured candidate ov
 
 Outputs are written under the ignored `artifacts\m9a\<timestamp>\` folder. Score `M9A_EVALUATION.md` before opening the separate answer key. See [docs/MILESTONE_9A_TEST.md](docs/MILESTONE_9A_TEST.md) for the exact review procedure.
 
-The rejected M9A candidate remains unreachable from normal automatic radio. M9C supplied the evidence used by the bounded M9B candidate; M9B still requires its staged owner gates before acceptance.
+The rejected M9A candidate remains unreachable from normal automatic radio. M9C supplied evidence used by the bounded M9B candidate, but M9 is now closed and M9B is not accepted runtime behavior.
 
 ## Milestone 9C source-backed benchmark
 
@@ -176,7 +176,7 @@ artifacts\m9b\20260815-095443-189\M9B_EVALUATION.md
 ```
 
 It did not start the radio, inspect or control Firefox, produce speech, or change any
-volume. Steve completed and accepted Gate 2 with the narrow same-card repetition exception recorded in [docs/MILESTONE_9B_TEST.md](docs/MILESTONE_9B_TEST.md). Gate 3 is owner-accepted. Gate 4 is authorized but paused after its latest seven-opportunity run; the M9B text-lifecycle, over-duration, and typed enrichment-diagnostic repair is verified, but no radio launcher should be rerun until Steve decides to resume the test.
+volume. Steve completed and accepted Gate 2 with the narrow same-card repetition exception recorded in [docs/MILESTONE_9B_TEST.md](docs/MILESTONE_9B_TEST.md), and Gate 3 is owner-accepted. Gate 4 did not meet its five-enriched-delivery requirement. Steve closed Milestone 9 as a prototype phase, so no further M9 radio run, repair, promotion, or feature work is authorized. See [docs/MILESTONE_9_CLOSURE.md](docs/MILESTONE_9_CLOSURE.md).
 
 ## Isolated Firefox audio-ducking diagnostic
 
@@ -266,6 +266,8 @@ The application uses Microsoft's Windows media, speech, playback, and Core Audio
 - [Current project state](docs/PROJECT_STATE.md)
 - [Current architecture](docs/CURRENT_ARCHITECTURE.md)
 - [Roadmap](docs/ROADMAP.md)
+- [Approved post-M9 capability roadmap](docs/POST_M9_CAPABILITY_ROADMAP.md)
+- [Approved M10A contract and acceptance record](docs/MILESTONE_10A_CONTRACT.md)
 - [Durable decisions](docs/DECISIONS.md)
 - [Known issues](docs/KNOWN_ISSUES.md)
 - [Research index](docs/RESEARCH_INDEX.md)

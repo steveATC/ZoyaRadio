@@ -6,17 +6,19 @@ This is the front door to the canonical Zoya Radio documentation. The local Git 
 
 | Field | Value |
 | --- | --- |
-| Snapshot date | 2026-08-15 |
+| Snapshot date | 2026-08-22 |
 | Repository branch | `master` |
-| Latest accepted implementation commit | `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf` |
+| Latest accepted implementation commit | `93ece64bf5cb21e67378d9ae024c6f45568fe86e` |
 | Documentation reorganization baseline | `d5594e7ee16be1f11afc732186fa16ae8c5cc1c9` |
-| Current passed milestone | Milestone 8, closed for continued internal development |
-| Latest accepted automated result | 178 passed, 0 failed at `b56c03d` |
+| Current passed milestone | M10A - Deterministic Opportunity Kernel; accepted live runtime remains Milestone 8 |
+| Latest accepted automated result | 292 passed, 0 failed at M10A implementation `93ece64bf5cb21e67378d9ae024c6f45568fe86e` |
 | Accepted internal packaged baseline | `0.8.0-alpha.1`; owner packaged-desktop acceptance recorded August 11, 2026 |
 | Deferred distribution evidence | Clean Windows 10/11 and invited private-alpha testing; not blockers to internal development |
 | Current concluded exploration | Milestone 9, closed as prototype/design evidence; M9B Gate 4 was not passed and M9B is not accepted runtime behavior. |
-| Next project step | Project-planning discussion: define product areas, boundaries, roadmap, and future milestones before authorizing implementation. |
-| Snapshot ID | `zoya-radio-2026-08-11-m8-b56c03d1` |
+| Approved post-M9 direction | Capability roadmap from M10A deterministic foundation through late configuration extraction; no capability is implemented by roadmap approval. |
+| Current accepted foundation | M10A pure opportunity kernel, unreachable from runtime; accepted by Steve on August 22, 2026. |
+| Next project step | Prepare a bounded M10B contract for Steve review. M10B implementation remains unauthorized until that contract is explicitly approved. |
+| Snapshot ID | `zoya-radio-2026-08-22-m10a-93ece64` |
 
 Update this table whenever an accepted implementation commit becomes the new source snapshot.
 
@@ -26,6 +28,7 @@ Update this table whenever an accepted implementation commit becomes the new sou
 - [PROJECT_STATE.md](PROJECT_STATE.md) - compact current operational status and immediate gates.
 - [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.md) - what the application actually implements now.
 - [ROADMAP.md](ROADMAP.md) - completed milestones and approved near-term direction.
+- [POST_M9_CAPABILITY_ROADMAP.md](POST_M9_CAPABILITY_ROADMAP.md) - approved capability phases, dependency/shared-capability maps, format maturity, and architectural boundaries.
 - [DECISIONS.md](DECISIONS.md) - durable accepted product and engineering decisions.
 - [KNOWN_ISSUES.md](KNOWN_ISSUES.md) - unresolved defects, accepted limitations, and deferred improvements.
 - [MILESTONE_8_CONTRACT.md](MILESTONE_8_CONTRACT.md) - approved M8 scope and historical gates, plus Steve's dated sequencing amendment closing M8 for internal development while deferring distribution validation.
@@ -37,6 +40,7 @@ Update this table whenever an accepted implementation commit becomes the new sou
 - [MILESTONE_9C_CONTRACT.md](MILESTONE_9C_CONTRACT.md) - approved isolated source-backed enrichment experiment.
 - [MILESTONE_9C_TEST.md](MILESTONE_9C_TEST.md) - completed experiment history, M9C.6 owner evidence, selected direction, and deferred integration issues.
 - [MILESTONE_9_CLOSURE.md](MILESTONE_9_CLOSURE.md) - final M9 outcome, evidence summary, closure decision, and deferred follow-on work.
+- [MILESTONE_10A_CONTRACT.md](MILESTONE_10A_CONTRACT.md) - approved M10A-only scope, automated verification, and Steve's August 22, 2026 acceptance record.
 - [RESEARCH_INDEX.md](RESEARCH_INDEX.md) - research inventory and the boundary between evidence and recommendations.
 
 ## ChatGPT Project-source availability
@@ -81,6 +85,7 @@ Repository-only does not mean non-authoritative. README and the milestone record
 | Current passed milestone, latest verification, and immediate blockers | [PROJECT_STATE.md](PROJECT_STATE.md) |
 | Implemented components, runtime flow, and current safety behavior | [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.md) |
 | Completed milestones and approved next work | [ROADMAP.md](ROADMAP.md) |
+| Detailed approved post-M9 capability architecture and sequence | [POST_M9_CAPABILITY_ROADMAP.md](POST_M9_CAPABILITY_ROADMAP.md) |
 | Durable decisions and accepted rationale | [DECISIONS.md](DECISIONS.md) |
 | Defects, limitations, unresolved observations, and deferred quality work | [KNOWN_ISSUES.md](KNOWN_ISSUES.md) |
 | Approved Milestone 8 scope, gates, non-goals, and acceptance requirements | [MILESTONE_8_CONTRACT.md](MILESTONE_8_CONTRACT.md) |
@@ -88,6 +93,7 @@ Repository-only does not mean non-authoritative. README and the milestone record
 | Approved M9C source-backed experimental scope and non-integration boundary | [MILESTONE_9C_CONTRACT.md](MILESTONE_9C_CONTRACT.md) |
 | Approved M9B grounded-context integration scope and staged acceptance gates | [MILESTONE_9B_CONTRACT.md](MILESTONE_9B_CONTRACT.md) |
 | Milestone 9 overall outcome and closure decision | [MILESTONE_9_CLOSURE.md](MILESTONE_9_CLOSURE.md) |
+| Approved M10A scope, parity surface, implementation verification, and acceptance state | [MILESTONE_10A_CONTRACT.md](MILESTONE_10A_CONTRACT.md) |
 | External research provenance and status | [RESEARCH_INDEX.md](RESEARCH_INDEX.md) |
 | What the Design / Brainstorming conversation proposed | [POST_M8_INTAKE.md](proposals/POST_M8_INTAKE.md) and [FUTURE_PERSONAL_STATION_VISION.md](proposals/FUTURE_PERSONAL_STATION_VISION.md), as non-authoritative proposal/design records only |
 | Milestone-specific manual evidence and regression procedures | Existing `MILESTONE_*_TEST.md` records |
@@ -132,3 +138,5 @@ Repository-only does not mean non-authoritative. README and the milestone record
 - [Milestone 9C contract](MILESTONE_9C_CONTRACT.md) - bounded source-backed experiment and non-integration boundary
 - [Milestone 9C evaluation](MILESTONE_9C_TEST.md) - completed M9C.6 owner evidence and basis for the approved M9B direction
 - [Milestone 9 closure](MILESTONE_9_CLOSURE.md) - concluded prototype outcome; no further M9 work authorized
+- [Post-M9 capability roadmap](POST_M9_CAPABILITY_ROADMAP.md) - approved direction; listing a milestone does not authorize its implementation
+- [Milestone 10A contract/acceptance](MILESTONE_10A_CONTRACT.md) - passed; accepted pure foundation remains unreachable from live runtime

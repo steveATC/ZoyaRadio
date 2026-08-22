@@ -21,10 +21,11 @@ This document records accepted milestone status and approved direction. It does 
 | 9A - Structured host commentary experiment | Completed - candidate rejected | Blinded qualitative review found the structured candidate preferable to the baseline in aggregate but still unsuitable for runtime; normal radio remains unchanged. |
 | 9B - Grounded context integration | Concluded without final runtime acceptance | Gates 2 and 3 were accepted; Gate 4 did not meet its five-enriched-delivery requirement. The candidate and evidence are retained for future planning, but no further M9 testing or promotion is authorized. |
 | 9C - Source-backed commentary experiments | Completed - direction selected | M9C.6 selected grounded 14B whole-comment synthesis as integration evidence; diagnostic paths remain outside normal radio. |
+| 10A - Deterministic Opportunity Kernel | Passed | Steve accepted the pure immutable reducer on August 22, 2026. It remains unreachable from runtime; source/test builds pass and the complete suite passes 292/292. |
 
 Milestone 8 is closed for continued internal development after M8A and M8B owner acceptance. Clean Windows 10/11 and invited-tester evidence remain deferred compatibility/distribution gates and do not certify this package for broad or public distribution.
 
-The latest accepted internal implementation snapshot is commit `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf`, with 178 automated tests passed and 0 failed. Later documentation-only commits do not replace that implementation snapshot or make the historical test result a new run.
+The latest accepted internal implementation snapshot is commit `93ece64bf5cb21e67378d9ae024c6f45568fe86e`, with 292 automated tests passed and 0 failed. Later documentation-only commits do not replace that implementation snapshot or make the historical test result a new run.
 
 ## Milestone 7.5B repair provenance
 
@@ -89,9 +90,56 @@ Steve accepted M8A, separately authorized M8B, and accepted the extracted M8B pa
 - Research remains evidence only and proposal history remains non-authoritative except for exact decisions Steve separately promoted into canonical milestone contracts.
 - Milestone 6 remains deferred unless Steve separately promotes it.
 
-## Next direction
+## Approved post-M9 direction
 
-No implementation direction is approved after M9. The next work is a project-planning discussion to define product areas, dependencies, roadmap order, and future milestone contracts. Brainstorming remains non-authoritative until Steve explicitly promotes a bounded decision.
+Steve approved a capability-first post-M9 roadmap on August 21, 2026. The full
+architecture, milestone responsibilities/non-goals, dependency map, shared-capability
+map, format-maturity map, Music Knowledge flow, memory boundaries, and safety gates
+are governed by [POST_M9_CAPABILITY_ROADMAP.md](POST_M9_CAPABILITY_ROADMAP.md).
+
+The approved phase sequence is:
+
+1. **Deterministic broadcast foundation:** M10A pure opportunity kernel, M10B
+   prepared-material lifecycle/binding, then M10C strict M8 runtime parity.
+2. **Editorial arbitration:** preparation/airtime arbitration, music-first
+   pressure, format spacing, treatment compatibility, explainable decisions,
+   bounded tie-breaking, and silence; commentary plus one reusable micro-liner is
+   the first two-format proof.
+3. **Creative content foundation:** deterministic Creative Context, conceptual
+   separation of Creative Direction from exact Content Generation, bounded Format
+   Laboratory batches, and only evidence-selected host-format integration.
+4. **Knowledge, listening intelligence, memory, and continuity:** source-agnostic
+   Music Knowledge, session/recent-session Listening Intelligence before any
+   durable-affinity experiment, bounded Station Lore/open threads, and minimal
+   complete-airtime effects.
+5. **Voice and localization foundation:** host voice abstraction first, then
+   cast/role capability and separate language/locale work. Independent auditions
+   and call/commercial/telephone/PT-BR experiments may happen earlier.
+6. **Delivery grammar and program-space safety:** treatment compatibility remains
+   independent from format and duration. Exact-target hold is an isolated major
+   diagnostic gate; opt-in `HoldAndReplace` requires separate later approval.
+7. **Procedural format expansion:** fixed commercial only as a plumbing fixture,
+   procedural commercial and caller lab batches, shared prepared-format pipeline,
+   and optional editorially earned cross-format continuity.
+8. **Rich production and sonic identity:** narrow shared scene capabilities first,
+   then a coherent Zoya sound pack that progressively upgrades proven formats.
+9. **Experience-ready private alpha:** compatibility and packaging when Steve
+   decides the experience is worth distributing; opportunistic Firefox evidence
+   may be collected earlier.
+10. **Configuration extraction:** expose only dimensions proven by the mature,
+    opinionated Zoya station.
+
+Formats are clients of shared capabilities, not feature silos. Exact cadence,
+cooldown, retention, promotion, and decay values remain conservative experimental
+defaults until listening evidence supports durable policy. Music Knowledge remains
+optional to safe scheduling. Generated content has no right to airtime. Raw
+creative alternatives are ephemeral, and unaired or partially heard material does
+not become canonical Station Lore.
+
+The [M10A - Deterministic Opportunity Kernel](MILESTONE_10A_CONTRACT.md) is passed.
+Steve accepted the automatically verified, runtime-unreachable implementation on
+August 22, 2026, and the implementation is committed as `93ece64bf5cb21e67378d9ae024c6f45568fe86e`.
+M10B remains unauthorized pending a separately approved bounded contract.
 
 ## Deferred and future boundaries
 
@@ -99,6 +147,7 @@ No implementation direction is approved after M9. The next work is a project-pla
 - Known limitations and possible quality improvements are tracked in [KNOWN_ISSUES.md](KNOWN_ISSUES.md), not silently promoted into milestone work.
 - External production analyses and repository research are indexed in [RESEARCH_INDEX.md](RESEARCH_INDEX.md). Their recommendations require an explicit decision before entering this roadmap.
 - Product-vision discussions outside Git remain brainstorming unless Steve promotes them into an approved milestone.
+- The approved post-M9 roadmap governs direction, but each implementation milestone still requires a separately approved bounded contract and explicit request.
 
 ## Milestone gate policy
 

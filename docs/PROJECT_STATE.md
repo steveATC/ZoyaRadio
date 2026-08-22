@@ -5,14 +5,16 @@
 | Field | Current value |
 | --- | --- |
 | Branch | `master` |
-| Latest accepted implementation commit | `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf` |
-| Current passed milestone | Milestone 8, closed for continued internal development |
-| Manual acceptance date | 2026-08-11 |
-| Latest accepted automated result | 178 passed, 0 failed at accepted internal implementation `b56c03d` |
+| Latest accepted implementation commit | `93ece64bf5cb21e67378d9ae024c6f45568fe86e` |
+| Current passed milestone | M10A - Deterministic Opportunity Kernel; accepted live runtime remains Milestone 8 |
+| Manual acceptance date | 2026-08-22 |
+| Latest accepted automated result | 292 passed, 0 failed at M10A implementation `93ece64bf5cb21e67378d9ae024c6f45568fe86e` |
 | Accepted internal packaged baseline | `0.8.0-alpha.1` |
 | Deferred distribution validation | Clean Windows 10/11 validation remains incomplete. Invited testing has begun and produced a concrete Firefox GSMTC identity compatibility defect; it is not a blocker to internal development. |
 | Current concluded exploration | Milestone 9, closed as prototype/design evidence; M9B has no final runtime acceptance claim. |
-| Next project step | Project-planning discussion before any future implementation authorization. |
+| Approved post-M9 direction | Capability-first roadmap beginning with M10A -> M10B -> M10C; accepted M8 runtime remains controlling. |
+| Current accepted foundation | M10A pure opportunity kernel, unreachable from runtime; accepted by Steve with 292 passed, 0 failed. |
+| Next project step | Prepare a bounded M10B contract for Steve review. M10B implementation remains unauthorized until that contract is explicitly approved. |
 | Deferred milestone | Milestone 6 |
 
 The local Git repository is authoritative. See [PROJECT_INDEX.md](PROJECT_INDEX.md) for the documentation authority and snapshot rules.
@@ -131,9 +133,11 @@ Full implemented behavior is in [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.m
 
 ## Next step and deferred observations
 
-- Milestone 8 is closed for continued internal development, and `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf` is the latest accepted internal implementation snapshot.
+- Milestone 8 remains the accepted live-runtime/package baseline at `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf`.
 - M9A was rejected, M9C supplied successful experimental evidence, and M9B supplied bounded integration/safety evidence without final runtime acceptance. Steve concluded M9 as a prototype phase; no further M9 testing or feature work is authorized. The accepted M8 safety baseline remains controlling. See [MILESTONE_9_CLOSURE.md](MILESTONE_9_CLOSURE.md).
-- The next action is project planning: define product areas, roadmap sequencing, and future milestone contracts before code changes begin.
+- Steve approved the capability-first post-M9 roadmap on August 21, 2026. The detailed phases, dependency map, shared-capability map, format-maturity map, and memory/knowledge/voice/delivery boundaries are in [POST_M9_CAPABILITY_ROADMAP.md](POST_M9_CAPABILITY_ROADMAP.md).
+- Steve approved the [M10A contract](MILESTONE_10A_CONTRACT.md), authorized M10A-only implementation, and accepted the automatically verified result on August 22, 2026. M10A is passed at implementation commit `93ece64bf5cb21e67378d9ae024c6f45568fe86e`.
+- M10A remains deliberately pure and unreachable: deterministic M8 decision reproduction and 14 parity/golden traces only, with no runtime connection, new format, persistence, creative system, knowledge work, voice work, or audio behavior. The complete suite passes 292/292.
 - Clean-machine checks remain deferred compatibility/distribution evidence. Invited testing has begun and already produced one recorded Firefox GSMTC identity compatibility defect; incomplete tester coverage and this unapproved repair do not reopen M8 or block internal development.
 - The earlier 20:49 observer stall remains intermittent, unresolved, and unreproduced by the accepted Firefox-plus-Chrome run.
 - Wrapper-refresh diagnostics are excessively repetitive; this is a deferred non-blocking logging-quality issue.
@@ -142,5 +146,7 @@ Full implemented behavior is in [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.m
 ## Navigation
 
 - Completed milestones and approved direction: [ROADMAP.md](ROADMAP.md)
+- Detailed approved post-M9 capability sequence: [POST_M9_CAPABILITY_ROADMAP.md](POST_M9_CAPABILITY_ROADMAP.md)
+- Approved M10A contract and acceptance record: [MILESTONE_10A_CONTRACT.md](MILESTONE_10A_CONTRACT.md)
 - Durable accepted choices: [DECISIONS.md](DECISIONS.md)
 - Research provenance and non-authority boundary: [RESEARCH_INDEX.md](RESEARCH_INDEX.md)
