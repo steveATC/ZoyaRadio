@@ -5,6 +5,7 @@
 - Work locally and only inside this repository.
 - Before working, read the applicable `AGENTS.md` instructions for the files in scope.
 - Use `docs/PROJECT_INDEX.md` to locate governing project documents.
+- For substantial AI-assisted work, follow the named-worker and explicit-handoff protocol in `docs/workflow/AI_WORKFLOW.md`. Declare exactly one primary worker role, stay within its contract, and do not silently perform the next worker's job.
 - Treat the local Git repository as authoritative over copied or exported ChatGPT Project sources.
 - Follow the explicitly assigned task and its approved scope. A chat message does not automatically change canonical decisions or milestone status.
 - If task instructions materially conflict with canonical repository state, stop and report the conflict for resolution.
@@ -72,11 +73,14 @@ Consult `docs/CURRENT_ARCHITECTURE.md` and `docs/DECISIONS.md` for the exact cur
 - Report verification actually performed and its results, manual checks still required, and known issues or risks discovered.
 - Report final Git status, any authorized commit created, and confirmation that nothing was pushed unless pushing was explicitly requested.
 - Keep logs, instructions, failures, and manual procedures understandable to Steve as a non-programmer without sacrificing technical accuracy.
+- For substantial updates, follow the owner-facing summary and decision/handoff wording defined in `docs/workflow/AI_WORKFLOW.md`.
 
-## Next-action handoff
+## Named-worker workflow
 
-- For substantial work where a follow-on action exists or the next step could reasonably be unclear, finish the final report with a concise recommended handoff: **Next step type** (`Decision`, `Research`, `Documentation`, `Implementation`, `Manual Test`, or `Evaluation`), **Owner** (for example, Steve, Codex/Work, or Research), **Why this comes next**, and **Action required**.
-- State what must not happen yet when a tempting follow-on action is unauthorized, and include a paste-ready suggested next prompt when Codex/Work is the next actor and that would materially help Steve.
-- The classification is guidance, not authorization: Codex must not silently begin the handoff action unless it is already inside the explicitly assigned scope. Documentation does not authorize implementation, and research does not authorize a decision or implementation.
-- Keep automated verification and Steve's real-desktop/manual acceptance as separate evidence. Qualitative work may correctly end with **Evaluation — Steve**, with no prompt or code change until Steve has evaluated the result.
-- Do not add this ceremony to tiny edits or trivial questions; it exists to help Steve understand the appropriate project workflow while preserving one bounded task at a time.
+- `docs/workflow/AI_WORKFLOW.md` governs routing, role boundaries, owner observability, and substantial-task handoffs.
+- Friendly worker names must always be paired with their formal role. Role contracts govern behavior; model personality or chat memory does not.
+- A handoff is guidance, not authorization. Steve chooses whether to invoke the next worker and remains the approval authority for contracts, implementation, dependencies, product decisions, manual acceptance, and commits.
+- Manual named-worker chats and paste-ready handoffs remain the active default and fallback. The optional Conductor-led orchestration policy in `docs/workflow/AI_WORKFLOW.md` is Stage 1 documentation only; no worker may activate or use subagent orchestration without separate Stage 2 or task-specific Steve authorization.
+- If Steve later authorizes an orchestration envelope, it may route only explicitly permitted stages. All Steve gates, single-primary-role rules, mandatory handoffs, and manual fallback prompts remain in force.
+- Keep automated verification and Steve's real-desktop/manual acceptance as separate evidence. Never infer or fabricate owner acceptance.
+- Tiny edits and trivial questions do not require the full declaration and handoff ceremony.
