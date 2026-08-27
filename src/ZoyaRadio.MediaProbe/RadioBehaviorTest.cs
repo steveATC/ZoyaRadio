@@ -8,20 +8,26 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
     private readonly LocalLog _log;
     private readonly RadioBehaviorConfiguration _radioConfiguration;
     private readonly IRadioClock _clock;
-    private readonly RadioBehaviorState _state;
+    private readonly M10CRuntimeMigrationState _state;
     private readonly RadioSessionAccess _sessionAccess;
     private readonly TransitionRadioPipeline _pipeline;
+    private readonly ReusableLinerInventory _linerInventory;
+    private readonly ReusableLinerPipeline _linerPipeline;
     private readonly M9BTransitionCommentProvider? _m9bCommentProvider;
     private readonly object _runtimeLifecycleLock = new();
     private readonly object _statusLock = new();
     private readonly object _stateLock = new();
     private readonly object _pipelineLock = new();
+    private readonly object _linerLock = new();
     private readonly SemaphoreSlim _mediaEventGate = new(1, 1);
     private GlobalSystemMediaTransportControlsSession? _selectedSession;
     private CancellationToken _shutdownToken;
     private CancellationTokenSource? _pendingCancellation;
     private Task? _pipelineTask;
     private PreparedTransitionOpportunity? _preparedOpportunity;
+    private CancellationTokenSource? _linerPreparationCancellation;
+    private Task? _linerPreparationTask;
+    private DateTimeOffset _nextLinerPreparationAttemptAt = DateTimeOffset.MinValue;
     private bool _simulateNextTransitionFailure;
     private bool _mediaSubscribed;
     private bool _managerSubscribed;
@@ -43,21 +49,23 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
         IRadioClock? clock = null,
         ILocalCommentGenerator? m9bGenerator = null,
         AiCommentConfiguration? m9bConfiguration = null,
-        M9BContextProvider? m9bContextProvider = null)
+        M9BContextProvider? m9bContextProvider = null,
+        bool quickReactionPilotEnabled = false)
     {
         _manager = manager;
         _log = log;
         _radioConfiguration = radioConfiguration ?? RadioBehaviorConfiguration.Default;
         _radioConfiguration.Validate();
         _clock = clock ?? new SystemRadioClock();
-        _state = new RadioBehaviorState(
+        _state = new M10CRuntimeMigrationState(
             _radioConfiguration,
             targetSource ?? new RandomTransitionTargetSource());
         _sessionAccess = new RadioSessionAccess(manager, log);
 
         var aiService = new AiCommentService(generator, aiConfiguration, log, persona);
-        ITransitionCommentProvider commentProvider = new LocalTransitionCommentProvider(aiService);
-        if (m9bGenerator is not null && m9bConfiguration is not null && m9bContextProvider is not null)
+        ITransitionCommentProvider commentProvider = quickReactionPilotEnabled ? new QuickReactionTransitionCommentProvider(aiService) : new LocalTransitionCommentProvider(aiService);
+        if (quickReactionPilotEnabled) log.Write("M12D PILOT: quick reaction explicitly enabled; lifecycle and overlay safety remain controlling.");
+        if (!quickReactionPilotEnabled && m9bGenerator is not null && m9bConfiguration is not null && m9bContextProvider is not null)
         {
             var recent = new M9BRecentCommentState();
             var grounded = new M9BGroundedCommentService(
@@ -91,6 +99,8 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
             _clock,
             log,
             ReportActivity);
+        _linerInventory = new ReusableLinerInventory();
+        _linerPipeline = new ReusableLinerPipeline(opportunityHost, log);
     }
 
     private async void OnMediaPropertiesChanged(
@@ -113,6 +123,7 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
         await _mediaEventGate.WaitAsync();
         RadioPreparationOpportunity? preparation = null;
         RadioTransitionDelivery? delivery = null;
+        RadioTrackObservation? observation = null;
 
         try
         {
@@ -128,7 +139,6 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
                 return;
             }
 
-            RadioTrackObservation observation;
 
             lock (_stateLock)
             {
@@ -184,6 +194,10 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
         else if (preparation is not null)
         {
             StartPreparation(preparation);
+        }
+        else
+        {
+            TryStartLiner(observation!);
         }
     }
 
@@ -367,6 +381,8 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
         await FirefoxSessionRebindSafety.DiscardPendingBeforeRebindingAsync(
             () => InvalidatePendingForSessionSafety(reason),
             WaitForPipelineAsync);
+        await WaitForLinerPreparationAsync();
+        InvalidateLinerInventory();
 
         if (!_sessionAccess.TryReadExactFirefoxMatches(
                 out IReadOnlyList<GlobalSystemMediaTransportControlsSession> refreshedMatches))
@@ -436,6 +452,8 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
             _state.RebindCurrentTrack(replacement.Media, _clock.Now);
         }
 
+        RearmLinerInventory();
+
         _log.Write(
             "FIREFOX GSMTC SESSION REACQUIRED: PASS - exactly one validated, eligible, Playing " +
             "firefox.exe session is selected.");
@@ -490,6 +508,7 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
 
     private void InvalidatePendingForSessionSafety(string reason)
     {
+        CancelLinerPreparation("Firefox session safety changed");
         bool invalidated;
 
         lock (_stateLock)
@@ -508,6 +527,35 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
 
     private void StartPreparation(RadioPreparationOpportunity opportunity)
     {
+        CancelLinerPreparation("an expiring comment preparation has priority");
+        bool capacityAvailable;
+        lock (_pipelineLock)
+        {
+            capacityAvailable = (_pipelineTask is null || _pipelineTask.IsCompleted)
+                && _preparedOpportunity is null;
+        }
+
+        EditorialDecision editorialDecision;
+        lock (_stateLock)
+        {
+            editorialDecision = _state.EvaluatePreparation(opportunity, capacityAvailable);
+        }
+
+        WriteEditorialDecision(editorialDecision);
+        if (editorialDecision.Outcome != EditorialDecisionOutcome.Prepare)
+        {
+            lock (_stateLock)
+            {
+                _state.ResolveOpportunity(opportunity.Id, false, null, _clock.Now);
+            }
+
+            _log.Write("PREPARATION SKIPPED: the Editorial Arbiter selected direct music continuation.");
+            _log.Write("No missed comment was queued.");
+            WriteNextSchedule();
+            ReportActivity(new RadioActivitySnapshot(RadioActivityState.OpportunityAbandoned));
+            return;
+        }
+
         var linkedCancellation = CancellationTokenSource.CreateLinkedTokenSource(_shutdownToken);
         bool skipped;
 
@@ -532,7 +580,7 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
         linkedCancellation.Dispose();
         lock (_stateLock)
         {
-            _state.ResolveOpportunity(opportunity.Id, false, null);
+            _state.ResolveOpportunity(opportunity.Id, false, null, _clock.Now);
         }
 
         _log.Write("PREPARATION SKIPPED: another automatic pipeline already exists.");
@@ -558,7 +606,7 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
             {
                 lock (_stateLock)
                 {
-                    if (_state.MarkPreparationReady(opportunity.Id))
+                    if (_state.MarkPreparationReady(opportunity.Id, result.Prepared))
                     {
                         lock (_pipelineLock)
                         {
@@ -595,7 +643,7 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
                 bool resolved;
                 lock (_stateLock)
                 {
-                    resolved = _state.ResolveOpportunity(opportunity.Id, false, null);
+                    resolved = _state.ResolveOpportunity(opportunity.Id, false, null, _clock.Now);
                 }
 
                 if (resolved)
@@ -611,7 +659,7 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
             ReportActivity(new RadioActivitySnapshot(RadioActivityState.OpportunityAbandoned));
             lock (_stateLock)
             {
-                _state.ResolveOpportunity(opportunity.Id, false, null);
+                _state.ResolveOpportunity(opportunity.Id, false, null, _clock.Now);
             }
         }
         finally
@@ -652,6 +700,60 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
 
     private void StartDelivery(RadioTransitionDelivery transition)
     {
+        long transitionSequence;
+        PreparedMaterialSessionId sessionId;
+        bool silentMode;
+        lock (_stateLock)
+        {
+            transitionSequence = _state.TotalObservedTransitions;
+            sessionId = _state.CurrentSessionId;
+            silentMode = _state.SilentMode;
+        }
+
+        var linerTransition = new ReusableLinerTransition(
+            transitionSequence,
+            transition.NewTrack,
+            transition.TransitionObservedAt,
+            sessionId);
+        EditorialAirtimeCandidate linerCandidate;
+        lock (_linerLock)
+        {
+            linerCandidate = _linerInventory.CreateCandidate(
+                linerTransition,
+                silentMode,
+                protectedPreparationBoundaryClear: false,
+                missedCommentBoundaryClear: false,
+                treatmentAvailable: true);
+        }
+
+        M11BTransitionSelection selection;
+        lock (_stateLock)
+        {
+            selection = _state.TryReserveTransition(transition, linerCandidate, _clock.Now);
+        }
+
+        M10CDeliveryReservation? reservation = selection.CommentReservation;
+        EditorialDecision editorialDecision = selection.Decision;
+
+        if (editorialDecision is not null)
+        {
+            WriteEditorialDecision(editorialDecision);
+        }
+
+        if (reservation is null)
+        {
+            _log.Write("TRANSITION DELIVERY ABANDONED: prepared material was no longer safely reservable. Silence is correct.");
+            CancelPendingPipeline("prepared material could not be reserved for delivery");
+            lock (_stateLock)
+            {
+                _state.ResolveOpportunity(transition.OpportunityId, false, null, _clock.Now);
+            }
+
+            WriteNextSchedule();
+            ReportActivity(new RadioActivitySnapshot(RadioActivityState.OpportunityAbandoned));
+            return;
+        }
+
         PreparedTransitionOpportunity? prepared;
         CancellationTokenSource? cancellation;
         bool simulateFailure;
@@ -678,7 +780,8 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
                         prepared,
                         transition,
                         cancellation,
-                        simulateFailure));
+                        simulateFailure,
+                        reservation));
                 return;
             }
         }
@@ -688,18 +791,18 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
         CancelPendingPipeline("preparation did not finish before the delivery transition");
         lock (_stateLock)
         {
-            _state.ResolveOpportunity(transition.OpportunityId, false, null);
+            _state.ResolveOpportunity(transition.OpportunityId, false, null, _clock.Now, reservation);
         }
 
         WriteNextSchedule();
         ReportActivity(new RadioActivitySnapshot(RadioActivityState.OpportunityAbandoned));
     }
-
     private async Task RunDeliveryAndFinalizeAsync(
         PreparedTransitionOpportunity prepared,
         RadioTransitionDelivery transition,
         CancellationTokenSource opportunityCancellation,
-        bool simulateFailure)
+        bool simulateFailure,
+        M10CDeliveryReservation reservation)
     {
         try
         {
@@ -718,6 +821,19 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
             {
                 _m9bCommentProvider?.RecordCompleted(prepared.Opportunity, prepared.Selection);
             }
+            if (result.Status == TransitionDeliveryStatus.Completed)
+            {
+                long completedSpeechTransition;
+                lock (_stateLock)
+                {
+                    completedSpeechTransition = _state.TotalObservedTransitions;
+                }
+
+                lock (_linerLock)
+                {
+                    _linerInventory.RecordHostSpeechCompleted(completedSpeechTransition);
+                }
+            }
             else
             {
                 _m9bCommentProvider?.Discard(prepared.Opportunity, result.Reason);
@@ -730,7 +846,9 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
                 resolved = _state.ResolveOpportunity(
                     transition.OpportunityId,
                     result.Status == TransitionDeliveryStatus.Completed,
-                    acceptedAiComment);
+                    acceptedAiComment,
+                    _clock.Now,
+                    reservation);
             }
 
             _log.Write(
@@ -751,7 +869,7 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
             ReportActivity(new RadioActivitySnapshot(RadioActivityState.OpportunityAbandoned));
             lock (_stateLock)
             {
-                _state.ResolveOpportunity(transition.OpportunityId, false, null);
+                _state.ResolveOpportunity(transition.OpportunityId, false, null, _clock.Now);
             }
         }
         finally
@@ -995,6 +1113,23 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
                 $"Next comment target: delivery on transition {_state.ScheduledThreshold}; " +
                 $"preparation starts one transition earlier.");
         }
+    }
+
+    private void WriteEditorialDecision(EditorialDecision decision)
+    {
+        string selected = decision.SelectedCandidateId ?? "direct-music-continuation";
+        string reasons = string.Join(", ", decision.Trace.Select(item =>
+            item.CandidateId is null ? item.Reason.ToString() : $"{item.Reason}:{item.CandidateId}"));
+        _log.Write(
+            $"EDITORIAL {decision.Stage.ToString().ToUpperInvariant()}: " +
+            $"{decision.Outcome} selected {selected}; reasons [{reasons}].");
+    }
+
+    private sealed class QuickReactionTransitionCommentProvider : ITransitionCommentProvider
+    {
+        private readonly AiCommentService _service;
+        public QuickReactionTransitionCommentProvider(AiCommentService service) => _service = service;
+        public Task<CommentSelection> SelectAsync(RadioPreparationContext context, bool aiEnabled, CancellationToken cancellationToken) => _service.SelectQuickReactionAsync(context, aiEnabled, cancellationToken);
     }
 
     private sealed class LocalTransitionCommentProvider : ITransitionCommentProvider

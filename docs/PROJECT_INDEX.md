@@ -6,25 +6,28 @@ This is the front door to the canonical Zoya Radio documentation. The local Git 
 
 | Field | Value |
 | --- | --- |
-| Snapshot date | 2026-08-22 |
+| Snapshot date | 2026-08-27 |
 | Repository branch | `master` |
 | Latest accepted implementation commit | `93ece64bf5cb21e67378d9ae024c6f45568fe86e` |
 | Documentation reorganization baseline | `d5594e7ee16be1f11afc732186fa16ae8c5cc1c9` |
-| Current passed milestone | M10A - Deterministic Opportunity Kernel; accepted live runtime remains Milestone 8 |
-| Latest accepted automated result | 292 passed, 0 failed at M10A implementation `93ece64bf5cb21e67378d9ae024c6f45568fe86e` |
+| Current passed milestone | M12D - Selected Quick-Reaction Contextual Pilot; Steve accepted D3.2 and VAR1 with limitations on August 27, 2026 |
+| Latest accepted automated result | 390 passed, 0 failed for the later M12D-VAR1 working-tree verification including D3.2 and VAR1 coverage; the historical D3.1 result remains 371 passed, 0 failed, and no M10B/M10C/M11A/M11B/M12A/M12B/M12C/M12D commit has been created |
 | Accepted internal packaged baseline | `0.8.0-alpha.1`; owner packaged-desktop acceptance recorded August 11, 2026 |
 | Deferred distribution evidence | Clean Windows 10/11 and invited private-alpha testing; not blockers to internal development |
 | Current concluded exploration | Milestone 9, closed as prototype/design evidence; M9B Gate 4 was not passed and M9B is not accepted runtime behavior. |
-| Approved post-M9 direction | Capability roadmap from M10A deterministic foundation through late configuration extraction; no capability is implemented by roadmap approval. |
-| Current accepted foundation | M10A pure opportunity kernel, unreachable from runtime; accepted by Steve on August 22, 2026. |
-| Next project step | Prepare a bounded M10B contract for Steve review. M10B implementation remains unauthorized until that contract is explicitly approved. |
-| Snapshot ID | `zoya-radio-2026-08-22-m10a-93ece64` |
+| M12C outcome | Straight handoff retained as no-model reference; quick reaction selected for later bounded work; session-aware observation deferred for revision/retest |
+| Approved post-M9 direction | M12D is passed: quick reaction is an accepted default-off runtime pilot; all further work requires a separate bounded authorization. |
+| Current accepted foundation | M10A/M10B/M10C and M11A govern the accepted M12D quick-reaction pilot; M12A/M12B remain isolated foundation/laboratory capabilities. |
+| Next project step | Steve decides the next separately bounded roadmap task. The D3.1 recent-comment topic-carryover issue was resolved by accepted D3.2; VAR1's repeated-form limitation remains active and deferred. |
+| M12D-VAR1 outcome | Steve accepted the generate-only simulated mixed-song format-variety evaluation with limitations on August 27, 2026; repeated title-first and `Oh ...` forms remain an active quality/product limitation. |
+| Snapshot ID | zoya-radio-2026-08-27-m12d-var1-accepted-with-limitations |
 
 Update this table whenever an accepted implementation commit becomes the new source snapshot.
 
 ## Start here
 
 - [README.md](../README.md) - practical operator and developer commands.
+- [AI-assisted development workflow](workflow/AI_WORKFLOW.md) - named-worker roles, routing, owner observability, authorization boundaries, and required handoffs for substantial AI-assisted work.
 - [PROJECT_STATE.md](PROJECT_STATE.md) - compact current operational status and immediate gates.
 - [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.md) - what the application actually implements now.
 - [ROADMAP.md](ROADMAP.md) - completed milestones and approved near-term direction.
@@ -41,6 +44,12 @@ Update this table whenever an accepted implementation commit becomes the new sou
 - [MILESTONE_9C_TEST.md](MILESTONE_9C_TEST.md) - completed experiment history, M9C.6 owner evidence, selected direction, and deferred integration issues.
 - [MILESTONE_9_CLOSURE.md](MILESTONE_9_CLOSURE.md) - final M9 outcome, evidence summary, closure decision, and deferred follow-on work.
 - [MILESTONE_10A_CONTRACT.md](MILESTONE_10A_CONTRACT.md) - approved M10A-only scope, automated verification, and Steve's August 22, 2026 acceptance record.
+- [MILESTONE_10B_CONTRACT.md](MILESTONE_10B_CONTRACT.md) - approved prepared-material lifecycle and binding contract with Steve's August 22, 2026 acceptance record.
+- [MILESTONE_10C_CONTRACT.md](MILESTONE_10C_CONTRACT.md) - passed strict M8 runtime-migration contract with Steve's August 23, 2026 acceptance record.
+- [MILESTONE_11A_CONTRACT.md](MILESTONE_11A_CONTRACT.md) - passed pure Editorial Arbiter contract with automated and Steve desktop acceptance evidence.
+- [MILESTONE_11B_CONTRACT.md](MILESTONE_11B_CONTRACT.md) - passed commentary/reusable-liner contract with automated and Steve desktop acceptance evidence.
+- [MILESTONE_12A_CONTRACT.md](MILESTONE_12A_CONTRACT.md) - passed pure Creative Context Assembler v1 contract with automated evidence and Steve's representative-packet acceptance.
+- [MILESTONE_12B_CONTRACT.md](MILESTONE_12B_CONTRACT.md) - passed bounded Creative Direction, format-specific Content Generation, and generate-only laboratory contract.
 - [RESEARCH_INDEX.md](RESEARCH_INDEX.md) - research inventory and the boundary between evidence and recommendations.
 
 ## ChatGPT Project-source availability
@@ -82,6 +91,7 @@ Repository-only does not mean non-authoritative. README and the milestone record
 | Subject | Governing document |
 | --- | --- |
 | Commands, launchers, logs, and local build instructions | [README.md](../README.md) |
+| AI-assisted task roles, routing, handoffs, and owner-test responsibilities | [AI_WORKFLOW.md](workflow/AI_WORKFLOW.md) |
 | Current passed milestone, latest verification, and immediate blockers | [PROJECT_STATE.md](PROJECT_STATE.md) |
 | Implemented components, runtime flow, and current safety behavior | [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.md) |
 | Completed milestones and approved next work | [ROADMAP.md](ROADMAP.md) |
@@ -94,6 +104,14 @@ Repository-only does not mean non-authoritative. README and the milestone record
 | Approved M9B grounded-context integration scope and staged acceptance gates | [MILESTONE_9B_CONTRACT.md](MILESTONE_9B_CONTRACT.md) |
 | Milestone 9 overall outcome and closure decision | [MILESTONE_9_CLOSURE.md](MILESTONE_9_CLOSURE.md) |
 | Approved M10A scope, parity surface, implementation verification, and acceptance state | [MILESTONE_10A_CONTRACT.md](MILESTONE_10A_CONTRACT.md) |
+| Approved M10B lifecycle/binding scope and acceptance record | [MILESTONE_10B_CONTRACT.md](MILESTONE_10B_CONTRACT.md) |
+| Passed M10C strict runtime-migration scope and acceptance record | [MILESTONE_10C_CONTRACT.md](MILESTONE_10C_CONTRACT.md) |
+| Passed M11A Editorial Arbiter scope and acceptance record | [MILESTONE_11A_CONTRACT.md](MILESTONE_11A_CONTRACT.md) |
+| Passed M11B commentary/reusable-liner scope and acceptance record | [MILESTONE_11B_CONTRACT.md](MILESTONE_11B_CONTRACT.md) |
+| Passed M12A Creative Context Assembler v1 scope and acceptance record | [MILESTONE_12A_CONTRACT.md](MILESTONE_12A_CONTRACT.md) |
+| Passed M12B Creative Direction and Content Generation acceptance record | [MILESTONE_12B_CONTRACT.md](MILESTONE_12B_CONTRACT.md) |
+| Passed M12C Host Format Laboratory, Batch 1 scope | [MILESTONE_12C_CONTRACT.md](MILESTONE_12C_CONTRACT.md) |
+| Passed M12D Selected Quick-Reaction Contextual Pilot scope and acceptance record | [MILESTONE_12D_CONTRACT.md](MILESTONE_12D_CONTRACT.md) |
 | External research provenance and status | [RESEARCH_INDEX.md](RESEARCH_INDEX.md) |
 | What the Design / Brainstorming conversation proposed | [POST_M8_INTAKE.md](proposals/POST_M8_INTAKE.md) and [FUTURE_PERSONAL_STATION_VISION.md](proposals/FUTURE_PERSONAL_STATION_VISION.md), as non-authoritative proposal/design records only |
 | Milestone-specific manual evidence and regression procedures | Existing `MILESTONE_*_TEST.md` records |
@@ -140,3 +158,9 @@ Repository-only does not mean non-authoritative. README and the milestone record
 - [Milestone 9 closure](MILESTONE_9_CLOSURE.md) - concluded prototype outcome; no further M9 work authorized
 - [Post-M9 capability roadmap](POST_M9_CAPABILITY_ROADMAP.md) - approved direction; listing a milestone does not authorize its implementation
 - [Milestone 10A contract/acceptance](MILESTONE_10A_CONTRACT.md) - passed; accepted pure foundation remains unreachable from live runtime
+- [Milestone 10B contract/acceptance](MILESTONE_10B_CONTRACT.md) - passed pure foundation
+- [Milestone 10C contract/acceptance](MILESTONE_10C_CONTRACT.md) - passed live migration
+- [Milestone 11A contract/acceptance](MILESTONE_11A_CONTRACT.md) - passed pure Editorial Arbiter
+- [Milestone 11B contract/acceptance](MILESTONE_11B_CONTRACT.md) - passed two-format proof; verified 337/337 and accepted by Steve on August 24, 2026
+- [Milestone 12C contract/acceptance](MILESTONE_12C_CONTRACT.md) - passed Host Format Laboratory, Batch 1; quick reaction selected for later bounded work
+- [Milestone 12D contract/acceptance](MILESTONE_12D_CONTRACT.md) - passed default-off quick-reaction runtime pilot; D3.1 verified 371/371, D3.2 comparison accepted, and VAR1 accepted with limitations on August 27, 2026

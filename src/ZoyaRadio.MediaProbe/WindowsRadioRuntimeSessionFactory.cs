@@ -88,7 +88,8 @@ internal sealed class WindowsRadioRuntimeSessionFactory : IRadioRuntimeSessionFa
                 radioConfiguration,
                 m9bGenerator: m9bOllama,
                 m9bConfiguration: m9bConfiguration,
-                m9bContextProvider: m9bContextProvider);
+                m9bContextProvider: m9bContextProvider,
+                quickReactionPilotEnabled: string.Equals(Environment.GetEnvironmentVariable("ZOYA_QUICK_REACTION_PILOT"), "1", StringComparison.Ordinal));
 
             return new OwnedWindowsRadioRuntimeSession(runtime, speechService, ollama, m9bOllama, m9bLiveResolver, log);
         }
@@ -143,7 +144,11 @@ internal sealed class OwnedWindowsRadioRuntimeSession : IRadioRuntimeSession
         return _runtime.StartAsync(options, cancellationToken);
     }
 
-    public Task StopAsync() => _runtime.StopAsync();
+    public async Task StopAsync()
+    {
+        await _runtime.StopAsync();
+        _log.Write("AUTOMATIC RADIO SESSION: protected stop returned to the controller.");
+    }
 
     public void SetSilentMode(bool silent) => _runtime.SetSilentMode(silent);
 

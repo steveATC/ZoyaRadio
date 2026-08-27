@@ -43,6 +43,44 @@ internal static class Milestone8AControllerTests
         TestAssert.Equal(1, session.StartCalls);
     }
 
+    public static async Task StopAfterPreparationPublishesTerminalStoppedSnapshot()
+    {
+        var session = new FakeRuntimeSession { BlockStopUntilReleased = true };
+        await using RadioRuntimeController controller = CreateController(new FakeRuntimeSessionFactory(session));
+        RadioControlSnapshot? lastPublished = null;
+        controller.StatusChanged += snapshot => lastPublished = snapshot;
+        await controller.StartAsync();
+
+        Task<RadioControlStopResult> stop = controller.StopAsync();
+        await session.StopEntered.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        session.ReleaseStop();
+        RadioControlStopResult result = await stop;
+
+        TestAssert.True(result.SafeToClose);
+        TestAssert.Equal(RadioLifecycleState.Stopped, result.Snapshot.Lifecycle);
+        TestAssert.True(lastPublished is not null);
+        TestAssert.Equal(RadioLifecycleState.Stopped, lastPublished!.Lifecycle);
+        TestAssert.Equal(RadioActivityState.Stopped, lastPublished.Activity.State);
+    }
+    public static async Task StopPublishesTerminalStateBeforeNonSafetyDisposeCompletes()
+    {
+        var session = new FakeRuntimeSession { BlockDisposeUntilReleased = true };
+        await using RadioRuntimeController controller = CreateController(new FakeRuntimeSessionFactory(session));
+        await controller.StartAsync();
+
+        RadioControlStopResult result = await controller.StopAsync();
+
+        await session.DisposeEntered.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        TestAssert.True(result.SafeToClose);
+        TestAssert.True(session.RestorationCompleted);
+        TestAssert.Equal(RadioLifecycleState.Stopped, result.Snapshot.Lifecycle);
+        TestAssert.Equal(RadioActivityState.Stopped, controller.CurrentStatus.Activity.State);
+        TestAssert.False(session.DisposeCompleted.Task.IsCompleted);
+
+        session.ReleaseDispose();
+        await session.DisposeCompleted.Task.WaitAsync(TimeSpan.FromSeconds(2));
+    }
+
     public static async Task NormalStop()
     {
         var session = new FakeRuntimeSession();
@@ -50,6 +88,7 @@ internal static class Milestone8AControllerTests
         await controller.StartAsync();
 
         RadioControlStopResult result = await controller.StopAsync();
+        await session.DisposeCompleted.Task.WaitAsync(TimeSpan.FromSeconds(2));
 
         TestAssert.True(result.SafeToClose);
         TestAssert.Equal(RadioLifecycleState.Stopped, result.Snapshot.Lifecycle);
@@ -66,6 +105,7 @@ internal static class Milestone8AControllerTests
 
         RadioControlStopResult first = await controller.StopAsync();
         RadioControlStopResult second = await controller.StopAsync();
+        await session.DisposeCompleted.Task.WaitAsync(TimeSpan.FromSeconds(2));
 
         TestAssert.True(first.SafeToClose && second.SafeToClose);
         TestAssert.Equal(1, session.StopCalls);
@@ -738,6 +778,8 @@ internal sealed class FakeRuntimeSession : IRadioRuntimeSession
     private Action<RadioRuntimeStatusUpdate>? _lastStatusHandler;
     private readonly TaskCompletionSource _stopRelease = new(
         TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly TaskCompletionSource _disposeRelease = new(
+        TaskCreationOptions.RunContinuationsAsynchronously);
 
     public event Action<RadioRuntimeStatusUpdate>? StatusChanged
     {
@@ -767,6 +809,8 @@ internal sealed class FakeRuntimeSession : IRadioRuntimeSession
 
     public bool BlockStopUntilReleased { get; init; }
 
+    public bool BlockDisposeUntilReleased { get; init; }
+
     public Exception? StartException { get; init; }
     public int StopFailuresRemaining { get; set; }
 
@@ -787,6 +831,12 @@ internal sealed class FakeRuntimeSession : IRadioRuntimeSession
         TaskCreationOptions.RunContinuationsAsynchronously);
 
     public TaskCompletionSource StopEntered { get; } = new(
+        TaskCreationOptions.RunContinuationsAsynchronously);
+
+    public TaskCompletionSource DisposeEntered { get; } = new(
+        TaskCreationOptions.RunContinuationsAsynchronously);
+
+    public TaskCompletionSource DisposeCompleted { get; } = new(
         TaskCreationOptions.RunContinuationsAsynchronously);
 
     public async Task<RadioRuntimeSessionStartResult> StartAsync(
@@ -893,11 +943,19 @@ internal sealed class FakeRuntimeSession : IRadioRuntimeSession
         WrapperRefreshes++;
     }
 
-    public ValueTask DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         DisposeCalls++;
-        return ValueTask.CompletedTask;
+        DisposeEntered.TrySetResult();
+        if (BlockDisposeUntilReleased)
+        {
+            await _disposeRelease.Task;
+        }
+
+        DisposeCompleted.TrySetResult();
     }
+
+    public void ReleaseDispose() => _disposeRelease.TrySetResult();
 }
 
 internal sealed class FakeLogFolderProvider : ILogFolderProvider

@@ -2,7 +2,7 @@
 
 Zoya Radio is a private, local-first Windows application with an accepted WinForms control frontend and preserved console diagnostics. It observes Firefox media, prepares short locally generated comments, speaks with the accepted Nicole voice, and can deliver prepared comments over proportionally ducked Firefox audio.
 
-Milestones 0 through 5, Milestone 7, Milestones 7.5A-7.5B, Milestone 8, and M10A have passed their required acceptance. Milestone 6 is deliberately deferred. Steve accepted packaged version `0.8.0-alpha.1` on August 11, 2026; `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf` remains the accepted live-runtime/package snapshot with 178 automated tests passed and 0 failed. Milestone 9 is closed as prototype/design evidence: M9A was rejected, M9C produced useful experimental evidence, and M9B did not receive final runtime acceptance. The accepted M8 safety baseline remains controlling. Steve accepted M10A on August 22, 2026 after its complete 292-test suite passed; the pure deterministic kernel remains unreachable from live runtime and is committed as `93ece64bf5cb21e67378d9ae024c6f45568fe86e`. Clean Windows 10/11 and invited-tester validation remain deferred distribution evidence, so the package is not a clean-machine-certified or public release.
+Milestones 0 through 5, Milestone 7, Milestones 7.5A-7.5B, Milestone 8, and M10A-M12D have passed their required acceptance. Milestone 6 is deliberately deferred. The latest committed accepted implementation remains M10A commit 93ece64bf5cb21e67378d9ae024c6f45568fe86e; M10B, M10C, M11A, M11B, M12A, M12B, M12C, and M12D are accepted uncommitted working-tree implementations. M12D includes accepted D3.2 topic isolation, and VAR1 is accepted with limitations. Current Release builds pass with 0 warnings/errors and the complete fake-driven suite passes 390/390; the historical D3.1 result was 371/371. The current working-tree implementation is not yet committed, and no next milestone, research, model/prompt/personality/enrichment change, commit, or push is authorized merely by this status. Clean Windows 10/11 and invited-tester validation remain deferred distribution evidence, so the package is not a clean-machine-certified or public release.
 
 Start with [docs/PROJECT_INDEX.md](docs/PROJECT_INDEX.md) for the canonical documentation map. Current status is in [docs/PROJECT_STATE.md](docs/PROJECT_STATE.md), and implemented behavior is in [docs/CURRENT_ARCHITECTURE.md](docs/CURRENT_ARCHITECTURE.md).
 
@@ -73,6 +73,8 @@ Run the accepted Milestone 7.5B behavior:
 ```
 
 After confirming the displayed `firefox.exe` target with **Y**, Zoya schedules a comment every 2-5 genuine transitions. It prepares local AI text and Nicole audio one transition early while music plays. At the next valid transition it ducks only Firefox to 25% of the volume captured at delivery time, speaks over the still-playing music, and restores the exact captured volume/mute state.
+
+Accepted M11B also prepares one fixed local `Zoya Radio.` liner in memory. It can be considered only after both six genuine transitions and twenty minutes since arm/last completed liner, and at least two transitions after completed host speech. Comments retain priority, missed comments are never filled by the liner, and ordinary music continuation remains valid. Steve accepted these cadence values for the proof while noting that twenty minutes is slow for timely manual verification; they remain provisional experimental defaults rather than permanent station policy.
 
 While armed:
 
@@ -268,6 +270,10 @@ The application uses Microsoft's Windows media, speech, playback, and Core Audio
 - [Roadmap](docs/ROADMAP.md)
 - [Approved post-M9 capability roadmap](docs/POST_M9_CAPABILITY_ROADMAP.md)
 - [Approved M10A contract and acceptance record](docs/MILESTONE_10A_CONTRACT.md)
+- [Approved M10B contract and acceptance record](docs/MILESTONE_10B_CONTRACT.md)
+- [Passed M10C runtime-migration contract and acceptance](docs/MILESTONE_10C_CONTRACT.md)
+- [Passed M11A Editorial Arbiter contract and acceptance](docs/MILESTONE_11A_CONTRACT.md)
+- [Passed M11B commentary/reusable-liner contract and acceptance record](docs/MILESTONE_11B_CONTRACT.md)
 - [Durable decisions](docs/DECISIONS.md)
 - [Known issues](docs/KNOWN_ISSUES.md)
 - [Research index](docs/RESEARCH_INDEX.md)

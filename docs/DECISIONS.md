@@ -106,6 +106,17 @@ These decisions summarize accepted project rules and rationale already evidenced
 - Creative Context reports compact established state. Creative Direction describes what a potential segment should accomplish. Content Generation writes exact words/renderable content. One early local-model call may perform direction and generation together, but these responsibilities remain conceptually separate.
 - Creative AI never controls scheduling, priority, timing, cooldown, playback, safety, expiry, memory commits, or whether generated material earns airtime. Silence and direct music continuation remain valid winners.
 
+## Approved format-aware creative-generation boundaries
+
+- A generic `LLM + facts -> commentary` path is not the future universal creative interface. Every generation request must identify the speaker/role, on-air situation, specific format, editorial objective, intended duration/structure, trusted context and explicit unknowns, creative permissions, and output contract at the level required by that format. This is a responsibility boundary, not approval of one frozen schema or exact prompt.
+- Stable Zoya personality is separate from the current producer assignment. Creative Direction states what a potential segment should accomplish; Content Generation writes the exact words or other renderable content. One local-model call may initially perform both responsibilities, but a premise may later be cached, rejected, rewritten, or routed to a format-specific writer without becoming airtime or canon.
+- Trusted facts are optional creative material, not a recital checklist. A format may use none, one, or several supplied facts when editorially useful. Missing facts remain unknown, and supplied facts do not force speech, metadata repetition, or factual exposition.
+- Factual scope remains explicit. Artist-level evidence may support a statement about the artist but does not establish track meaning, sound, lyrics, genre, mood, or history. Track-, recording-, release-, and session-level evidence likewise remain within their declared scope.
+- Host reactions, session observations, commercials, listener calls/dialogue, station imaging, fictional event promos, callbacks, and later chains/arcs require format-specific direction, generation contracts, and owner evaluation. Success in one format does not validate another, and no giant universal prompt is approved.
+- The producer-assignment style is an approved design principle to test: state the role, situation, job, constraints, permissions, and required deliverable clearly enough that the model is performing a radio function rather than producing generic commentary. Particular wording, field names, prompt layering, model choice, and whether direction and writing use one or two calls remain experimental.
+- Cross-format continuity remains optional and editorially earned. Context may expose an approved open thread, but a keyword match does not script a callback, Creative Direction cannot make lore canonical, and the Arbiter may reject every continuation.
+- Using a smaller model for Creative Direction and a larger model for exact writing is a Format Laboratory hypothesis only. It is not an architectural requirement or authorization to add or change models.
+
 ## Approved knowledge, memory, and continuity boundaries
 
 - Music Knowledge, Listening Intelligence, and Station Lore are separate data domains. A bounded Creative Context Assembler may combine selected canonical facts/state, but must not expose raw provider payloads or raw long-term listening events to prompts.
@@ -121,14 +132,32 @@ These decisions summarize accepted project rules and rationale already evidenced
 
 ## Approved voice, locale, delivery, and release sequencing
 
-- Nicole remains the accepted default for the current Zoya build, but host identity, voice identity, renderer/backend, and fallback are separate concepts. Host Voice Foundation precedes broad cast work; cast/role capability is added when calls/commercials demonstrate need.
+- Nicole remains the accepted default for the current Zoya build, but host identity, voice identity, renderer/backend, performance direction, and fallback are separate concepts. Host Voice/Renderer Foundation precedes broad cast work; cast/role capability is added when calls/commercials demonstrate need.
+- Expressive-renderer capability evaluation is separate from later production integration. A bounded provider-neutral evaluation may compare normal-host quality, expressive controls, voice identities, multi-speaker potential, latency/resources, reliability/determinism, cancellation/fallback, EN/PT-BR support, licensing, model size, hardware, privacy, and local-first implications. Chatterbox is an example candidate only, not an approved dependency.
+- A renderer selected for isolated speech must be evaluated again inside real prepared scenes for voice consistency, exact rendered-duration timing, performance-direction mapping, cancellation/disposal, processing tolerance, and produced-radio quality before it becomes a production capability.
 - Language and locale are separate from host/voice identity. Full station configuration remains late, but English/Nicole assumptions must not become inseparable from the engine; bounded EN/PT-BR and pronunciation/cultural-fit experiments may occur earlier.
 - Delivery treatment is independent from content format and duration. Content may declare allowed, preferred, or required treatments, and an opportunity must provide a compatible treatment. No rule equivalent to `duration > X => pause Firefox` is approved.
 - The current automatic no-pause invariant remains controlling until an isolated exact-target hold diagnostic passes a major manual safety gate. An opt-in `HoldAndReplace` primitive requires a separate later decision and authorization; M15A does not authorize M15B.
-- Narrow production capabilities such as one telephone filter, bed, effect, fade, normalization step, or multi-voice pre-render may upgrade a demonstrated client before the full sonic-identity system.
+- A bounded format experiment may use a second voice, one telephone/radio filter, a ring or hang-up effect, a simple bed/fade, gain adjustment, or normalization before the shared production phase. Such evidence does not establish a reusable production subsystem; proven needs must be consolidated rather than preserved as format-specific hacks.
+- Prepared-scene representation/compilation, production voice-renderer integration, shared mixing/FX, and canonical sonic identity are distinct capability and acceptance boundaries. Voice identity, performance intent, scene timing, audio engineering, and station branding must remain independently replaceable and testable.
+- Complex scenes should normally be completely prepared before their first audible beat. Real rendered durations, ownership, cancellation, disposal, treatment compatibility, final safety revalidation, and silence remain deterministic even when scene content or performance is AI-assisted.
 - Distribution/Firefox compatibility work occurs when Steve decides the experience is worth distributing. Opportunistic Firefox evidence may be gathered earlier, but private alpha does not gate richer internal formats, production, or sonic identity.
 - General configuration is extracted last from dimensions proven useful by the mature opinionated Zoya station; no speculative station builder is approved now.
 - None of these roadmap decisions changes implemented behavior. The accepted M8 safety baseline remains controlling until a later bounded milestone is implemented, verified, and explicitly accepted.
+
+## Accepted M12D D3.2 topic-isolation boundary
+
+- D3.2 is an accepted bounded repair to the default-off quick-reaction pilot, followed by an accepted exactly 32-request comparison on August 27, 2026. Three requests were mechanically rejected for being under 15 words; selected-model unload succeeded. This comparison does not prove universal topic isolation.
+- The versioned `quick-reaction-v3-topic-isolation` prompt keeps current Track-A title/artist as the only subject matter. Up to three recent accepted lines are reduced to abstract form measurements: opening shape, length band, sentence count, ending shape, and dash/semicolon use. Their words, topics, facts, premises, entities, jokes, scenes, and continuations are absent.
+- Existing spoken-text cleanup, current-track grounding, default-off/explicit-opt-in behavior, lifecycle/arbitration/binding/cancellation/targeting/ducking/restoration, and M11B pilot-off behavior remain controlling. The D3.1 Otava Yo/Tommy the Cat carryover was a quality defect, not a lifecycle or targeting defect, and is resolved by this boundary.
+
+## Accepted M12D-VAR1 quality boundary
+
+- On August 27, 2026, Steve accepted the generate-only simulated mixed-song format-variety evaluation with limitations.
+- Good individual local-model comments do not establish sustained format variety: repeated title-first reactions and recurring `Oh ...` openings become recognizable and repetitive song after song.
+- This is an expected quality/product limitation and temporary placeholder, not an established application/runtime defect. Its underlying cause remains unestablished.
+- Future research into model choice, prompting, personality, and bounded context/enrichment is deferred until broader evidence from later formats, including possible commercials and listener calls. This decision authorizes neither that research nor any model, dependency, enrichment, lyrics/facts, format, implementation, or milestone.
+- VAR1 artifacts remain generate-only; nothing became live, audible, or user-visible. Default-off/explicit-opt-in quick-reaction behavior and accepted runtime/safety behavior remain unchanged.
 
 ## Approved Milestone 9A experimental boundaries
 

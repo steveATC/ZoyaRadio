@@ -27,6 +27,13 @@ internal interface ITransitionRadioHost
         DateTimeOffset speechStartDeadline,
         bool simulatePostDuckFailure,
         CancellationToken cancellationToken);
+
+    Task<TransitionDuckingResult> RunDuckedLinerAsync(
+        ReusableLinerTransition transition,
+        IPreparedAnnouncementSpeech preparedSpeech,
+        TimeSpan maximumSpeechDuration,
+        DateTimeOffset speechStartDeadline,
+        CancellationToken cancellationToken);
 }
 
 internal static class TransitionPreparationSafety

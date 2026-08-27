@@ -33,7 +33,11 @@ internal static class Program
         bool m9bGenerateOnlyBenchmark = false;
         bool m9bGate3Silent = false;
         bool m9bGate3Smoke = false;
+        bool m12cHostFormatLab = false;
 
+        bool m12dQuickReactionLab = false;
+        bool m12dD32Comparison = false;
+        bool m12dVar1SimulatedPlaylist = false;
         foreach (string argument in args)
         {
             if (string.Equals(argument, "--once", StringComparison.OrdinalIgnoreCase))
@@ -197,7 +201,30 @@ internal static class Program
                 continue;
             }
 
+
+            if (string.Equals(argument, "--m12c-host-format-lab", StringComparison.OrdinalIgnoreCase))
+            {
+                m12cHostFormatLab = true;
+                continue;
+            }
+            if (string.Equals(argument, "--m12d-d3-2-comparison", StringComparison.OrdinalIgnoreCase))
+            {
+                m12dD32Comparison = true;
+                continue;
+            }
+            if (string.Equals(argument, "--m12d-var1-simulated-playlist", StringComparison.OrdinalIgnoreCase))
+            {
+                m12dVar1SimulatedPlaylist = true;
+                continue;
+            }
+            if (string.Equals(argument, "--m12d-quick-reaction-lab", StringComparison.OrdinalIgnoreCase))
+            {
+                m12dQuickReactionLab = true;
+                continue;
+            }
+
             Console.Error.WriteLine($"Unknown option: {argument}");
+
             WriteUsage();
             return 2;
         }
@@ -217,7 +244,11 @@ internal static class Program
             + (m9c6Benchmark ? 1 : 0)
             + (m9bGenerateOnlyBenchmark ? 1 : 0)
             + (m9bGate3Silent ? 1 : 0)
-            + (m9bGate3Smoke ? 1 : 0);
+            + (m9bGate3Smoke ? 1 : 0)
+            + (m12cHostFormatLab ? 1 : 0)
+            + (m12dD32Comparison ? 1 : 0)
+            + (m12dVar1SimulatedPlaylist ? 1 : 0)
+            + (m12dQuickReactionLab ? 1 : 0);
         if (selectedModes > 1)
         {
             Console.Error.WriteLine(
@@ -319,6 +350,26 @@ internal static class Program
         if (m9bGate3Silent)
         {
             return await M9BGate3SilentCommand.RunAsync();
+        }
+
+        if (m12dQuickReactionLab)
+        {
+            return await M12DQuickReactionCommand.RunAsync();
+        }
+
+        if (m12dD32Comparison)
+        {
+            return await M12DD32ComparisonCommand.RunAsync();
+        }
+
+        if (m12dVar1SimulatedPlaylist)
+        {
+            return await M12DVarietyPlaylistCommand.RunAsync();
+        }
+
+        if (m12cHostFormatLab)
+        {
+            return await M12CHostFormatLaboratoryCommand.RunAsync();
         }
 
         if (m9bGate3Smoke)
@@ -793,8 +844,12 @@ internal static class Program
         Console.Error.WriteLine("   or: run-deterministic-context-benchmark.cmd");
         Console.Error.WriteLine("   or: run-m9c5-model-comparison.cmd");
         Console.Error.WriteLine("   or: run-m9c6-whole-comment-benchmark.cmd");
+        Console.Error.WriteLine("   or: run-m12d-quick-reaction-lab.cmd");
+        Console.Error.WriteLine("   or: run-m12d-d3-2-comparison.cmd");
+        Console.Error.WriteLine("   or: run-m12d-var1-simulated-playlist.cmd");
         Console.Error.WriteLine("   or: run-m9b-generate-only-evaluation.cmd");
         Console.Error.WriteLine("   or: run-m9b-gate3-silent.cmd");
         Console.Error.WriteLine("   or: run-m9b-gate3-smoke.cmd");
+        Console.Error.WriteLine("   or: run-m12c-host-format-lab.cmd");
     }
 }

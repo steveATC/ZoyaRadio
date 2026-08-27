@@ -8,13 +8,19 @@ make any capability implemented, change the accepted Milestone 8 runtime, pass a
 milestone, or authorize work beyond a separately approved bounded milestone
 contract.
 
-Milestone 9 remains closed as prototype/design evidence. The accepted runtime is
-still the Milestone 8 implementation at `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf`.
+Steve approved the post-M11 format-aware generation and staged voice/production
+refinements on August 24, 2026. That approval preserves the sequence below and its
+capability boundaries; it does not authorize implementation, dependencies, or a
+commit for any future milestone.
 
-Steve approved and authorized M10A-only implementation on August 22, 2026, then
-accepted the automatically verified result later that day. Its
-[contract and acceptance record](MILESTONE_10A_CONTRACT.md) describe a passed pure
-kernel that remains unreachable from runtime. M10B remains unauthorized.
+Milestone 9 remains closed as prototype/design evidence. M10A, M10B, M10C, M11A,
+and M11B have since passed under their bounded contracts and acceptance records.
+M11B proved commentary, one fixed reusable liner, and direct music continuation as
+deterministically arbitrated clients; it did not accept the current commentary
+prompt as a mature radio-host format. Steve accepted the pure runtime-unreachable
+[M12A context assembler](MILESTONE_12A_CONTRACT.md) on August 24, 2026. The bounded
+[M12B contract](MILESTONE_12B_CONTRACT.md) was subsequently approved and implemented
+as an isolated 360/360 candidate. Steve reviewed its fixtures and accepted M12B on August 26, 2026. Steve accepted [M12C](MILESTONE_12C_CONTRACT.md) after its 366/366 automated result and blinded qualitative review. It selected quick reaction only for later bounded work, retained deterministic handoff as the no-model reference, and deferred session-aware observation for revision/retest. M12C remains local-only and unreachable from normal runtime. Steve subsequently authorized and accepted M12D D3.2 and VAR1 with limitations; the default-off pilot remains bounded and no further milestone or commit is authorized.
 
 ## Product strategy
 
@@ -48,13 +54,32 @@ listening evidence and a separate decision.
 | Music Knowledge | Source-backed canonical artist/track/fact evidence with provenance and typed lookup outcomes | Scheduling or inferred listener preference |
 | Listening Intelligence | Deterministic aggregates derived from actual listening with explicit evidence coverage | Permanent raw listening diary or unsupported classification |
 | Station Lore | Approved station-world entities, bounded open threads, and completed-airtime effects | Raw brainstorm output or narrative obligation |
-| Voice and production | Host voice, cast roles, renderer capabilities, language/locale, delivery assets, and scenes | Treating duration as permission to pause music |
+| Voice capability | Host/voice identity separation, renderer adapters/capabilities, semantic performance intent, cast roles, language/locale, and fallback | Scene timing, audio mixing, station branding, or treating one backend as permanent |
+| Prepared Scene Compiler | Deterministic component ordering/overlap, real-duration timeline resolution, ownership, cancellation, disposal, and compile validation | Renderer selection, DSP/mixing policy, scheduling, or sonic-brand decisions |
+| Audio Production / Mixing | Gain staging, normalization, filters, beds, fades, reusable FX, final scene rendering, and production-resource cleanup | Editorial selection, voice identity, or station-lore authority |
+| Sonic Identity / Imaging | Canonical sound assets, motifs, IDs, stings, bumpers, announcer treatment, imaging grammar, and provenance | Safe scheduling, scene-engine mechanics, or general station configuration |
 | Safe playback layer | Positively validated target operations and protected restoration | Editorial decisions, guessing targets, or blind toggles |
 
 Creative Direction and exact Content Generation are conceptually separate even
 when an early experiment performs both in one local model invocation. This keeps
 premises independently cacheable and allows later format-specific writers,
 renderers, cast direction, or models without prematurely requiring two calls.
+
+Creative requests are format-aware producer assignments rather than one universal
+`LLM + facts -> commentary` interface. At the level needed by the client, a request
+identifies the speaker/role, on-air situation, specific format, editorial objective,
+duration/structure, trusted context and unknowns, creative permissions, and output
+contract. Stable personality remains separate from the assignment. This principle
+does not freeze field names, prompt wording, prompt count, or model topology.
+
+Trusted context supplies permissions, not a checklist. A generator may use none,
+one, or several relevant facts; it must not mention facts merely because they were
+provided. Fact scope remains explicit: artist-level evidence does not become a
+claim about a track's lyrics, sound, mood, genre, or meaning. Host reactions,
+session observations, commercials, calls/dialogue, imaging, fictional event promos,
+callbacks, and later chains/arcs use independent direction, generation, validation,
+and evaluation contracts. A successful prompt for one format proves nothing about
+the others.
 
 ## Capability phases and milestones
 
@@ -219,19 +244,27 @@ does not force future systems into a speculative universal relevance model.
   giant benchmark or one giant AI controller.
 - **Hard dependencies:** M12A accepted.
 - **Responsibilities:** typed creative brief/premise, format goal, constraints,
-  evergreen/context-bound flag, optional cast/performance/lore intent; generator
-  request/result; validation/fallback/discard outcomes; a reusable generate-only
-  Format Laboratory harness. One invocation may initially fill both roles.
+  speaker/role, on-air situation, editorial objective, duration/structure,
+  evergreen/context-bound flag, optional cast/performance/lore intent, trusted
+  context permissions and fact scope, and a format-specific output contract;
+  generator request/result; validation/fallback/discard outcomes; a reusable
+  generate-only Format Laboratory harness. One invocation may initially fill both
+  roles, while preserving direction and exact wording as distinct responsibilities.
 - **Explicit non-goals:** testing every future format, runtime scheduling, durable
-  premise storage, multiple models, audio, or lore commits.
+  premise storage, one universal prompt/schema, required multi-model routing,
+  audio, or lore commits.
 - **Accepted behavior preserved:** AI output has no airtime right and unsupported
-  facts remain prohibited.
+  facts remain prohibited. Supplied facts are optional creative material rather
+  than required talking points, and missing context remains unknown.
 - **Unlocks:** small evidence-driven benchmark batches for host, commercial, and
   dialogue concepts.
 - **Main risks:** a supposedly conceptual boundary becoming unnecessary ceremony,
-  or exact prose leaking back into deterministic direction state.
+  stable personality and situation-specific instructions collapsing into one giant
+  prompt, facts becoming a recital checklist, or exact prose leaking back into
+  deterministic direction state.
 - **Automated verification:** schema/version tests, failure/fallback containment,
-  bounded alternatives, and proof the lab cannot access playback/audio.
+  bounded alternatives, factual-scope fixtures, optional-fact-use accounting, and
+  proof the lab cannot access playback/audio.
 - **Steve/manual evaluation:** inspect whether briefs express useful intent without
   prematurely writing or scheduling the segment.
 - **Next action type:** Evaluation framework.
@@ -244,8 +277,9 @@ does not force future systems into a speculative universal relevance model.
   every idea deserves implementation.
 - **Hard dependencies:** M12B accepted.
 - **Responsibilities:** one bounded batch such as straight announcement, quick
-  reaction, and session-aware observation; fixed scenarios, blinded artifacts,
-  qualitative rubric, mechanical outcomes, and explicit selection/rejection.
+  reaction, and session-aware observation; a small comparison of format-specific
+  producer-assignment variants; fixed scenarios, blinded artifacts, qualitative
+  rubric, mechanical outcomes, and explicit selection/rejection.
 - **Explicit non-goals:** long rants, callbacks, chains, arcs, commercials, calls,
   runtime integration, or a permanent repertoire.
 - **Accepted behavior preserved:** normal radio remains untouched.
@@ -255,11 +289,15 @@ does not force future systems into a speculative universal relevance model.
   not resemble real listening.
 - **Automated verification:** complete bounded run, arm blinding, exact fixture
   accounting, local model unload, and no runtime/audio access.
-- **Steve/manual evaluation:** score relevance, grounding, personality, phrasing,
-  variety, concision, and desire to hear it.
+- **Steve/manual evaluation:** score whether it sounds like radio, format
+  fulfillment, naturalness, personality, grounding, useful rather than compulsory
+  context use, fact-recital avoidance, generic-prose avoidance, structural variety,
+  format-appropriate concision, and desire to hear it.
 - **Next action type:** Evaluation by Steve.
 
 #### M12D - Selected Contextual Host Integration
+
+- **Status:** Accepted bounded D3.2 topic-isolation pilot and VAR1 format-variety evaluation with limitations. Further work requires a separate decision.
 
 - **Purpose:** add only the host formats selected by M12C to prepared runtime
   arbitration.
@@ -430,7 +468,7 @@ Lore promotion is explicit:
 
 ### Phase E - Voice and localization foundation
 
-#### M14A - Host Voice Foundation
+#### M14A - Host Voice and Renderer Abstraction Foundation
 
 - **Purpose:** make Nicole the accepted default voice for the current Zoya build,
   not the conceptual definition of Zoya.
@@ -439,14 +477,18 @@ Lore promotion is explicit:
 - **Hard dependencies:** accepted current speech preparation; independent auditions
   may happen earlier.
 - **Responsibilities:** host identity separate from voice identity and renderer;
-  small approved alternative host voice; capability checks; explicit fallback;
-  unavailable-voice containment; licensing/provenance record.
+  replaceable renderer/backend adapter boundary; small approved alternative host
+  voice; explicit capability descriptions for voice/language/performance/resource
+  needs; deterministic selection and fallback; unavailable-voice containment;
+  cancellation/disposal ownership; licensing/provenance record.
 - **Explicit non-goals:** large configuration UI, arbitrary downloaded voices,
-  multi-character casting, full performance direction, or localization.
+  multi-character casting, choosing an expressive backend without evaluation,
+  production-scene integration, audio mixing/FX, full performance direction, or
+  localization.
 - **Accepted behavior preserved:** Nicole default, local CPU preparation, Windows
   local TTS fallback, pre-delivery failure containment, and no bundled unapproved
   dependency.
-- **Unlocks:** tester-selectable host voice and a clean base for cast roles.
+- **Unlocks:** tester-selectable host voice plus clean seams for renderer evaluation, cast roles, localization, and later production integration.
 - **Main risks:** voice availability/licensing or fallback changing perceived host
   identity.
 - **Automated verification:** selection, capability, unavailable voice, fallback,
@@ -454,33 +496,73 @@ Lore promotion is explicit:
 - **Steve/manual evaluation:** audition and approve the small alternative set.
 - **Next action type:** Research/Evaluation may precede implementation.
 
-#### M14B - Cast and Role Capability
+#### M14B - Expressive Renderer Capability Evaluation
+
+- **Purpose:** evaluate provider-neutral local voice backends for normal Zoya host
+  delivery before any backend is trusted inside produced scenes.
+- **Why now:** host suitability, expressive control, language support, resource cost,
+  and fallback are voice/backend questions; solving them once does not prove later
+  scene-production quality.
+- **Hard dependencies:** accepted current speech-preparation safety. M14A is a useful
+  integration boundary, but an isolated render-only audition may occur earlier.
+- **Responsibilities:** bounded disclosed candidate set; normal-host voice quality;
+  voice identity and multi-speaker potential; actually supported performance
+  controls; latency and CPU/GPU/RAM/VRAM measurements; reliability, repeatability,
+  cancellation, unload/disposal, and fallback feasibility; EN and PT-BR capability
+  where claimed; license, model-size, hardware, privacy, and local-first review.
+- **Explicit non-goals:** approving Chatterbox or any named backend by roadmap text,
+  automatic dependency installation, runtime selection, scene assembly, mixing/FX,
+  voice cloning, or claiming isolated speech proves produced-radio quality.
+- **Accepted behavior preserved:** Nicole/Kokoro and Windows fallback remain the
+  current accepted route unless a later bounded contract integrates an approved
+  result; the radio and desktop media remain untouched during isolated evaluation.
+- **Unlocks:** evidence for a separately authorized renderer integration and clearer
+  capability requirements for cast, localization, and production scenes.
+- **Main risks:** choosing on one attractive sample, hidden hardware cost, unstable
+  voice identity, weak PT-BR, unsupported control claims, or licensing surprises.
+- **Automated verification:** bounded artifact/accounting harness, truthful capability
+  reporting, cancellation/disposal, resource measurements, fallback isolation, and
+  proof that the evaluation cannot access playback or normal runtime.
+- **Steve/manual evaluation:** host fit, expressiveness without gimmickry, clarity,
+  fatigue, identity consistency, EN/PT-BR quality where applicable, and value versus
+  resource cost.
+- **Next action type:** Research/Evaluation contract; no candidate is approved merely
+  because it appears in this roadmap.
+
+Chatterbox is one example candidate for a future bounded comparison. The eventual
+contract must review the then-current candidate versions and alternatives rather
+than treating this roadmap mention as a dependency choice.
+
+#### M14C - Cast and Role Capability
 
 - **Purpose:** support announcer, caller, spokesperson, guest, and other roles
   without assuming every role requires a distinct voice.
 - **Why now:** commercials and calls need reusable casting rather than format-local
   voice switches.
-- **Hard dependencies:** M14A; an accepted multi-voice format experiment is a useful
-  prerequisite.
-- **Responsibilities:** role/cast registry, compatible voice capabilities,
-  deterministic assignment/fallback, and bounded multi-voice pre-render ownership.
-- **Explicit non-goals:** unlimited characters, recurring-character lore by
-  default, full scene production, or voice-cloning.
+- **Hard dependencies:** M14A; accepted M14B renderer evidence and a multi-voice
+  format experiment are useful prerequisites.
+- **Responsibilities:** role/cast registry, compatible voice/capability requirements,
+  deterministic assignment/fallback, same-voice allowance, and explicit refusal
+  when no approved renderer can satisfy a role.
+- **Explicit non-goals:** unlimited characters, recurring-character lore by default,
+  audio rendering, multi-voice resource ownership, full scene production, or
+  voice-cloning.
 - **Accepted behavior preserved:** host fallback and preparation safety.
-- **Unlocks:** shared commercial/call/dialogue production.
-- **Main risks:** indistinct speakers, poor local second voice, or resource leakage.
+- **Unlocks:** reusable cast plans consumed by later commercial/call/dialogue renderer and scene-production capabilities.
+- **Main risks:** indistinct speakers, poor local second voice, role proliferation,
+  or assignment beyond an approved renderer's capabilities.
 - **Automated verification:** role resolution, same-voice allowance, fallback,
-  unavailable cast member, cancellation, and disposal tests.
+  unavailable cast member, capability mismatch/refusal, and deterministic assignment.
 - **Steve/manual evaluation:** dialogue intelligibility and believability audition.
 - **Next action type:** Experiment/Evaluation before runtime integration.
 
-#### M14C - Language and Locale Foundation
+#### M14D - Language and Locale Foundation
 
 - **Purpose:** keep language, locale, voice, and host identity separable.
 - **Why now:** English/Nicole assumptions must not become inseparable from the
   engine before future private-alpha work.
-- **Hard dependencies:** M12A and M14A are useful prerequisites; PT-BR feasibility
-  research may happen earlier.
+- **Hard dependencies:** M12A and M14A are useful prerequisites; M14B may supply
+  renderer evidence, while PT-BR feasibility research may happen earlier.
 - **Responsibilities:** explicit language and locale values; localized deterministic
   templates; locale-aware creative constraints; renderer pronunciation/capability
   checks; fallback/refusal; EN and PT-BR bounded experiment.
@@ -497,9 +579,10 @@ Lore promotion is explicit:
   cultural-fit review.
 - **Next action type:** Research/Evaluation, then bounded implementation.
 
-Performance direction begins only as small semantic intent in creative/voice
-requests and grows when an accepted renderer demonstrates useful expressive
-controls. It is not bundled into M14A.
+Performance direction begins as small renderer-neutral semantic intent in
+creative/voice requests. M14B discovers which controls actually work; later M17B
+maps only supported intent into a production renderer. Expressiveness is neither
+bundled into M14A nor assumed from a provider's advertised feature list.
 
 ### Phase F - Delivery grammar and program-space safety
 
@@ -590,8 +673,10 @@ overlay. No rule equivalent to `duration > X => pause Firefox` is permitted.
 - **Hard dependencies:** M12B; M13B is a useful prerequisite for trusted session
   context but not required for an initial fixed-context batch.
 - **Responsibilities:** bounded context packets, Creative Direction brief, exact
-  commercial generation, evergreen versus opportunity-bound classification,
-  alternatives that die if unselected, mechanical review, and owner rubric.
+  format-specific commercial generation contract, exact commercial generation,
+  evergreen versus opportunity-bound classification, alternatives that die if
+  unselected, mechanical review, and owner rubric. Commercial instructions are not
+  inherited from the host-comment prompt.
 - **Explicit non-goals:** static advertiser pack as mature model, runtime airtime,
   automatic lore, multi-voice requirement, or FX system.
 - **Accepted behavior preserved:** trusted evidence only; unsupported genre guessing
@@ -601,8 +686,9 @@ overlay. No rule equivalent to `duration > X => pause Firefox` is permitted.
   claims, or retaining brainstorm garbage.
 - **Automated verification:** bounded run/accounting, context provenance, no runtime
   access, alternative disposal, validation/fallback, and model unload.
-- **Steve/manual evaluation:** originality, fit to trusted context, replay value,
-  Zoya tone, and desire to hear it.
+- **Steve/manual evaluation:** commercial-format fulfillment, originality, fit to
+  trusted context without fact recital, replay value, Zoya-station tone, structural
+  variety, and desire to hear it.
 - **Next action type:** Evaluation.
 
 #### M16C - Shared Procedural Preparation Pipeline
@@ -612,12 +698,15 @@ overlay. No rule equivalent to `duration > X => pause Firefox` is permitted.
   required client, not the owner of the capability.
 - **Why now:** quality and plumbing evidence both exist.
 - **Hard dependencies:** accepted M16A/M16B evidence, M12D foundations, and required
-  delivery capability.
+  delivery capability. M17 is hard only when the selected client requires a
+  composite or mixed produced scene.
 - **Responsibilities:** bounded ahead-of-time requests, candidate selection,
-  material classification, preparation, reuse/release, expiry/discard, typed
-  delivery treatment, and no-airtime-right arbitration.
+  material classification, single-component rendering/preparation where sufficient,
+  reuse/release, expiry/discard, typed delivery treatment, and no-airtime-right
+  arbitration.
 - **Explicit non-goals:** every procedural format, durable advertiser canon by
-  default, automatic cross-format continuation, or full production system.
+  default, automatic cross-format continuation, composite-scene compilation, shared
+  mixing/FX, or a full production system.
 - **Accepted behavior preserved:** scheduling, safety, and final revalidation remain
   deterministic and independent of generation success.
 - **Unlocks:** reuse by calls, liners, host bits, and later scenes.
@@ -634,12 +723,16 @@ overlay. No rule equivalent to `duration > X => pause Firefox` is permitted.
   runtime calls.
 - **Why now:** a poor second voice or dialogue style is a major dependency worth
   discovering early; this experiment may be scheduled before M16A-C.
-- **Hard dependencies:** M12B; M14B is useful but an isolated one-shot experiment
-  may precede it.
+- **Hard dependencies:** M12B. M14B renderer evidence and M14C cast structure are
+  useful, but an isolated one-shot voice/production experiment may precede them.
 - **Responsibilities:** bounded caller premise/script batch, second-voice audition,
-  turn-taking, telephone treatment experiment, dialogue duration, and owner rubric.
-- **Explicit non-goals:** runtime calls, recurring caller canon, full FX system, or
-  obligation to implement calls after the experiment.
+  format-specific dialogue contract, turn-taking, dialogue duration, and an
+  explicitly disposable production proof that may include one simple telephone-band
+  filter, ring/hang-up effect, basic bed/fade, and gain/normalization pass.
+- **Explicit non-goals:** runtime calls, recurring caller canon, reusable scene or
+  mixer architecture, broad FX library, production dependency selection, or
+  obligation to implement calls after the experiment. Caller instructions are not
+  inherited from host-comment or commercial prompts.
 - **Accepted behavior preserved:** generate/render-only isolation from Firefox and
   normal radio.
 - **Unlocks:** decision on local voice viability and caller-format value.
@@ -648,8 +741,15 @@ overlay. No rule equivalent to `duration > X => pause Firefox` is permitted.
 - **Automated verification:** bounded artifacts, cleanup, voice fallback, no
   playback access, and repeatable render settings.
 - **Steve/manual evaluation:** believability, clarity, timing, character restraint,
-  and desire to hear it.
+  dialogue-format fulfillment, non-monologue structure, and desire to hear it.
 - **Next action type:** Experiment/Evaluation; independently schedulable.
+Narrow caller or commercial production experiments remain isolated artifacts with
+bounded tools and disclosed settings. They may prove that a second voice, filter,
+effect, bed, fade, or normalization step helps a format, but they do not establish
+shared APIs or production dependencies. M17 must consolidate accepted needs behind
+reusable ownership, renderer, scene, and mixing boundaries rather than copy the
+experimental path into runtime.
+
 
 #### M16E - Optional Cross-Format Continuity
 
@@ -674,52 +774,131 @@ overlay. No rule equivalent to `duration > X => pause Firefox` is permitted.
   than compulsory or annoying.
 - **Next action type:** Evaluation.
 
-### Phase H - Rich production and sonic identity
+### Phase H - Prepared production and sonic identity
 
-#### M17A - Shared Prepared Scene Production
+Narrow production tricks may validate a format earlier; this phase turns only
+proven needs into coherent reusable capabilities. Experimental caller/commercial
+artifacts are evidence, not production APIs, and may be discarded or reimplemented.
 
-- **Purpose:** provide incremental reusable production capabilities to existing
-  formats.
-- **Why now:** proven formats can benefit from narrow treatment without waiting for
-  the complete station sound.
-- **Hard dependencies:** M10B, delivery-treatment model, and an accepted client.
-- **Responsibilities:** bounded multi-voice pre-render, simple bed/effect/fade,
-  telephone filter, level normalization, deterministic scene ownership, cleanup,
-  and renderer capability/fallback.
-- **Explicit non-goals:** complete sonic identity, broad FX library, or requiring
-  every format to use scenes.
-- **Accepted behavior preserved:** preparation failure occurs before playback
-  mutation and incompatible opportunities remain silent.
-- **Unlocks:** progressive upgrades to calls, commercials, IDs, and host bits.
-- **Main risks:** clipping, inconsistent loudness, asset licensing, latency, or
-  resource leakage.
-- **Automated verification:** offline render fixtures, duration/level bounds,
-  cancellation/disposal, capability fallback, package provenance, and no live
-  playback in tests.
-- **Steve/manual evaluation:** headphone/speaker listening for clarity, levels,
-  pacing, and whether production helps the joke/segment.
-- **Next action type:** Iterative Evaluation.
+#### M17A - Deterministic Prepared Scene Model and Compiler Foundation
 
-#### M17B - Canonical Zoya Sonic Identity
+- **Purpose:** represent, validate, own, and compile a multi-component prepared
+  scene without also choosing voices, inventing DSP policy, or designing branding.
+- **Why now:** calls, commercials, imaging, and later chained bits need one atomic
+  prepared unit whose timing and resources are known before its first audible beat.
+- **Hard dependencies:** M10B, the delivery-treatment model, and one accepted
+  composite-scene client or fixture that demonstrates the minimum grammar.
+- **Responsibilities:** versioned scene/timeline representation; ordered and
+  overlapped components; explicit pauses and turn boundaries; real rendered-duration
+  inputs; deterministic timeline resolution and total-duration calculation; opaque
+  prepared-component handles; atomic scene ownership, cancellation, disposal,
+  invalidation, and compile diagnostics.
+- **Explicit non-goals:** expressive-renderer selection, voice synthesis, gain/EQ,
+  beds, filters, fades, FX library, final audio mix, sonic identity, scheduling,
+  playback expansion, or universal scene language.
+- **Accepted behavior preserved:** scene preparation creates no airtime right;
+  incompatible, incomplete, stale, cancelled, or failed scenes remain silent and
+  dispose safely before playback mutation.
+- **Unlocks:** one deterministic assembly target for renderer and mixing capabilities
+  used by several formats.
+- **Main risks:** an over-general scene schema, timing guessed before rendering,
+  leaking component resources, or confusing compilation with editorial scheduling.
+- **Automated verification:** timeline/order/overlap fixtures, real-duration
+  substitution, total-duration bounds, missing-component refusal, atomic
+  cancellation/disposal, compile determinism, and no playback/audio-device access.
+- **Steve/manual evaluation:** inspect readable scene plans and one dry sequential
+  fixture; no polished-radio acceptance is expected yet.
+- **Next action type:** Implementation contract after a real client proves the
+  minimum scene grammar.
 
-- **Purpose:** create a coherent station sound across IDs, stings, beds, bumpers,
-  announcer treatment, and proven formats.
-- **Why now:** station identity should refine a station already shown to be
-  entertaining, not mask weak editorial content.
-- **Hard dependencies:** M17A and accepted format/voice evidence.
-- **Responsibilities:** coherent motif, sound pack, imaging grammar, reusable scene
-  compiler conventions, licensing/provenance, voice direction where supported,
-  and progressive migration of existing formats.
-- **Explicit non-goals:** distribution gate, speculative asset explosion, or
-  forcing identical treatment on every format.
+#### M17B - Production Voice Renderer Integration
+
+- **Purpose:** integrate an accepted voice backend through M14A boundaries so
+  prepared scenes can contain reliable, directed, duration-known voice components.
+- **Why now:** M14B can establish isolated backend potential, but only scene use can
+  prove consistent voices, real timing, cancellation, and useful expressiveness.
+- **Hard dependencies:** M14A, accepted M14B candidate evidence, and M17A. M14C is
+  required when the accepted client uses multiple cast roles.
+- **Responsibilities:** provider-neutral production adapter; semantic Voice
+  Direction mapping only to demonstrated controls; single- and multi-voice
+  rendering; voice-identity consistency; exact rendered-duration return; bounded
+  preparation; capability negotiation and refusal; fallback; CPU/GPU/RAM/VRAM
+  ownership; cancellation, unload, disposal, and scene-component handoff.
+- **Explicit non-goals:** approving Chatterbox by name, audio mixing/FX, station
+  imaging assets, arbitrary voice cloning, scheduler authority, or assuming an
+  isolated audition automatically survives production.
+- **Accepted behavior preserved:** current Nicole/Windows behavior remains available
+  until separately changed; renderer failure occurs before audible scene start and
+  cannot create airtime debt or unsafe fallback.
+- **Unlocks:** reliable voice components for calls, commercials, announcers, guests,
+  and produced host scenes.
+- **Main risks:** expressive controls that are unstable or provider-specific, voice
+  drift across lines, resource spikes, long preparation, weak fallback, or license
+  and packaging constraints.
+- **Automated verification:** capability matrices, supported/unsupported direction,
+  exact duration, multi-line identity consistency indicators, bounded resources,
+  cancellation/unload/disposal, fallback, and no desktop-media access.
+- **Steve/manual evaluation:** compare isolated audition evidence with dry assembled
+  scenes for host fit, cast distinction, expressiveness, pacing, consistency, and
+  fatigue.
+- **Next action type:** Evaluation, then a separate integration decision.
+
+#### M17C - Shared Mixing and FX Toolkit
+
+- **Purpose:** turn compiled prepared components into one controlled final scene
+  render using shared, deterministic audio-production tools.
+- **Why now:** proven formats need acoustic treatment, but telephone filters, beds,
+  fades, and normalization should not remain copied experimental tricks.
+- **Hard dependencies:** M17A and an accepted production need. M17B is hard for a
+  voice-bearing client but not for a fixed-audio-only mixer fixture.
+- **Responsibilities:** explicit sample-format conversion; gain staging; level and
+  peak bounds; normalization policy; deterministic mixing; EQ/filter primitives;
+  telephone/radio treatment; beds; fades; reusable effects; component alignment;
+  final duration/format validation; cancellable offline render; asset provenance;
+  final-scene ownership and cleanup.
+- **Explicit non-goals:** Creative Direction, cast selection, backend approval,
+  station motif/sound-pack authorship, scheduler policy, live improvisational DSP,
+  or a giant workstation-style effects system.
+- **Accepted behavior preserved:** complex output is fully prepared before its first
+  audible beat; production failure, clipping risk, missing assets, or incompatible
+  treatment yields refusal/silence before playback mutation.
+- **Unlocks:** reusable produced calls, commercials, IDs, stings, and other scenes
+  without format-specific mixers.
+- **Main risks:** clipping, pumping, damaged voice quality, inconsistent loudness,
+  excessive latency, nondeterministic native tools, asset licensing, or cleanup
+  leaks.
+- **Automated verification:** offline golden/metric fixtures, sample-format and
+  duration checks, peak/loudness bounds, filter/fade alignment, missing-asset
+  refusal, cancellation/disposal, provenance, repeatability, and no audio-device or
+  desktop-playback access.
+- **Steve/manual evaluation:** headphone and speaker review for intelligibility,
+  balance, processing restraint, voice damage, pacing, and produced-radio quality.
+- **Next action type:** Iterative Evaluation with separately approved primitives.
+
+#### M17D - Canonical Zoya Sonic Identity
+
+- **Purpose:** create the coherent, recognizable Zoya sound that uses the proven
+  scene, renderer, and mixing capabilities.
+- **Why now:** branding should refine formats already shown to entertain and should
+  not hide weak editorial content or determine lower-level production architecture.
+- **Hard dependencies:** M17A and M17C, plus accepted format and voice evidence.
+  M17B is required for any identity element using expressive or cast voice.
+- **Responsibilities:** curated canonical sound pack; motif; station IDs, stings,
+  bumpers, beds, announcer treatment, and imaging variants; imaging grammar and
+  production conventions; asset integrity/licensing/provenance; restrained
+  progressive migration of proven formats.
+- **Explicit non-goals:** distribution gate, speculative asset explosion, general
+  station builder, new scheduler authority, or forcing identical treatment on
+  every format.
 - **Accepted behavior preserved:** content/treatment compatibility, music-first
-  arbitration, safe playback, and fallback.
+  arbitration, prepared-before-air scenes, safe playback, fallback, and silence.
 - **Unlocks:** an experience close to the intended full Zoya Radio identity.
-- **Main risks:** overproduction, inconsistent motif, fatigue, and packaging size.
-- **Automated verification:** asset integrity/provenance, scene compilation,
-  loudness/duration bounds, fallback, and package audit.
+- **Main risks:** overproduction, inconsistent motif, fatigue, asset bloat, or
+  branding that overwhelms music and host content.
+- **Automated verification:** asset integrity/provenance, scene compilation and
+  rendering, duration/level bounds, missing-capability fallback, and package audit.
 - **Steve/manual evaluation:** broad listening acceptance of identity, restraint,
-  consistency, and format upgrades.
+  consistency, recognizability, and progressive format upgrades.
 - **Next action type:** Evaluation/Decision.
 
 ### Phase I - Experience-ready private alpha
@@ -731,7 +910,7 @@ overlay. No rule equivalent to `duration > X => pause Firefox` is permitted.
 - **Why now:** compatibility work should serve a valuable experience rather than
   block internal radio design.
 - **Hard dependencies:** Steve's product decision; no architectural dependency on
-  M17B, though richer station maturity is the sequencing preference.
+  M17D, though richer station maturity is the sequencing preference.
 - **Responsibilities:** revisit known Firefox identity defect, use opportunistically
   gathered diagnostics, compatibility matrix, package/runtime prerequisites,
   licensing, clean-machine procedures, and bounded repairs.
@@ -819,9 +998,12 @@ M13D +> M13E minimal airtime effects/context v2
 M13A +> M13E canonical factual context
 M13B/M13C +> M13E coverage-aware listening context
 
-Voice auditions ..> M14A Host Voice Foundation => M14B Cast/Role
-PT-BR/local TTS experiments ..> M14C Language/Locale
-M14A ~> M14C
+Voice auditions ..> M14A Host Voice/Renderer Abstraction
+Expressive renderer auditions ..> M14B provider-neutral capability evaluation
+M14A ~> M14B integration boundary
+M14A + accepted M14B evidence ~> M14C Cast/Role
+PT-BR/local TTS experiments ..> M14D Language/Locale
+M14A/M14B ~> M14D
 
 M10C + M11A => M15A treatment model/hold diagnostic
 M15A manual acceptance + separate decision => M15B optional HoldAndReplace
@@ -830,11 +1012,16 @@ M11B + required treatment => M16A fixed plumbing fixture
 M12B ..> M16B procedural commercial lab
 M16A + accepted M16B ~> M16C procedural preparation pipeline
 M12B ..> M16D caller/dialogue lab
-M14B +> M16C/M16D multi-voice clients
+M14B ~> M16D isolated renderer evidence
+M14C +> M16C/M16D multi-role clients
 M13D/M13E + at least two clients => M16E optional cross-format continuity
 
-M10B + treatment model + accepted client => M17A scene production
-M17A + accepted station formats/voice => M17B sonic identity
+M10B + treatment model + accepted composite client => M17A scene compiler
+M14A + accepted M14B evidence + M17A => M17B production renderer
+M14C +> M17B multi-role rendering
+M17A + accepted production need => M17C shared mixing/FX
+M17B +> M17C voice-bearing scene input
+M17A/M17C + accepted station formats/voice => M17D sonic identity
 
 Firefox diagnostics ..> M18A later compatibility work
 Steve distribution decision => M18A => M18B private alpha
@@ -844,8 +1031,8 @@ Mature Zoya + Steve product decision => M19 configuration extraction
 Sequencing preferences are not false dependencies: M13A can advance alongside
 creative work; call/voice/telephone and PT-BR experiments can happen earlier;
 Firefox evidence can be collected whenever a tester exposes it; narrow production
-experiments can upgrade formats before M17B; and distribution deliberately does
-not gate sonic identity.
+experiments can validate formats before M17 and must be consolidated there if
+accepted; and distribution deliberately does not gate M17D sonic identity.
 
 ## Shared-capability map
 
@@ -853,13 +1040,16 @@ not gate sonic identity.
 | --- | --- | --- | --- | --- | --- |
 | M10 lifecycle/binding | Bound comment and prepared rant | Reusable or context-bound spot | Prepared dialogue | Reusable inventory | Sequence ownership |
 | M11 Editorial Arbiter | Speech pressure and format spacing | Break spacing and priority | Long-format spacing | Reuse/cooldown | Sequence preconditions |
-| M12 context/direction/generation | Purpose and exact host wording | Premise then commercial script | Caller premise then dialogue | Copy variants | Beat/arc intent |
+| M12 context/direction/generation | Format-specific host assignment and exact wording | Commercial premise then format-specific script | Caller premise then dialogue contract | Imaging/promo assignment and copy variants | Beat/arc intent only after new lab evidence |
 | M13 Music Knowledge | Source-backed factual relevance | Trusted contextual inspiration | Factual caller premise constraints | Optional factual ID | Grounded callback facts |
 | M13 Listening Intelligence | Session observation/rant | Procedural product inspiration | Listener reaction premise | Contextual liner | Relevance over time |
 | M13 Lore/open threads | Callback or reaction | Advertiser/campaign state | Caller relationship/complaint | Station-world naming | Completed/open beats |
-| M14 voice/cast/locale | Host selection and language | Announcer/spokesperson | Host/caller roles | Imaging voice | Multiple characters |
+| M14 voice/renderer/cast/locale | Host/renderer selection, performance capability, and language | Announcer/spokesperson capability | Host/caller roles and backend evidence | Imaging voice | Multiple characters |
 | M15 delivery treatments | Overlay or deliberate break | Usually held break | Overlay or held break | Intro/outro overlay | Scene-specific requirement |
-| M17 scene production | Bed/effect when useful | Multi-voice/FX/bed | Telephone/dialogue treatment | Stings/announcer treatment | Scene compiler |
+| M17A scene model/compiler | Ordered prepared components | Atomic commercial scene | Turn/pause timeline | ID/sting component plan | Sequence/timeline ownership |
+| M17B production renderer | Directed host/guest voice | Consistent announcer/cast clips | Duration-known host/caller voices | Imaging/announcer voice | Directed multi-character clips |
+| M17C mixing/FX | Optional shared bed/fade | Shared mix, FX, bed, normalization | Telephone/dialogue mix | Final sting/ID render | Reusable production toolkit |
+| M17D sonic identity | Zoya performance/bed grammar | Canonical commercial production fit | Canonical call sound | IDs, stings, bumpers, motif | Station-wide imaging grammar |
 
 ## Format-maturity map
 
@@ -871,11 +1061,11 @@ separate milestones.
 | Fixed fixture | Accepted M8 comment; later fixed rant fixture only if needed | One prebuilt plumbing spot | Scripted one-shot production sample | Tiny reusable liner is first second-format proof |
 | Generate-only experiment | M12C bounded host batches | M16B procedural commercial batch | M16D dialogue batch | Optional copy/imaging batch after fixed proof |
 | Contextual generation | M12D session-conditioned selected formats | Trusted session/listening brief inspires fictional product | Context/lore supports caller premise | Optional context-aware copy |
-| Prepared runtime integration | M12D through shared lifecycle/arbiter | M16C first required procedural-pipeline client | Later client only after lab/voice evidence | M11B reusable inventory |
+| Prepared runtime integration | M12D through shared lifecycle/arbiter | M16C first procedural client; M17 when composite/produced | Later client after lab/voice evidence; M17 when composite/produced | M11B reusable inventory |
 | Persistence/continuity | Optional callback through M13D/E | Aired advertiser/thread only; unaired alternatives vanish | Recurring caller only after earned airtime/policy | Usually reusable state, not story canon |
-| Multiple voices | Usually unnecessary; guest later optional | M14B/M17A optional cast | M14B strongly useful | Announcer voice optional |
-| Narrow production | Bed/fade only when it helps | Simple bed/effect/normalization | Telephone treatment and turn mix | Stinger/announcer treatment |
-| Mature sonic identity | Zoya performance/bed grammar | Coherent branded parody scene | Canonical call sound | IDs, stings, bumpers, motif |
+| Multiple voices | Usually unnecessary; guest later optional | M14C cast plus M17B renderer when accepted | M14C strongly useful; M17B for production | Announcer voice optional through M17B |
+| Narrow production | Early isolated bed/fade only when useful | Early simple proof; M17C consolidates accepted needs | M16D disposable proof; M17C consolidates accepted needs | Early stinger proof; M17C consolidates accepted needs |
+| Mature sonic identity | M17D Zoya performance/bed grammar | M17D coherent branded parody scene | M17D canonical call sound | M17D IDs, stings, bumpers, motif |
 | Optional later enhancement | Long rant, chain, arc only after new lab evidence | Campaign development and callbacks | Recurring relationships/cross-format response | Localized or procedural imaging |
 
 ## Music Knowledge data flow
@@ -933,6 +1123,11 @@ engine, change hard eligibility, or imply that an artist has no genre metadata.
 
 - No generalized station builder before M19.
 - No permanent cadence clock from planning guesses.
+- No universal commentary prompt that silently becomes the interface for host
+  formats, commercials, calls, imaging, promos, or chained bits.
+- No compulsory use of every trusted fact supplied to a creative request.
+- No fixed small-model-direction/large-model-writing split without bounded lab
+  evidence and a separately approved dependency/model decision.
 - No durable raw listening diary.
 - No raw Creative Director alternative landfill.
 - No raw provider payloads in prompts or canonical identity.
@@ -941,13 +1136,15 @@ engine, change hard eligibility, or imply that an artist has no genre metadata.
 - No distribution gate before richer internal creative/production work.
 - No full sonic-identity system merely to add one narrow phone filter, bed, fade,
   effect, or multi-voice render.
+- No expressive TTS/backend, including Chatterbox, is approved by roadmap mention,
+  isolated audition, advertised capability, or an early format experiment.
+- No caller/commercial experiment may silently become the shared scene, renderer,
+  or mixing implementation; accepted needs return through bounded M17 contracts.
 - No assumption that every benchmark concept deserves runtime implementation.
 
 ## Recommended immediate handoff
 
-The **M10A - Deterministic Opportunity Kernel** is passed at implementation commit
-`93ece64bf5cb21e67378d9ae024c6f45568fe86e`. Steve accepted its automatically verified implementation
-on August 22, 2026. It remains deliberately boring, pure, and unreachable from
-live runtime. The next bounded activity is preparation of an M10B contract for
-Steve review. M10B implementation and every later milestone remain separately
-gated and unauthorized.
+M10A through M12D are passed under their bounded contracts and acceptance records.
+The recommended next step type is **Decision - Steve**: select the next separately
+bounded roadmap task. VAR1's repeated-form limitation remains active; broader
+research, later formats, implementation, and a commit remain unauthorized.

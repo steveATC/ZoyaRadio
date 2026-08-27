@@ -4,7 +4,7 @@
 
 **Passed. Steve accepted the automatically verified M10A implementation on
 August 22, 2026. The accepted implementation is commit `93ece64bf5cb21e67378d9ae024c6f45568fe86e`.
-M10B remains explicitly unauthorized.**
+M10B was subsequently authorized, implemented, and accepted as a separate passed foundation.**
 
 This contract is the first bounded implementation proposal under the approved
 [post-M9 capability roadmap](POST_M9_CAPABILITY_ROADMAP.md). Steve approved this
@@ -366,11 +366,12 @@ passed. The accepted M8 runtime remains controlling because this pure kernel is
 unreachable from live application paths.
 
 No M10B work was authorized by this acceptance. Steve later authorized and
-recorded the accepted M10A implementation commit as `93ece64bf5cb21e67378d9ae024c6f45568fe86e`.
+recorded the accepted M10A implementation commit as
+`93ece64bf5cb21e67378d9ae024c6f45568fe86e`, and subsequently approved the
+separate M10B contract and M10B-only implementation.
 
 ## Next action type
 
 **Decision - Steve**
 
-Prepare a bounded M10B contract for Steve review. M10B implementation remains
-unauthorized until that contract receives explicit approval and implementation authorization.
+M10B is passed. The proposed [M10C contract](MILESTONE_10C_CONTRACT.md) is ready for Steve review only; M10C implementation and a commit remain unauthorized.

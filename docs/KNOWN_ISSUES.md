@@ -51,6 +51,19 @@ This file separates unresolved defects from accepted platform limits and deferre
 - No GPU execution provider was loaded in that observation.
 - This is a measured resource observation, not evidence that model disposal failed, and no memory-management redesign is approved yet.
 
+### Resolved M12D D3.1 quick-reaction recent-comment topic carryover
+
+- During accepted D3.1 listening, `Заберут меня в солдаты` by Otava Yo was correctly observed as Track A, but its newly generated quick reaction discussed the earlier accepted `Tommy the Cat` commentary instead.
+- The behavior log confirms correct preparation binding to Otava Yo and correct later Track-A to Track-B delivery binding. This was not stale prepared audio, unsafe targeting, or a lifecycle/reservation failure.
+- The pilot-only recent-comment anti-repetition context contaminated the new topic despite the prompt instruction not to quote, imitate, or continue prior lines. The same run otherwise demonstrated the intended reduction in repetitive Oh openings.
+- Accepted D3.2 topic isolation resolves this historical quality incident by removing prior-line words and subject matter from the prompt. The incident was not stale prepared audio, unsafe targeting, or a lifecycle/reservation failure, and it is not an active repair item.
+
+### M12D-VAR1 repeated format limitation
+
+- Steve's August 27, 2026 generate-only simulated mixed-song evaluation was accepted with limitations. The local model often creates good individual comments, but title-first reactions and recurring `Oh ...` openings become recognizable and repetitive song after song.
+- This is an expected quality/product limitation and temporary placeholder, not an established application/runtime defect. The underlying cause is unestablished; prompt strictness, personality, model choice/capacity, and context/enrichment are future research questions, not findings.
+- Broader research and later formats, including possible commercials and listener calls, are deliberately deferred until broader evidence exists and require separate authorization. No model, dependency, enrichment, lyrics/facts, implementation, or milestone is authorized by this record.
+
 ## Accepted platform and product limitations
 
 ### Missing album metadata
@@ -108,12 +121,21 @@ This file separates unresolved defects from accepted platform limits and deferre
 
 ## Deferred quality improvements
 
+- **M12D format-variety limitation:** Steve accepted VAR1's generate-only simulated mixed-song evaluation with limitations. Individual comments can be good, but repeated title-first reactions and recurring `Oh ...` openings become recognizable and repetitive song after song. This remains an expected quality/product limitation, not a runtime defect; broader research or format work requires separate authorization.
 - Reduce harmless wrapper-refresh log repetition without weakening diagnostics.
 - Improve multilingual speech or transliteration only under a separately approved milestone; do not alter Unicode metadata to accommodate an English voice.
 - Consider semantic similarity for comment repetition only under an approved design. Current history avoids exact duplicate accepted comments but intentionally has no semantic regeneration loop.
 - Genre/style-change detection would require a trusted factual source. It must not be inferred from title, artist name, model memory, or imagined audio qualities.
 - Browser-tab-level Firefox ducking is not a current requirement and has no approved implementation plan.
 - Persistent listening history is not implemented or approved; current history is intentionally process-local and bounded.
+
+### Current commentary prompt is not a mature radio-format interface
+
+- M11B accepted deterministic coordination of comments, a fixed reusable liner, and direct music continuation. It did not evaluate or accept the current generic commentary prompt as the future creative interface.
+- During M11B listening, Steve observed that an enriched comment could sound like a random commentator receiving facts rather than a radio host performing a defined on-air job. Earlier M9 experiments separately showed repeated openings, formulaic fact-plus-reaction structures, unsupported inferences, and the need to make metadata mention optional.
+- Future Creative Direction and Content Generation work must test bounded, format-specific producer assignments. Host reactions, session observations, commercials, listener calls/dialogue, imaging, fictional event promos, callbacks, and later chains/arcs should not inherit one universal prompt merely because they all use an LLM.
+- Trusted facts should be optional, scope-labeled creative material rather than a checklist. Artist-level evidence must not silently become a track-level claim.
+- These observations authorize documentation and later generate-only evaluation only. They do not authorize changing the production prompt, model, generation path, runtime behavior, or M11B acceptance.
 
 ### Deferred M9C.6 integration quality work
 

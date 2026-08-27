@@ -68,6 +68,20 @@ internal sealed class AiCommentService
             cancellationToken);
     }
 
+    public async Task<CommentSelection> SelectQuickReactionAsync(
+        RadioPreparationContext context,
+        bool aiEnabled,
+        CancellationToken cancellationToken)
+    {
+        return await SelectCommentCoreAsync(
+            context.SubjectTrack,
+            () => QuickReactionPilotPrompt.Create(context),
+            context.RecentAcceptedAiComments,
+            aiEnabled,
+            simulateAiFailure: false,
+            cancellationToken,
+            outputTransform: QuickReactionPilotPrompt.NormalizeForSpeech);
+    }
     public async Task<CommentSelection> SelectPreparedTransitionCommentAsync(
         RadioPreparationContext context,
         bool aiEnabled,
@@ -81,14 +95,14 @@ internal sealed class AiCommentService
             simulateAiFailure: false,
             cancellationToken);
     }
-
     private async Task<CommentSelection> SelectCommentCoreAsync(
         MediaSnapshot fallbackMedia,
         Func<CommentPrompt> promptFactory,
         IReadOnlyList<string> recentAcceptedAiComments,
         bool aiEnabled,
         bool simulateAiFailure,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Func<string?, string?>? outputTransform = null)
     {
         if (!AnnouncementText.TryBuild(fallbackMedia, out string? fallback))
         {
@@ -187,7 +201,10 @@ internal sealed class AiCommentService
                     modelRequestedFallback: true);
             }
 
-            CommentValidationResult validation = CommentValidator.Validate(generation.Response);
+            string? outputForValidation = outputTransform is null
+                ? generation.Response
+                : outputTransform(generation.Response);
+            CommentValidationResult validation = CommentValidator.Validate(outputForValidation);
             _log.Write($"AI output word count: {validation.WordCount}");
             _log.Write($"AI output validation: {(validation.IsValid ? "PASS" : "FAIL")} - {validation.Reason}");
 

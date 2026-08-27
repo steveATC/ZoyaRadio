@@ -1,13 +1,76 @@
 # Current architecture
 
-This document describes the accepted Milestone 8 live runtime at commit `b56c03d1c913ba18b5d2dc1298964d33d5aeb9cf`, the accepted but runtime-unreachable M10A deterministic opportunity kernel at implementation commit `93ece64bf5cb21e67378d9ae024c6f45568fe86e`, the implemented-but-unaccepted M9B grounded-context candidate, and preserved isolated M9A/M9C diagnostics. M9 was concluded without final M9B runtime acceptance; the accepted M8 safety baseline remains controlling for live behavior.
+This document describes the accepted M12D default-off quick-reaction runtime pilot, M12B Creative Direction/Content Generation laboratory boundary, M12A Creative Context Assembler, and M11B commentary/reusable-liner runtime over the accepted M11A Editorial Arbiter, M10C one-comment runtime, M10A deterministic opportunity kernel, and M10B prepared-material lifecycle, plus the implemented-but-unaccepted M9B grounded-context candidate and preserved isolated M9A/M9C diagnostics. M9 was concluded without final M9B runtime acceptance; accepted M8 playback safety invariants remain controlling.
 
 ## Accepted M10A deterministic foundation
 
 - `DeterministicOpportunityKernel` is a pure immutable reducer over explicit state, typed inputs, typed decisions/reasons, supplied timestamps, and supplied transition targets.
 - It reproduces accepted M8 scheduling/state decisions and is covered by 14 focused parity/golden traces. Steve accepted M10A on August 22, 2026 after the complete suite passed 292 tests with 0 failures.
-- No production launcher, controller, host, runtime, UI, playback, or audio path references the kernel. M10A therefore changes no observable application behavior and does not replace the accepted M8 runtime.
-- The kernel performs no clock, random, Windows, file, network, AI, speech, audio, playback, or persistence access. M10B lifecycle work remains unimplemented and unauthorized.
+- Before M10C, no production launcher, controller, host, runtime, UI, playback, or audio path referenced the kernel. M10C now uses it as opportunity authority for the existing one-comment runtime; M11A does not change that ownership.
+- The kernel performs no clock, random, Windows, file, network, AI, speech, audio, playback, or persistence access.
+
+## Accepted M10B prepared-material lifecycle
+
+- Steve approved the bounded M10B contract, authorized M10B-only implementation, and accepted the result on August 22, 2026. M10B is passed.
+- `PreparedMaterialLifecycle` is an internal immutable reducer over explicit state and typed inputs. It tracks Preparing, Ready, Reserved, and Terminal material without reading a clock or performing side effects.
+- Caller-supplied bindings may constrain one M10A opportunity, normalized-exact subject track, opaque logical session, and absolute expiry. Single-opportunity material and reusable-within-binding material remain distinct policies.
+- The lifecycle owns only opaque payload handles. Typed decisions explicitly accept or refuse ownership and request one disposal when owned material becomes terminal; the reducer never holds or disposes a real resource.
+- Reservations are exclusive but do not authorize airtime. Reusable material may return to Ready only through explicit release or completion disposition while still valid; single-opportunity material cannot return to inventory.
+- Terminal records clear their payload handle and make repeated cleanup idempotent. State collections are exposed through read-only wrappers.
+- Before M10C, no production launcher, controller, host, runtime, UI, playback, audio, M9 candidate, or diagnostic referenced the lifecycle. M10C introduced it for comments; accepted M11B now exercises `ReusableWithinBinding` for one session-bound liner fixture.
+- Release builds pass with 0 warnings and 0 errors. The complete fake-driven suite passes 308 tests with 0 failures, including 16 focused lifecycle and composition traces.
+
+## Accepted M10C live runtime migration
+
+- Steve accepted M10C on August 23, 2026. `M10CRuntimeMigrationState` is the live adapter for the existing one-comment path: M10A owns deterministic opportunity/schedule decisions; M10B owns prepared-material lifecycle, binding, reservation, terminal disposition, and typed disposal; the adapter maps those decisions to existing M8 pipeline resources.
+- The migration adds no format, editorial policy, playback control, persistence, or new audio behavior. Existing M8 preparation, delivery, Firefox-only ducking, exact restoration, silence/refusal, Silent Mode, Clear History, and bounded memory behavior are preserved.
+- Current Release verification passed with 0 warnings/errors and 314/314 fake-driven tests. Steve confirmed Firefox-only delivery restoration, Chrome isolation, preparation-stop with no ducking, delivery-stop with exact restoration, and immediate control-form return to ready.
+
+## Accepted M11A Editorial Arbiter
+
+- Steve accepted M11A on August 23, 2026. EditorialArbiter is a pure deterministic decision layer with separate preparation and airtime inputs, one selected content candidate or direct music continuation, and stable typed decision traces.
+- The arbiter evaluates hard opportunity/material eligibility, exact binding, prepared state, expiry, treatment availability, bounded preparation capacity, current music/speech pressure inputs, spacing/cooldown inputs, explicit policy priority, and deterministic bounded tie-breaking. Randomness cannot create the reason to interrupt music.
+- The live M10C-equivalent profile supports only the existing comment and DuckOverMusic treatment. It adds no liner, second format, cadence value, universal relevance score, knowledge, memory, creative system, program break, or playback control.
+- RadioBehaviorTest asks the arbiter before claiming the existing preparation path and before M10B reservation. M10A remains opportunity authority, M10B remains material/reservation/disposal authority, and the existing runtime retains final pre-air Firefox validation and protected cleanup.
+- Current Release builds pass with 0 warnings/errors and the complete fake-driven suite passes 320/320. Steve's accepted live run recorded typed Prepare and ReserveForAirtime decisions, exact Firefox 100% -> 25% -> 100% restoration on the same session, Chrome isolation, no playback control, and clean shutdown.
+
+## Accepted M11B commentary and reusable-liner proof
+
+- Steve approved M11B-only implementation on August 23, 2026 and accepted it on August 24, 2026. The accepted runtime adds exactly one fixed local copy fixture, `Zoya Radio.`, prepared through the accepted Nicole/local fallback speech boundary and retained only in memory for the current logical runtime session.
+- `ReusableLinerInventory` composes the accepted M10B reducer: Preparing -> Ready -> one Reserved transition -> explicit Release or completed ReturnToInventory. Session rebind, Stop, shutdown, or invalidation disposes the owned prepared speech exactly once. Concurrent reuse is refused.
+- The accepted existing comment is `Timely`; the reusable liner is `Routine`. Comment preparation and airtime win conflicts. A comment-preparation boundary or missed/unready comment cannot be filled by the liner, and final refusal never triggers second-choice chatter.
+- Candidate-specific arbiter pressure keeps the initial experimental liner policy separate from comment behavior: both six genuine transitions and twenty elapsed minutes since arm/last completed liner, plus two transitions since completed host speech. These values are provisional listening-test defaults, not permanent station policy.
+- Ready material has no right to airtime. Silent Mode, cooldown, spacing, protected comment boundaries, unavailable delivery capacity, unsafe targeting, or stale timing select direct music/silence with typed reasons.
+- Both comments and the liner use the same `WindowsRadioOpportunityHost` duck/speech/restoration implementation. Liner delivery revalidates the current track, the exact logical Firefox GSMTC target, one Firefox Core Audio session, Playing state, and the existing two-second window; it never pauses, resumes, toggles, seeks, changes endpoint/master volume, or targets Chrome.
+- Clear History leaves liner inventory and cooldown alone because they are bounded operational state, not listening history or Station Lore. Nothing persists across process exit.
+- Release builds for media probe, tests, and control app pass with 0 warnings/errors. The complete fake suite passes 337/337, including 17 focused M11B tests. Steve's accepted desktop trial confirmed one liner at transition 10 after more than 20 minutes, repeated earlier direct-music selections, comment priority, exact Firefox 100% -> 25% -> 100% restoration, Ready inventory return, safe Silent Mode, and clean Stop. The 20-minute value remains a provisional experimental default because Steve found it acceptable for the proof but slow for timely manual verification.
+
+## Accepted M12A Creative Context Assembler
+
+- Steve accepted M12A on August 24, 2026. `CreativeContextAssembler` is a pure deterministic, versioned packet assembler over explicitly supplied typed state. It copies bounded values and has no clock, network, model, prompt, provider, storage, audio, browser, playback, scheduling, reservation, or runtime dependency.
+- Version 1 represents exact bounded current title/artist values, opportunity class/reason, deterministic session facts, recent tracks, accepted comments, and recent-use/policy facts with explicit provenance.
+- Null facts remain unknown. Collections distinguish unknown, known empty, complete, and complete-with-omissions. Injected limits cannot exceed the accepted 10-track and 6-comment caps; newest retained items preserve deterministic order.
+- String limits count Unicode text elements and report omitted elements. Instruction-shaped metadata remains inert typed data. Output collections are copied and read-only, and no state persists between assemblies.
+- No normal production file references the assembler or packet. M12A therefore causes no audible, operator-visible, scheduling, lifecycle, or playback change.
+- Three Release builds pass with 0 warnings/errors and the complete suite passes 348/348, including 11 focused M12A checks. Steve accepted the representative packet views.
+
+## Accepted M12B Creative Direction and Content Generation boundary
+
+- The pure `FormatLaboratory` composes injected Creative Direction, exact format/version Content Generation, and exact validator boundaries over an explicitly supplied M12A context packet. It does not call a real model or construct a prompt.
+- `CreativeDirectionBrief` describes editorial objective, speaker role, situation, structure, binding, stable personality identity, explicit context permissions/scopes, prohibitions, and optional cast/performance/lore intent. It has no script field. Exact words exist only in `GeneratedContentCandidate`.
+- Format producers dispatch by exact format identity/version. Validators additionally dispatch by exact validator identity/version. Contract, version, personality, scope, and availability mismatches produce typed refusal outcomes.
+- Context permission grants the option to use one supplied fact; it does not require fact use. Declared use may be empty and is rejected for unknown, unavailable, omitted, unpermitted, or wrong-scope facts.
+- Alternative count and all strings are bounded and copied. A run retains only one selected valid candidate; rejected, excess, unselected, failed, or cancelled output has no persistent ownership.
+- No normal runtime source references M12B. It has no network, prompt, model, storage, audio, browser, playback, scheduling, reservation, or airtime capability and causes no audible or operator-visible change.
+- Release builds passed with 0 warnings/errors and the complete fake-driven suite passed 360/360, including 12 focused M12B checks. Steve reviewed the fixtures and accepted M12B on August 26, 2026. M12B is passed.
+
+## Accepted M12D quick-reaction contextual pilot
+
+- Steve accepted M12D D3.1 on August 26, 2026 and accepted the D3.2 topic-isolation repair and comparison on August 27, 2026. `ZOYA_QUICK_REACTION_PILOT=1` is an explicit local experimental setting, default off; without it the accepted M11B generic-comment route remains selected.
+- When enabled, `QuickReactionTransitionCommentProvider` selects only quick reaction through the same M10A opportunity, M10B lifecycle/binding/reservation, M11A arbitration, Track-A preparation, Track-B revalidation, and `DuckOverMusic` delivery as the accepted comment. It adds no cadence rule, persistent state, program break, or playback-control capability.
+- The pilot uses versioned `quick-reaction-v3-topic-isolation` copy. Its prompt receives only the current Track-A title/artist as subject matter. Up to three recent accepted lines are reduced to abstract form measurements (opening shape, length band, sentence count, ending shape, and dash/semicolon use); their words, topics, facts, premises, entities, jokes, scenes, and continuations are absent. It does not receive session observations, enrichment, Music Knowledge, listener preference, or Station Lore.
+- Before generic mechanical validation and duplicate comparison, pilot-only cleanup removes Markdown emphasis/underscores and emoji/presentation symbols from model text. It is not a factual assertion filter and does not add a semantic regeneration loop or restrict accepted creative latitude.
+- D3.1 Release ControlApp verification passed with 0 warnings/errors and the full fake-driven suite passed 371/371. The accepted D3.2 repair preserves current-track grounding, lifecycle/arbitration/binding/cancellation/targeting/ducking/restoration, and M11B pilot-off behavior while isolating prior-topic subject matter. Its exactly 32-request comparison retained three mechanical under-15-word rejections and succeeded in selected-model unload. Later current-tree verification passed 390/390 including D3.2 and VAR1 coverage. The historical D3.1 Otava Yo/Tommy the Cat carryover was a quality defect, not a lifecycle or targeting defect, and is resolved by D3.2.
 
 ## Platform and local dependencies
 
@@ -164,7 +227,7 @@ Normal automatic delivery contains no GSMTC pause, play, or toggle command. `Try
 
 ## Comment generation and factual boundary
 
-- The only trusted music facts supplied to the model are the exact title and artist plus deterministic recent exact-string context.
+- The only trusted music facts supplied to the model are exact title and artist. The accepted M12D v3 pilot supplies recent lines only as abstract form measurements; their subject matter is absent.
 - Album, genre, sound, lyrics, biography, history, and remembered model knowledge are not trusted facts.
 - Prompt text permits personality, literal wordplay, and clearly imaginary reactions without presenting outside knowledge as fact.
 - AI comments are mechanically checked for one paragraph, 15-40 words, model commentary, control text, and banned radio cliches. Mechanical checks do not prove factual grounding.
@@ -192,7 +255,7 @@ Normal automatic delivery contains no GSMTC pause, play, or toggle command. `Try
 
 ## Current boundaries
 
-The implementation has no browser scraping, cookies, account access, unofficial YouTube API, cloud AI/TTS, telemetry, tray icon, global media keys, endpoint/master-volume manipulation, persistent listening-history database, track-position tracking, duration tracking, installer, code signing, public release, clean-machine certification, or invited-tester validation. Milestone 8 is closed only for continued internal development; compatibility and third-party distribution claims remain deferred. The rejected M9A and diagnostic M9C candidates remain isolated; only the bounded M9B candidate is integrated, and it remains unaccepted runtime behavior after M9's conclusion. The accepted M10A kernel is also isolated and unreachable from live runtime; no M10B lifecycle or runtime migration exists.
+The implementation has no browser scraping, cookies, account access, unofficial YouTube API, cloud AI/TTS, telemetry, tray icon, global media keys, endpoint/master-volume manipulation, persistent listening-history database, track-position tracking, duration tracking, installer, code signing, public release, clean-machine certification, or invited-tester validation. Milestone 8 is closed only for continued internal development; compatibility and third-party distribution claims remain deferred. The rejected M9A and diagnostic M9C candidates remain isolated; only the bounded M9B candidate is integrated, and it remains unaccepted runtime behavior after M9's conclusion. The accepted M10C runtime routes the existing one-comment path through M10A/M10B while retaining the M8 pipeline, targeting, ducking, and cleanup behavior. Accepted M11A supplies typed arbitration; accepted M11B adds one fixed reusable liner through the same protected overlay path. Accepted M12A remains a pure context assembler with no normal-runtime reference; accepted M12B remains its isolated approved consumer. Accepted M12D is the separate, default-off quick-reaction runtime pilot; it does not route through M12A/M12B laboratory types.
 
 ## Windows API basis
 

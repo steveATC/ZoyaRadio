@@ -30,50 +30,10 @@ internal sealed class WindowsRadioOpportunityHost : IRadioOpportunityHost, ITran
         _log = log;
     }
 
-    public async Task<RadioOpportunitySnapshot> ReadSnapshotAsync(
+    public Task<RadioOpportunitySnapshot> ReadSnapshotAsync(
         long opportunityId,
-        CancellationToken cancellationToken)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        RadioRuntimeState runtime = _runtimeStateProvider();
-        bool sessionListReadSucceeded = _sessionAccess.TryReadExactFirefoxMatches(
-            out IReadOnlyList<GlobalSystemMediaTransportControlsSession> matches);
-        GlobalSystemMediaTransportControlsSession? selectedSession = _selectedSessionProvider();
-        RadioSessionDetails details = selectedSession is null
-            ? RadioSessionDetails.Unavailable
-            : await _sessionAccess.ReadSessionDetailsAsync(selectedSession);
-        bool sameSelectedSession = false;
-
-        if (sessionListReadSucceeded
-            && matches.Count == 1
-            && selectedSession is not null)
-        {
-            GlobalSystemMediaTransportControlsSession candidate = matches[0];
-            bool sameWrapper = ReferenceEquals(candidate, selectedSession);
-            RadioSessionDetails candidateDetails = sameWrapper
-                ? details
-                : await _sessionAccess.ReadSessionDetailsAsync(candidate);
-            FirefoxSessionContinuityDecision continuity = FirefoxSessionContinuity.Evaluate(
-                sameWrapper,
-                FirefoxSessionContinuityEvidence.FromDetails(details),
-                FirefoxSessionContinuityEvidence.FromDetails(candidateDetails));
-            sameSelectedSession = continuity.PreservesPendingAndActiveWork;
-        }
-
-        return new RadioOpportunitySnapshot(
-            runtime.Armed,
-            runtime.SilentMode,
-            runtime.PendingOpportunityId == opportunityId,
-            sessionListReadSucceeded,
-            matches.Count,
-            sameSelectedSession,
-            details.SourceId,
-            details.SourceReadSucceeded,
-            details.Media,
-            details.MediaReadSucceeded,
-            details.PlaybackStatus,
-            details.PlaybackReadSucceeded);
-    }
+        CancellationToken cancellationToken) =>
+        ReadSnapshotCoreAsync(opportunityId, requirePendingOpportunity: true, cancellationToken);
 
     public async Task<IPreparedAnnouncementSpeech> PrepareSpeechAsync(
         string text,
@@ -106,12 +66,113 @@ internal sealed class WindowsRadioOpportunityHost : IRadioOpportunityHost, ITran
             cancellationToken);
     }
 
-    public async Task<TransitionDuckingResult> RunDuckedAnnouncementAsync(
+    public Task<TransitionDuckingResult> RunDuckedAnnouncementAsync(
         RadioTransitionDelivery transition,
         IPreparedAnnouncementSpeech preparedSpeech,
         TimeSpan maximumSpeechDuration,
         DateTimeOffset speechStartDeadline,
         bool simulatePostDuckFailure,
+        CancellationToken cancellationToken) =>
+        RunDuckedSpeechAsync(
+            preparedSpeech,
+            maximumSpeechDuration,
+            speechStartDeadline,
+            simulatePostDuckFailure,
+            async actionCancellationToken =>
+            {
+                RadioOpportunitySnapshot snapshot = await ReadSnapshotCoreAsync(
+                    transition.OpportunityId,
+                    requirePendingOpportunity: true,
+                    actionCancellationToken);
+                TimeSpan deliveryWindow = speechStartDeadline - transition.TransitionObservedAt;
+                return TransitionDeliverySafety.Evaluate(
+                    transition,
+                    snapshot,
+                    _clock.Now,
+                    deliveryWindow);
+            },
+            cancellationToken);
+
+    public Task<TransitionDuckingResult> RunDuckedLinerAsync(
+        ReusableLinerTransition transition,
+        IPreparedAnnouncementSpeech preparedSpeech,
+        TimeSpan maximumSpeechDuration,
+        DateTimeOffset speechStartDeadline,
+        CancellationToken cancellationToken) =>
+        RunDuckedSpeechAsync(
+            preparedSpeech,
+            maximumSpeechDuration,
+            speechStartDeadline,
+            simulatePostDuckFailure: false,
+            async actionCancellationToken =>
+            {
+                RadioOpportunitySnapshot snapshot = await ReadSnapshotCoreAsync(
+                    transition.TransitionSequence,
+                    requirePendingOpportunity: false,
+                    actionCancellationToken);
+                TimeSpan deliveryWindow = speechStartDeadline - transition.ObservedAt;
+                return ReusableLinerDeliverySafety.Evaluate(
+                    transition,
+                    snapshot,
+                    _clock.Now,
+                    deliveryWindow);
+            },
+            cancellationToken);
+
+    private async Task<RadioOpportunitySnapshot> ReadSnapshotCoreAsync(
+        long opportunityId,
+        bool requirePendingOpportunity,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        RadioRuntimeState runtime = _runtimeStateProvider();
+        bool sessionListReadSucceeded = _sessionAccess.TryReadExactFirefoxMatches(
+            out IReadOnlyList<GlobalSystemMediaTransportControlsSession> matches);
+        GlobalSystemMediaTransportControlsSession? selectedSession = _selectedSessionProvider();
+        RadioSessionDetails details = selectedSession is null
+            ? RadioSessionDetails.Unavailable
+            : await _sessionAccess.ReadSessionDetailsAsync(selectedSession);
+        bool sameSelectedSession = false;
+
+        if (sessionListReadSucceeded
+            && matches.Count == 1
+            && selectedSession is not null)
+        {
+            GlobalSystemMediaTransportControlsSession candidate = matches[0];
+            bool sameWrapper = ReferenceEquals(candidate, selectedSession);
+            RadioSessionDetails candidateDetails = sameWrapper
+                ? details
+                : await _sessionAccess.ReadSessionDetailsAsync(candidate);
+            FirefoxSessionContinuityDecision continuity = FirefoxSessionContinuity.Evaluate(
+                sameWrapper,
+                FirefoxSessionContinuityEvidence.FromDetails(details),
+                FirefoxSessionContinuityEvidence.FromDetails(candidateDetails));
+            sameSelectedSession = continuity.PreservesPendingAndActiveWork;
+        }
+
+        bool opportunityMatches = !requirePendingOpportunity
+            || runtime.PendingOpportunityId == opportunityId;
+        return new RadioOpportunitySnapshot(
+            runtime.Armed,
+            runtime.SilentMode,
+            opportunityMatches,
+            sessionListReadSucceeded,
+            matches.Count,
+            sameSelectedSession,
+            details.SourceId,
+            details.SourceReadSucceeded,
+            details.Media,
+            details.MediaReadSucceeded,
+            details.PlaybackStatus,
+            details.PlaybackReadSucceeded);
+    }
+
+    private async Task<TransitionDuckingResult> RunDuckedSpeechAsync(
+        IPreparedAnnouncementSpeech preparedSpeech,
+        TimeSpan maximumSpeechDuration,
+        DateTimeOffset speechStartDeadline,
+        bool simulatePostDuckFailure,
+        Func<CancellationToken, Task<RadioSafetyDecision>> finalSafety,
         CancellationToken cancellationToken)
     {
         if (_clock.Now > speechStartDeadline)
@@ -125,20 +186,11 @@ internal sealed class WindowsRadioOpportunityHost : IRadioOpportunityHost, ITran
         return await _transitionDucker.RunAsync(
             async actionCancellationToken =>
             {
-                RadioOpportunitySnapshot finalSnapshot = await ReadSnapshotAsync(
-                    transition.OpportunityId,
-                    actionCancellationToken);
-                TimeSpan deliveryWindow = speechStartDeadline - transition.TransitionObservedAt;
-                RadioSafetyDecision finalSafety = TransitionDeliverySafety.Evaluate(
-                    transition,
-                    finalSnapshot,
-                    _clock.Now,
-                    deliveryWindow);
-
-                if (!finalSafety.CanProceed)
+                RadioSafetyDecision safety = await finalSafety(actionCancellationToken);
+                if (!safety.CanProceed)
                 {
                     throw new InvalidOperationException(
-                        $"Prepared speech became stale after ducking: {finalSafety.Reason}.");
+                        $"Prepared speech became stale after ducking: {safety.Reason}.");
                 }
 
                 if (_clock.Now > speechStartDeadline)

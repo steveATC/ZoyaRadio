@@ -248,6 +248,11 @@ internal sealed partial class RadioBehaviorTest
                 _state.Arm(rechecked.Media, _clock.Now);
             }
 
+            lock (_linerLock)
+            {
+                _linerInventory.Arm(_state.CurrentSessionId, _clock.Now, _state.TotalObservedTransitions);
+            }
+
             lock (_runtimeLifecycleLock)
             {
                 _runtimeStarted = true;
@@ -262,6 +267,7 @@ internal sealed partial class RadioBehaviorTest
         _log.Write($"Initial track: {rechecked.Media.Title} - {rechecked.Media.Artist}");
         _log.Write("The initial track establishes state and does not count as a transition.");
         WriteNextSchedule();
+        StartLinerPreparation();
         PublishRuntimeStatus(
             rechecked.Media.Title,
             rechecked.Media.Artist,
@@ -300,6 +306,15 @@ internal sealed partial class RadioBehaviorTest
         if (change.PendingOpportunityInvalidated)
         {
             CancelPendingPipeline("Silent Mode changed");
+        }
+
+        if (silent)
+        {
+            CancelLinerPreparation("Silent Mode is ON");
+        }
+        else
+        {
+            StartLinerPreparation();
         }
 
         _log.Write($"SILENT MODE: {(change.SilentMode ? "ON" : "OFF")}");
@@ -343,6 +358,7 @@ internal sealed partial class RadioBehaviorTest
         _m9bCommentProvider?.ClearHistoryAndCache();
         _log.Write("RECENT HISTORY CLEARED: recent tracks and accepted AI comments were removed from memory.");
         _log.Write("The current diagnostic log was not deleted or rewritten.");
+        _log.Write("Reusable liner inventory and cooldown are operational state and were left unchanged.");
         _log.Write(
             invalidated
                 ? "A pending comment was cancelled; if Firefox was already ducked, protected exact-volume restoration still runs."
@@ -375,8 +391,11 @@ internal sealed partial class RadioBehaviorTest
         }
 
         CancelPendingPipeline("automatic behavior is shutting down");
+        CancelLinerPreparation("automatic behavior is shutting down");
         Unsubscribe();
         await WaitForPipelineAsync();
+        await WaitForLinerPreparationAsync();
+        InvalidateLinerInventory();
         DisposePreparedOpportunity();
         await _mediaEventGate.WaitAsync();
         _mediaEventGate.Release();
@@ -400,6 +419,7 @@ internal sealed partial class RadioBehaviorTest
             silentMode: false,
             "Stopped safely",
             new RadioActivitySnapshot(RadioActivityState.Stopped));
+        _log.Write("AUTOMATIC RADIO: STOP STATUS PUBLISHED TO THE CONTROL LAYER");
     }
 
     private static async Task<bool> ConfirmConsoleStartAsync(

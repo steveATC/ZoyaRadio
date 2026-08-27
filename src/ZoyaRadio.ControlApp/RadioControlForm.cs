@@ -31,9 +31,10 @@ internal sealed class RadioControlForm : Form
     {
         AutoSize = true,
         ForeColor = Color.DarkOrange,
-        Text = "Stopping and restoring protected Firefox audio state...",
+        Text = "Stopping Zoya Radio...",
         Visible = false,
     };
+    private readonly System.Windows.Forms.Timer _stopRefreshTimer = new() { Interval = 100 };
     private bool _updatingView;
     private bool _setupInProgress;
     private PrivateAlphaReadinessSnapshot? _readiness;
@@ -63,6 +64,7 @@ internal sealed class RadioControlForm : Form
         _getQwenButton.Click += OnGetQwenClicked;
         _cancelSetupButton.Click += OnCancelSetupClicked;
         _ollamaWebsiteButton.Click += OnOpenOllamaWebsiteClicked;
+        _stopRefreshTimer.Tick += OnStopRefreshTimerTick;
         FormClosing += OnFormClosing;
         Shown += OnShown;
         _controller.StatusChanged += OnControllerStatusChanged;
@@ -201,9 +203,11 @@ internal sealed class RadioControlForm : Form
 
     private async void OnStopClicked(object? sender, EventArgs eventArgs)
     {
+        _stopRefreshTimer.Start();
         try
         {
             RadioControlStopResult result = await _controller.StopAsync();
+            ApplySnapshot(result.Snapshot);
             if (!result.SafeToClose)
             {
                 ShowError(
@@ -215,6 +219,17 @@ internal sealed class RadioControlForm : Form
         catch (Exception exception)
         {
             ShowError("Zoya Radio could not stop safely", exception.Message);
+            _stopRefreshTimer.Stop();
+        }
+    }
+
+    private void OnStopRefreshTimerTick(object? sender, EventArgs eventArgs)
+    {
+        RadioControlSnapshot snapshot = _controller.CurrentStatus;
+        ApplySnapshot(snapshot);
+        if (!snapshot.CleanupInProgress)
+        {
+            _stopRefreshTimer.Stop();
         }
     }
 
@@ -401,6 +416,7 @@ internal sealed class RadioControlForm : Form
 
     private async void OnFormClosing(object? sender, FormClosingEventArgs eventArgs)
     {
+        _stopRefreshTimer.Stop();
         if (_closeCoordinator.CloseAllowed)
         {
             _controller.StatusChanged -= OnControllerStatusChanged;

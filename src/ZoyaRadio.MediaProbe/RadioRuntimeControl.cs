@@ -148,7 +148,7 @@ public sealed record RadioControlViewState(
             RadioActivityState.OpportunityAbandoned =>
                 "Opportunity abandoned safely - observing for a fresh opportunity",
             RadioActivityState.NoSafeFirefoxTarget => "No safe Firefox media target",
-            RadioActivityState.Stopping => "Stopping and restoring audio",
+            RadioActivityState.Stopping => "Stopping Zoya Radio",
             RadioActivityState.Faulted => string.IsNullOrWhiteSpace(activity.Detail)
                 ? "Faulted - check the status message"
                 : $"Faulted - {activity.Detail}",
@@ -510,7 +510,7 @@ public sealed class RadioRuntimeController : IAsyncDisposable
                 _snapshot.FirefoxTarget,
                 _snapshot.SilentMode,
                 new RadioActivitySnapshot(RadioActivityState.Stopping),
-                "Stopping Zoya Radio and restoring protected audio state...",
+                "Stopping Zoya Radio...",
                 hasActiveRuntime: true);
         }
 
@@ -739,21 +739,23 @@ public sealed class RadioRuntimeController : IAsyncDisposable
         try
         {
             await session.StopAsync();
-            await session.DisposeAsync();
+            Action<RadioRuntimeStatusUpdate>? statusHandler = null;
 
             lock (_sync)
             {
                 if (generation == _generation && ReferenceEquals(_session, session))
                 {
-                    if (_sessionStatusHandler is not null)
-                    {
-                        session.StatusChanged -= _sessionStatusHandler;
-                    }
-
+                    statusHandler = _sessionStatusHandler;
                     _sessionStatusHandler = null;
                     _session = null;
                 }
             }
+
+            // StopAsync is the protected boundary: it must cancel automatic work and
+            // restore any captured Firefox audio state. Per-run resource disposal is
+            // deliberately best-effort afterward, so a blocked TTS or HTTP cleanup
+            // cannot leave the control surface stuck in Stopping after audio is safe.
+            _ = DisposeSessionAfterStopAsync(session, statusHandler);
 
             return null;
         }
@@ -762,6 +764,26 @@ public sealed class RadioRuntimeController : IAsyncDisposable
             return exception;
         }
     }
+
+    private static Task DisposeSessionAfterStopAsync(
+        IRadioRuntimeSession session,
+        Action<RadioRuntimeStatusUpdate>? statusHandler) => Task.Run(async () =>
+    {
+        try
+        {
+            if (statusHandler is not null)
+            {
+                session.StatusChanged -= statusHandler;
+            }
+
+            await session.DisposeAsync();
+        }
+        catch
+        {
+            // The protected stop already completed. This best-effort release must not
+            // change the confirmed-safe terminal state or block the control UI.
+        }
+    });
 
     private void HandleSessionStatus(
         long generation,
@@ -789,7 +811,7 @@ public sealed class RadioRuntimeController : IAsyncDisposable
                     ? new RadioActivitySnapshot(RadioActivityState.Stopping)
                     : update.Activity,
                 _snapshot.Lifecycle == RadioLifecycleState.Stopping
-                    ? "Stopping Zoya Radio and restoring protected audio state..."
+                    ? "Stopping Zoya Radio..."
                     : update.StatusText,
                 hasActiveRuntime: true);
         }

@@ -22,10 +22,14 @@ This document records accepted milestone status and approved direction. It does 
 | 9B - Grounded context integration | Concluded without final runtime acceptance | Gates 2 and 3 were accepted; Gate 4 did not meet its five-enriched-delivery requirement. The candidate and evidence are retained for future planning, but no further M9 testing or promotion is authorized. |
 | 9C - Source-backed commentary experiments | Completed - direction selected | M9C.6 selected grounded 14B whole-comment synthesis as integration evidence; diagnostic paths remain outside normal radio. |
 | 10A - Deterministic Opportunity Kernel | Passed | Steve accepted the pure immutable reducer on August 22, 2026. It remains unreachable from runtime; source/test builds pass and the complete suite passes 292/292. |
+| 10B - Prepared Material Lifecycle and Binding | Passed | Steve accepted the pure lifecycle on August 22, 2026. Release builds and the complete 308-test suite passed. |
+| 10C - Accepted M8 Runtime Migration | Passed | Steve accepted the live M10A/M10B migration on August 23, 2026. Release builds passed with 0 warnings/errors; the complete suite passed 314/314; focused desktop parity confirmed preparation-stop and delivery-stop return the UI to ready, with Firefox-only exact restoration during delivery. |
+| 11A - Pure Editorial Arbiter | Passed | Steve accepted the pure preparation/airtime arbiter on August 23, 2026. Release builds passed with 0 warnings/errors; the complete suite passed 320/320; focused desktop evidence confirmed typed Prepare/ReserveForAirtime decisions, M10C-equivalent audio behavior, Chrome isolation, and exact Firefox restoration. |
+| 11B - Commentary and Reusable Liner Proof | Passed | Steve accepted the two-format proof on August 24, 2026. Three Release builds passed with 0 warnings/errors and the complete suite passed 337/337; desktop evidence confirmed one correctly gated liner, comment priority, frequent music continuation, exact Firefox restoration, reusable inventory return, safe Silent Mode, and clean Stop. |
 
 Milestone 8 is closed for continued internal development after M8A and M8B owner acceptance. Clean Windows 10/11 and invited-tester evidence remain deferred compatibility/distribution gates and do not certify this package for broad or public distribution.
 
-The latest accepted internal implementation snapshot is commit `93ece64bf5cb21e67378d9ae024c6f45568fe86e`, with 292 automated tests passed and 0 failed. Later documentation-only commits do not replace that implementation snapshot or make the historical test result a new run.
+The latest committed accepted implementation snapshot remains 93ece64bf5cb21e67378d9ae024c6f45568fe86e (M10A). M10B, M10C, M11A, and M11B are accepted uncommitted working-tree implementations. A future commit requires separate authorization.
 
 ## Milestone 7.5B repair provenance
 
@@ -69,6 +73,8 @@ The latest accepted internal implementation snapshot is commit `93ece64bf5cb21e6
 - Milestone 7.5A verified 50.0% -> 12.5% -> 50.0% proportional restoration, normal/Ctrl+C/simulated-failure cleanup, a natural ramp, and Chrome/master-volume isolation.
 - Milestone 7.5B verified two prepared deliveries through Chrome-driven GSMTC churn, exact 100% -> 25% -> 100% restoration, continued transition observation, Chrome isolation, and clean shutdown.
 - Milestone 8A accepted the WinForms control application, readable Radio activity, safe Stop/window-close cleanup, Firefox-only duck/restoration, Chrome/master isolation, target refusal, LocalAppData logs, and preserved console diagnostics.
+- M10C accepted strict live migration of the one-comment path onto M10A/M10B. Steve reconfirmed Chrome isolation, preparation-stop without Firefox ducking, delivery-stop with exact 100% -> 25% -> 100% Firefox restoration, and immediate UI return to ready.
+- M11A accepted pure preparation and airtime arbitration for the existing comment. The accepted live run produced typed Prepare and ReserveForAirtime decisions, preserved music-first safe silence as a valid outcome, left Chrome unaffected, and retained exact Firefox 100% -> 25% -> 100% restoration without playback control.
 
 Milestone-specific evidence and preserved regression instructions remain in the existing `MILESTONE_*_TEST.md` documents.
 
@@ -97,6 +103,12 @@ architecture, milestone responsibilities/non-goals, dependency map, shared-capab
 map, format-maturity map, Music Knowledge flow, memory boundaries, and safety gates
 are governed by [POST_M9_CAPABILITY_ROADMAP.md](POST_M9_CAPABILITY_ROADMAP.md).
 
+On August 24, 2026, Steve approved the post-M11 refinements that keep generation
+format-aware, distinguish Creative Direction from exact script generation, stage
+voice/renderer/cast/locale capabilities, and separate narrow format experiments
+from the later shared production foundation. This is roadmap approval only; each
+milestone still requires its own bounded contract and implementation authorization.
+
 The approved phase sequence is:
 
 1. **Deterministic broadcast foundation:** M10A pure opportunity kernel, M10B
@@ -112,17 +124,23 @@ The approved phase sequence is:
    Music Knowledge, session/recent-session Listening Intelligence before any
    durable-affinity experiment, bounded Station Lore/open threads, and minimal
    complete-airtime effects.
-5. **Voice and localization foundation:** host voice abstraction first, then
-   cast/role capability and separate language/locale work. Independent auditions
-   and call/commercial/telephone/PT-BR experiments may happen earlier.
+5. **Voice and localization foundation:** host voice/renderer abstraction first,
+   provider-neutral expressive-renderer evaluation as a separate evidence gate,
+   then cast/role capability and separate language/locale work. Independent
+   auditions and call/commercial/telephone/PT-BR experiments may happen earlier;
+   naming a backend such as Chatterbox does not approve it.
 6. **Delivery grammar and program-space safety:** treatment compatibility remains
    independent from format and duration. Exact-target hold is an isolated major
    diagnostic gate; opt-in `HoldAndReplace` requires separate later approval.
 7. **Procedural format expansion:** fixed commercial only as a plumbing fixture,
    procedural commercial and caller lab batches, shared prepared-format pipeline,
    and optional editorially earned cross-format continuity.
-8. **Rich production and sonic identity:** narrow shared scene capabilities first,
-   then a coherent Zoya sound pack that progressively upgrades proven formats.
+8. **Rich production and sonic identity:** deterministic prepared-scene
+   representation/compilation first, production-grade voice-renderer integration
+   second, shared mixing/FX third, then a coherent Zoya sound pack and imaging
+   grammar that progressively upgrade proven formats. Narrow format experiments
+   may precede this phase, but proven needs are consolidated here rather than
+   preserved as format-specific hacks.
 9. **Experience-ready private alpha:** compatibility and packaging when Steve
    decides the experience is worth distributing; opportunistic Firefox evidence
    may be collected earlier.
@@ -139,7 +157,18 @@ not become canonical Station Lore.
 The [M10A - Deterministic Opportunity Kernel](MILESTONE_10A_CONTRACT.md) is passed.
 Steve accepted the automatically verified, runtime-unreachable implementation on
 August 22, 2026, and the implementation is committed as `93ece64bf5cb21e67378d9ae024c6f45568fe86e`.
-M10B remains unauthorized pending a separately approved bounded contract.
+Steve approved the [M10B bounded contract](MILESTONE_10B_CONTRACT.md) and
+authorized M10B-only implementation on August 22, 2026. The pure lifecycle
+passed Release builds and the full 308-test suite; Steve accepted M10B the same
+day. Steve then approved, authorized, and accepted the [M10C contract](MILESTONE_10C_CONTRACT.md)
+on August 23, 2026. The existing one-comment runtime now uses M10A/M10B with
+strict M8 parity. Steve then approved, authorized, and accepted the
+[M11A contract](MILESTONE_11A_CONTRACT.md) on August 23, 2026. The pure
+Editorial Arbiter gates the existing comment at preparation and airtime with
+typed reasons while preserving M10C behavior; current verification is 320/320.
+Steve then accepted [M11B](MILESTONE_11B_CONTRACT.md) on August 24, 2026 after the 337/337 automated result and bounded desktop listening trial. M11B proves the accepted comment, one session-reusable liner, and direct music can share typed arbitration, lifecycle, and protected overlay delivery. Steve approved, authorized, and accepted [M12A](MILESTONE_12A_CONTRACT.md) on August 24, 2026 after three zero-warning Release builds, 348/348 passing tests, and representative-packet review. The accepted pure context assembler remains unreachable from normal runtime. Steve then approved the bounded [M12B contract](MILESTONE_12B_CONTRACT.md), authorized M12B-only implementation, reviewed its representative fixtures, and accepted it on August 26, 2026. The isolated direction/generation/laboratory boundary passed 360/360 tests and zero-warning Release builds while remaining unreachable from normal runtime. Steve accepted the [M12C Host Format Laboratory, Batch 1](MILESTONE_12C_CONTRACT.md) on August 26, 2026 after its blinded qualitative review. The deterministic handoff remains the fixed no-model reference; quick reaction is selected only for later bounded work; session-aware observation is deferred for revision/retest. M12C remains local-only and unreachable from normal runtime. Steve then authorized the bounded [M12D Selected Quick-Reaction Contextual Pilot](MILESTONE_12D_CONTRACT.md), accepted D3.1 on August 26, 2026, and accepted the bounded D3.2 comparison on August 27, 2026. The selected quick-reaction client remains a default-off local pilot using the accepted prepared lifecycle, Editorial Arbiter, and existing ducked-overlay delivery; normal M11B launches remain unchanged. D3.2 found no `Oh [...]` repetition in its batch, but the same music can receive the same comment format; this is accepted observation, not a defect or scope change. The later VAR1 simulated mixed-song evaluation was accepted with limitations, and its repeated-form quality limitation remains active. The earlier D3.1 topic-carryover issue is resolved by D3.2. M12D is passed; no commit or next milestone is authorized.
+
+M12D's accepted D3.2 topic-isolation repair replaced prior recent-line subject matter with abstract form measurements only; its exactly 32-request comparison retained three mechanical under-15-word rejections and succeeded in selected-model unload. Steve accepted that comparison on August 27, 2026. The later M12D-VAR1 generate-only simulated mixed-song evaluation was also accepted with limitations: individual comments can be good, but repeated title-first and `Oh ...` forms become recognizable and repetitive song after song. This is an expected quality/product limitation, not an established runtime defect. The earlier D3.1 topic-carryover issue is resolved by D3.2. Broader research and later formats remain deferred and require separate authorization; no new milestone or sequence is implied.
 
 ## Deferred and future boundaries
 
