@@ -101,30 +101,23 @@ Every substantial worker response ends with all of these fields:
 
 `Next worker` must be Conductor, Scout, Imp, Warden, Guide, Scribe, Steve / Decision, or `None` when no follow-up genuinely exists.
 
-Outside an active Steve-approved orchestration envelope, a handoff is guidance and Steve chooses whether to invoke the next worker. Inside an active envelope, Conductor may invoke only the next stage explicitly permitted by that envelope and delegates internally when permitted, so Steve is not asked to relay an internal handoff. Never give Steve a prompt to paste back into the same active Conductor chat. Use a paste-ready prompt only when Steve genuinely needs a different persistent worker/chat, subagent delegation is unavailable or inappropriate, or Steve explicitly requests one. In same-chat or internal-routing cases, the field must instead say `Not needed — ...` and explain the route. When a prompt is needed, it should identify the worker and formal role, bounded objective, governing artifacts, known evidence, unresolved items, prohibited work, and required output.
+## Standing Conductor-led orchestration
 
-## Optional Conductor-led orchestration — Stage 1 policy (inactive)
+Conductor may spawn the appropriate formal named-worker subagent for any stage whose underlying work is already authorized. This standing routing policy removes the need for Steve to relay an ordinary handoff; it does not create product scope or specialist authority. The documented Codex worker-model defaults are operational routing choices explicitly authorized by this standing policy; adopting or changing any Zoya product/runtime AI model, provider, dependency, or service remains a Steve gate.
 
-Manual named-worker chats and paste-ready handoffs remain the active default and the fallback for every substantial task. This section records an accepted policy only: it does not activate orchestration, create agents, or authorize a pilot.
+Spawning is routing, not authorization. It never grants product or architecture decision authority, scope-change authority, implementation authorization, provider/model/dependency/service approval, permission escalation, manual-testing or subjective-evaluation authority, milestone acceptance, commit, push, release, or distribution authority. Automatic ordinary completion routing is allowed only when the next stage is already authorized. Any repair loop requires explicit authority; otherwise it returns to Conductor or Steve.
 
-A later Steve-approved authorization envelope may permit Conductor to route automatically between explicitly allowed worker stages. An envelope must identify its bounded objective, permitted stages, allowed read/write authority, expected artifacts, verification, stop conditions, and final return to Conductor or Steve. It cannot imply general authority to route other work.
+Within each delegated stage:
 
-Within an active envelope:
+- exactly one formal named-worker role is primary and its existing contract applies;
+- only Conductor may spawn subagents; recursive spawning is prohibited;
+- exactly one write-capable worker may operate at a time; parallelism is limited to genuinely independent read-only work;
+- delegations use bounded self-contained task packets rather than full inherited conversation history whenever supported;
+- Conductor explicitly selects a cost-appropriate model and reasoning effort: Scout Terra medium unless unusually difficult research is justified; Imp Terra high by default; Warden Terra high by default; Guide Luna medium or Terra medium; Scribe Luna medium. Sol requires explicit justification, and Max or Ultra is never selected automatically. If an assigned model is unavailable, stop or use the manual fallback rather than silently substituting;
+- every internal worker still produces the mandatory handoff; its paste-ready field says `Not needed — ...` for internal routing and supplies a manual fallback only when internal delegation is unavailable, inappropriate, or Steve requests it; and
+- failures, conflicts, unexpected edits or overlap, unavailable models, permission needs, and scope changes return to Conductor or Steve without expanding authority.
 
-- every stage retains exactly one primary formal worker role;
-- Conductor coordinates but does not perform specialist work;
-- a handoff may trigger only the next stage explicitly permitted by that envelope; outside an envelope, all handoffs remain guidance rather than authorization;
-- only one write-capable worker may operate at a time, and parallel work is limited to genuinely independent read-only tasks;
-- only Conductor may spawn agents; recursive subagent spawning is prohibited;
-- model and reasoning effort inherit by default. Lower-cost settings may be selected for bounded supporting work, but maximum-cost settings are never selected automatically;
-- every internal worker still produces the mandatory handoff; its paste-ready field is a manual fallback prompt only when one is genuinely needed, and otherwise says `Not needed — ...`; and
-- failures, repeated repairs, permission problems, canonical conflicts, unexpected edits, and dirty-worktree overlaps return to Conductor or Steve under the normal routing rules.
-
-The following remain Steve gates even inside an envelope: product decisions; architecture choices; scope changes; implementation authorization; dependencies, models, providers, or services; permission escalation; manual testing; subjective evaluation; milestone acceptance; commits; pushes; releases; and distribution.
-
-For each envelope, Conductor must report a delegation ledger identifying each worker, objective, permissions, model and reasoning effort, files, changes, verification, evidence established, evidence unestablished, failures, retries, and final routing.
-
-Stage 1 remains inactive. No subagent workflow may begin without separate Stage 2 or task-specific authorization from Steve.
+The Steve gates remain exactly in force: product and architecture decisions; scope changes; dependencies, models, providers, and services; permission escalation; manual testing; subjective evaluation; milestone acceptance; commits; pushes; releases; and distribution. Conductor maintains a delegation ledger covering each role, objective, model and effort, permissions, files, changes, verification, findings, failures, retries, exposed usage, and routing. Manual named-worker chats and paste-ready handoffs remain available as fallback and direct-access routes.
 
 ## Routing defaults
 

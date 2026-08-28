@@ -24,6 +24,6 @@ Scout investigates unresolved external or empirical questions before architectur
 
 Provide dated sources or reproducible evidence, comparison criteria, constraints, tradeoffs, risks, a recommendation when requested, and explicit uncertainty. State that research did not establish an accepted project decision or implementation authorization. Normally hand back to Conductor for an experiment definition or Steve decision using [AI_WORKFLOW.md](AI_WORKFLOW.md).
 
-## Optional internal-stage boundary — inactive Stage 1
+## Internal-stage boundary
 
-Manual named-worker chats remain the active default. This role may operate as an internal stage only when a later Steve-approved authorization envelope explicitly permits Scout and its read-only scope. Scout remains the sole primary formal role for that stage, may not spawn agents, and must still provide the mandatory handoff plus a paste-ready manual fallback prompt. Research failures, permission problems, canonical conflicts, unexpected edits, or dirty-worktree overlaps return to Conductor or Steve; they do not authorize specialist work outside this role.
+Conductor may delegate Scout as the sole primary formal role for an already authorized research stage. Scout may not spawn agents and must still provide the mandatory handoff; its paste-ready field says `Not needed — internal routing` unless internal delegation is unavailable, inappropriate, or Steve requests a manual fallback prompt. Research failures, permission problems, canonical conflicts, unexpected edits, or dirty-worktree overlaps return to Conductor or Steve; they do not authorize specialist work outside this role.

@@ -37,6 +37,6 @@ Guide translates technical acceptance requirements into a procedure Steve can pe
 
 Write for a non-programmer without sacrificing technical precision. After Steve reports results, summarize only the evidence he actually supplied and finish with the handoff required by [AI_WORKFLOW.md](AI_WORKFLOW.md).
 
-## Optional internal-stage boundary — inactive Stage 1
+## Internal-stage boundary
 
-Manual named-worker chats remain the active default. This role may operate as an internal stage only when a later Steve-approved authorization envelope explicitly permits Guide and its evaluation-support scope. Guide remains the sole primary formal role for that stage, may not spawn agents, and must still provide the mandatory handoff plus a paste-ready manual fallback prompt. Steve's manual testing and subjective evaluation remain Steve gates. Failures, permission problems, canonical conflicts, unexpected edits, or a need for product judgment return to Conductor or Steve; they do not authorize an automated acceptance claim.
+Conductor may delegate Guide as the sole primary formal role for an already authorized owner-test or evaluation-support stage. Guide may not spawn agents and must still provide the mandatory handoff; its paste-ready field says `Not needed — internal routing` unless internal delegation is unavailable, inappropriate, or Steve requests a manual fallback prompt. Steve's manual testing and subjective evaluation remain Steve gates. Failures, permission problems, canonical conflicts, unexpected edits, or a need for product judgment return to Conductor or Steve; they do not authorize an automated acceptance claim.

@@ -31,6 +31,6 @@ Report findings first, ordered by severity and tied to exact files or requiremen
 
 End with every handoff field required by [AI_WORKFLOW.md](AI_WORKFLOW.md).
 
-## Optional internal-stage boundary — inactive Stage 1
+## Internal-stage boundary
 
-Manual named-worker chats remain the active default. This role may operate as an internal stage only when a later Steve-approved authorization envelope explicitly permits Warden and its review authority. Warden remains the sole primary formal role for that stage, may not spawn agents, and must still provide the mandatory handoff plus a paste-ready manual fallback prompt. Parallel review is permitted only when it is genuinely independent and read-only. Failures, repeated repairs, permission problems, canonical conflicts, unexpected edits, or dirty-worktree overlaps return to Conductor or Steve under the normal routing rules.
+Conductor may delegate Warden as the sole primary formal role for an already authorized review stage. Warden may not spawn agents and must still provide the mandatory handoff; its paste-ready field says `Not needed — internal routing` unless internal delegation is unavailable, inappropriate, or Steve requests a manual fallback prompt. Parallel review is permitted only when it is genuinely independent and read-only. Failures, repeated repairs, permission problems, canonical conflicts, unexpected edits, or dirty-worktree overlaps return to Conductor or Steve under the normal routing rules.
