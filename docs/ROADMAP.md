@@ -29,7 +29,7 @@ This document records accepted milestone status and approved direction. It does 
 
 Milestone 8 is closed for continued internal development after M8A and M8B owner acceptance. Clean Windows 10/11 and invited-tester evidence remain deferred compatibility/distribution gates and do not certify this package for broad or public distribution.
 
-The latest committed accepted implementation snapshot remains 93ece64bf5cb21e67378d9ae024c6f45568fe86e (M10A). M10B, M10C, M11A, and M11B are accepted uncommitted working-tree implementations. A future commit requires separate authorization.
+The latest accepted implementation snapshot is `fdc1b6528acc694b3c15db7e50902e80a1b8453d`, containing the accepted M10B-M12D implementations. The earlier M10A implementation remains historically identified by commit 93ece64bf5cb21e67378d9ae024c6f45568fe86e. A future commit still requires separate authorization.
 
 ## Milestone 7.5B repair provenance
 

@@ -2,7 +2,7 @@
 
 ## Contract status
 
-**M12D passed. Steve accepted D1, authorized D3, accepted the D3.1 opt-in runtime pilot, and accepted the D3.2 topic-isolation repair/comparison plus VAR1 with limitations on August 27, 2026. No commit has been created.**
+**M12D passed. Steve accepted D1, authorized D3, accepted the D3.1 opt-in runtime pilot, and accepted the D3.2 topic-isolation repair/comparison plus VAR1 with limitations on August 27, 2026. The accepted M10B-M12D implementations are recorded in commit `fdc1b6528acc694b3c15db7e50902e80a1b8453d`.**
 
 ## Purpose
 
@@ -131,7 +131,7 @@ Steve evaluated a simulated mixed-song playlist for format variety and accepted 
 
 M12D is passed: D1 and D3/D3.1/D3.2 received Steve's explicit acceptance, and VAR1 received acceptance with limitations. The recorded 371/371 automated evidence belongs to D3.1; D3.2 is the accepted topic-isolation repair plus comparison; VAR1 adds its separately recorded 7/7 focused and 390/390 regression results. The default-off pilot remains an accepted, reversible experimental client; it is not authorization to broaden quick reaction, make it configurable, begin session-aware observation, pursue deferred research, or start another milestone.
 
-No commit is automatic. M13, further host formats, and all unrelated roadmap work remain unauthorized.
+No future commit is automatic. M13, further host formats, and all unrelated roadmap work remain unauthorized.
 
 ## Next action after this contract
 

@@ -8,10 +8,10 @@ This is the front door to the canonical Zoya Radio documentation. The local Git 
 | --- | --- |
 | Snapshot date | 2026-08-27 |
 | Repository branch | `master` |
-| Latest accepted implementation commit | `93ece64bf5cb21e67378d9ae024c6f45568fe86e` |
+| Latest accepted implementation commit | `fdc1b6528acc694b3c15db7e50902e80a1b8453d` (accepted M10B-M12D implementation commit) |
 | Documentation reorganization baseline | `d5594e7ee16be1f11afc732186fa16ae8c5cc1c9` |
 | Current passed milestone | M12D - Selected Quick-Reaction Contextual Pilot; Steve accepted D3.2 and VAR1 with limitations on August 27, 2026 |
-| Latest accepted automated result | 390 passed, 0 failed for the later M12D-VAR1 working-tree verification including D3.2 and VAR1 coverage; the historical D3.1 result remains 371 passed, 0 failed, and no M10B/M10C/M11A/M11B/M12A/M12B/M12C/M12D commit has been created |
+| Latest accepted automated result | 390 passed, 0 failed for the later M12D-VAR1 verification including D3.2 and VAR1 coverage; the historical D3.1 result remains 371 passed, 0 failed |
 | Accepted internal packaged baseline | `0.8.0-alpha.1`; owner packaged-desktop acceptance recorded August 11, 2026 |
 | Deferred distribution evidence | Clean Windows 10/11 and invited private-alpha testing; not blockers to internal development |
 | Current concluded exploration | Milestone 9, closed as prototype/design evidence; M9B Gate 4 was not passed and M9B is not accepted runtime behavior. |
