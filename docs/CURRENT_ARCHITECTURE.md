@@ -1,6 +1,12 @@
 # Current architecture
 
-This document describes the accepted M12D default-off quick-reaction runtime pilot, M12B Creative Direction/Content Generation laboratory boundary, M12A Creative Context Assembler, and M11B commentary/reusable-liner runtime over the accepted M11A Editorial Arbiter, M10C one-comment runtime, M10A deterministic opportunity kernel, and M10B prepared-material lifecycle, plus the implemented-but-unaccepted M9B grounded-context candidate and preserved isolated M9A/M9C diagnostics. M9 was concluded without final M9B runtime acceptance; accepted M8 playback safety invariants remain controlling.
+This document describes the accepted M12D default-off quick-reaction runtime pilot, M12B Creative Direction/Content Generation laboratory boundary, M12A Creative Context Assembler, and M11B commentary/reusable-liner runtime over the accepted M11A Editorial Arbiter, M10C one-comment runtime, M10A deterministic opportunity kernel, and M10B prepared-material lifecycle, plus the accepted isolated M13A-I1 fixture foundation, the implemented-but-unaccepted M9B grounded-context candidate, and preserved isolated M9A/M9C diagnostics. M9 was concluded without final M9B runtime acceptance; accepted M8 playback safety invariants remain controlling.
+
+## Accepted M13A-I1 isolated foundation
+
+- I1 is fixture-only, local, fake-driven, non-network, and unreachable from normal runtime. It contains typed knowledge/provenance/outcome models, a MusicBrainz fixture parser, linked Wikidata fixture behavior, root-only identity resolution, deterministic reconciliation, and bounded fake cache/retry/report diagnostics.
+- Top-level/root artists own identity candidacy; nested/direct credits are references bound only to a declared root. Credit-only identity acceptance is prohibited. Exact canonical object binding is required; MBID remains `EntityId`, while QID is provenance only. Malformed/schema, ambiguous, temporary, and negative factual outcomes remain distinct, and parsers are total/no-throw.
+- The accepted 18-row data-driven matrix covers the fixture contract. There is no network client/provider activation, persistence, cache-on-disk, normal-runtime/controller/UI/scheduling/context/prompt/speech/playback binding, or dependency addition from I1. Accepted M12D/M11 behavior is unchanged.
 
 ## Accepted M10A deterministic foundation
 
@@ -116,6 +122,7 @@ The project-local Microsoft .NET SDK 8.0.423 is in ignored `.dotnet/`. Microsoft
 | `run-m9b-generate-only-evaluation.cmd` | Run the M9B 16-track/48-request owner-quality artifact generation. It does not reach Firefox, media, audio, GUI, speech, or normal radio state. |
 | `run-m9b-gate3-silent.cmd` | Historical explicit Gate 3 preparation-only Firefox observation. It uses no speech, ducking, playback command, or volume operation and reports a typed operational evidence verdict after 12 transitions. Gate 3 is accepted from cumulative evidence; no further Gate 3 desktop trial is required. |
 | `run-m9b-gate3-smoke.cmd` | Explicit local reviewed-catalog/loopback-Ollama diagnostic. It records raw local rejected-candidate evidence and selected-model unload without reaching Firefox, GSMTC, audio, speech, ducking, playback, volume, GUI, cache, or live enrichment. |
+| `run-m13a-music-knowledge-evaluation.cmd` | Run the accepted M13A-I1 fake-driven 18-row music-knowledge matrix; local fixtures only, with no provider, network, persistence, or normal-runtime path. |
 | `run-radio-behavior-test.cmd` | Arm transition-aware automatic preparation and ducked delivery. |
 | `run-audio-ducking-test.cmd` | Enumerate or explicitly test isolated Firefox Core Audio duck/restoration. |
 | `run-neural-tts-diagnostic.cmd` and related launchers | Safely exercise Nicole preparation, fallback, and resource diagnostics. |

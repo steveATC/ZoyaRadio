@@ -26,10 +26,13 @@ This document records accepted milestone status and approved direction. It does 
 | 10C - Accepted M8 Runtime Migration | Passed | Steve accepted the live M10A/M10B migration on August 23, 2026. Release builds passed with 0 warnings/errors; the complete suite passed 314/314; focused desktop parity confirmed preparation-stop and delivery-stop return the UI to ready, with Firefox-only exact restoration during delivery. |
 | 11A - Pure Editorial Arbiter | Passed | Steve accepted the pure preparation/airtime arbiter on August 23, 2026. Release builds passed with 0 warnings/errors; the complete suite passed 320/320; focused desktop evidence confirmed typed Prepare/ReserveForAirtime decisions, M10C-equivalent audio behavior, Chrome isolation, and exact Firefox restoration. |
 | 11B - Commentary and Reusable Liner Proof | Passed | Steve accepted the two-format proof on August 24, 2026. Three Release builds passed with 0 warnings/errors and the complete suite passed 337/337; desktop evidence confirmed one correctly gated liner, comment priority, frequent music continuation, exact Firefox restoration, reusable inventory return, safe Silent Mode, and clean Stop. |
+| 13A-I1 - Music Knowledge and Identity Foundation | Accepted isolated foundation | Steve accepted the fixture-only, non-network foundation on August 28, 2026. Three Release builds were clean, the complete fake-driven suite passed 402/402, and final Warden review found no issues. M13A as a whole is not passed. |
 
 Milestone 8 is closed for continued internal development after M8A and M8B owner acceptance. Clean Windows 10/11 and invited-tester evidence remain deferred compatibility/distribution gates and do not certify this package for broad or public distribution.
 
 The latest accepted implementation snapshot is `fdc1b6528acc694b3c15db7e50902e80a1b8453d`, containing the accepted M10B-M12D implementations. The earlier M10A implementation remains historically identified by commit 93ece64bf5cb21e67378d9ae024c6f45568fe86e. A future commit still requires separate authorization.
+
+On August 28, 2026 Steve accepted [M13A-I1](MILESTONE_13A_CONTRACT.md) as an isolated first foundation only: typed music-knowledge/provenance/outcome models, fixture parsing, deterministic identity ownership and reconciliation, and fake cache/retry/report diagnostics. It is not M13A completion and does not authorize adapters, live providers, network, runtime consumption, M13A-I2, M13B, commit, push, release, or distribution. Any next M13A stage requires a separately bounded authorization.
 
 ## Milestone 7.5B repair provenance
 

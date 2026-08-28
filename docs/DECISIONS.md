@@ -145,6 +145,13 @@ These decisions summarize accepted project rules and rationale already evidenced
 - General configuration is extracted last from dimensions proven useful by the mature opinionated Zoya station; no speculative station builder is approved now.
 - None of these roadmap decisions changes implemented behavior. The accepted M8 safety baseline remains controlling until a later bounded milestone is implemented, verified, and explicitly accepted.
 
+## Accepted M13A-I1 identity and provenance boundary
+
+- On August 28, 2026 Steve accepted I1 as a fixture-only, non-network foundation; no provider activation is approved.
+- Root artist collections exclusively own identity candidacy. Nested/direct credits are references bound to a declared root, and credit-only identity acceptance is prohibited.
+- Stable MusicBrainz MBID remains the canonical `EntityId`. A linked Wikidata QID is provenance only and may be considered only after positive MusicBrainz identity resolution.
+- Malformed/schema failure, ambiguity, temporary outage, confirmed negative fact, and confirmed fact remain categorical and distinct. Parser failure is never negative factual evidence.
+
 ## Accepted M12D D3.2 topic-isolation boundary
 
 - D3.2 is an accepted bounded repair to the default-off quick-reaction pilot, followed by an accepted exactly 32-request comparison on August 27, 2026. Three requests were mechanically rejected for being under 15 words; selected-model unload succeeded. This comparison does not prove universal topic isolation.

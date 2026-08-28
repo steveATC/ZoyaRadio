@@ -394,6 +394,18 @@ var tests = new (string Name, Func<Task> Run)[]
     ("M8B ZIP digest round-trip", () => RunSynchronous(Milestone8BPackagingTests.ZipDigestRoundTrips)),
     ("M8B packaging script encodes distribution gates", () => RunSynchronous(Milestone8BPackagingTests.PackagingScriptEncodesDistributionGates)),
     ("M8B tester documentation and terms are present", () => RunSynchronous(Milestone8BPackagingTests.TesterDocumentationAndTermsArePresent)),
+    ("M13A exact identity normalizes Unicode punctuation whitespace and case", () => RunSynchronous(Milestone13AMusicKnowledgeTests.ExactIdentityNormalizesUnicodePunctuationWhitespaceAndCase)),
+    ("M13A nested collaborative credits and edition relationships are typed", () => RunSynchronous(Milestone13AMusicKnowledgeTests.NestedCollaborativeCreditsAndEditionRelationshipsAreTyped)),
+    ("M13A approved aliases resolve without fuzzy fallback", () => RunSynchronous(Milestone13AMusicKnowledgeTests.ApprovedAliasesResolveButUnapprovedAliasesDoNot)),
+    ("M13A duplicate artist names and same-title recordings remain ambiguous", () => RunSynchronous(Milestone13AMusicKnowledgeTests.DuplicateNamesAndSameTitleRecordingsRemainAmbiguous)),
+    ("M13A mismatch and unsupported credits never guess", () => RunSynchronous(Milestone13AMusicKnowledgeTests.IdentityMismatchAndUnsupportedCreditsNeverGuess)),
+    ("M13A MusicBrainz fixture failures remain categorical", () => RunSynchronous(Milestone13AMusicKnowledgeTests.MusicBrainzFixtureFailuresStayCategorical)),
+    ("M13A Wikidata requires accepted MusicBrainz linkage", () => RunSynchronous(Milestone13AMusicKnowledgeTests.WikidataIsReachableOnlyThroughAcceptedMusicBrainzLink)),
+    ("M13A reviewed facts reconcile conflicts with provenance", () => RunSynchronous(Milestone13AMusicKnowledgeTests.ReviewedFactsAndReconciliationPreserveConflictAndProvenance)),
+    ("M13A fake transport maps bounded retry outcomes", () => RunSynchronous(Milestone13AMusicKnowledgeTests.FixtureTransportMapsOutageTimeoutRateLimitAndSchemaFailure)),
+    ("M13A bounded memory cache expires and refuses corruption", () => RunSynchronous(Milestone13AMusicKnowledgeTests.BoundedMemoryCacheExpiresAndRefusesCorruption)),
+    ("M13A fixture report is deterministic without style promotion", () => RunSynchronous(Milestone13AMusicKnowledgeTests.FixtureReportIsDeterministicReadableAndHasNoStylePromotion)),
+    ("M13A types have no HTTP client or normal runtime binding", () => RunSynchronous(Milestone13AMusicKnowledgeTests.M13ATypesHaveNoHttpClientOrNormalRuntimeBinding)),
 };
 
 int failures = 0;

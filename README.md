@@ -2,7 +2,7 @@
 
 Zoya Radio is a private, local-first Windows application with an accepted WinForms control frontend and preserved console diagnostics. It observes Firefox media, prepares short locally generated comments, speaks with the accepted Nicole voice, and can deliver prepared comments over proportionally ducked Firefox audio.
 
-Milestones 0 through 5, Milestone 7, Milestones 7.5A-7.5B, Milestone 8, and M10A-M12D have passed their required acceptance. Milestone 6 is deliberately deferred. The latest accepted implementation is commit `fdc1b6528acc694b3c15db7e50902e80a1b8453d`, containing the accepted M10B-M12D implementations. M12D includes accepted D3.2 topic isolation, and VAR1 is accepted with limitations. Current Release builds pass with 0 warnings/errors and the complete fake-driven suite passes 390/390; the historical D3.1 result was 371/371. No next milestone, research, model/prompt/personality/enrichment change, or further commit/push is authorized merely by this status. Clean Windows 10/11 and invited-tester validation remain deferred distribution evidence, so the package is not a clean-machine-certified or public release.
+Milestones 0 through 5, Milestone 7, Milestones 7.5A-7.5B, Milestone 8, and M10A-M12D have passed their required acceptance. Milestone 6 is deliberately deferred. M13A-I1 was accepted on August 28, 2026 as an isolated, fixture-only, non-network music-knowledge foundation; M13A as a whole is not passed. The latest accepted implementation remains commit `fdc1b6528acc694b3c15db7e50902e80a1b8453d`, containing the accepted M10B-M12D implementations. M12D includes accepted D3.2 topic isolation, and VAR1 is accepted with limitations. Current Release builds pass with 0 warnings/errors and the complete fake-driven suite passes 402/402; the historical M12D D3.1 result was 371/371 and the later M12D-VAR1 result was 390/390. I1 is unreachable from normal runtime and adds no provider, network, persistence, dependency, or user-visible behavior. No next milestone, research, model/prompt/personality/enrichment change, or further commit/push is authorized merely by this status. Clean Windows 10/11 and invited-tester validation remain deferred distribution evidence, so the package is not a clean-machine-certified or public release.
 
 Start with [docs/PROJECT_INDEX.md](docs/PROJECT_INDEX.md) for the canonical documentation map. Current status is in [docs/PROJECT_STATE.md](docs/PROJECT_STATE.md), and implemented behavior is in [docs/CURRENT_ARCHITECTURE.md](docs/CURRENT_ARCHITECTURE.md).
 
@@ -262,6 +262,12 @@ From the repository root:
 
 The application uses Microsoft's Windows media, speech, playback, and Core Audio session APIs; Ollama's loopback-only local HTTP API; and the approved `KokoroSharp.CPU` 0.8.0 package. No cloud speech service or API key is used.
 
+Run the accepted M13A-I1 fake-driven music-knowledge evaluation (local fixtures only; no provider, network, persistence, or normal runtime):
+
+```powershell
+.\run-m13a-music-knowledge-evaluation.cmd
+```
+
 ## Canonical project documents
 
 - [Documentation index](docs/PROJECT_INDEX.md)
@@ -274,6 +280,7 @@ The application uses Microsoft's Windows media, speech, playback, and Core Audio
 - [Passed M10C runtime-migration contract and acceptance](docs/MILESTONE_10C_CONTRACT.md)
 - [Passed M11A Editorial Arbiter contract and acceptance](docs/MILESTONE_11A_CONTRACT.md)
 - [Passed M11B commentary/reusable-liner contract and acceptance record](docs/MILESTONE_11B_CONTRACT.md)
+- [Accepted M13A-I1 isolated music-knowledge foundation](docs/MILESTONE_13A_CONTRACT.md)
 - [Durable decisions](docs/DECISIONS.md)
 - [Known issues](docs/KNOWN_ISSUES.md)
 - [Research index](docs/RESEARCH_INDEX.md)

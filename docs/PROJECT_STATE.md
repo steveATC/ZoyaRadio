@@ -8,17 +8,23 @@
 | Latest accepted implementation commit | `fdc1b6528acc694b3c15db7e50902e80a1b8453d` (accepted M10B-M12D implementation commit) |
 | Current passed milestone | M12D - Selected Quick-Reaction Contextual Pilot; Steve accepted D3.2 and VAR1 with limitations on August 27, 2026. |
 | Manual acceptance date | 2026-08-27 |
-| Latest accepted automated result | 390 passed, 0 failed for the later M12D-VAR1 verification including D3.2 and VAR1 coverage; the historical D3.1 result remains 371 passed, 0 failed |
+| Latest accepted automated result | 402 passed, 0 failed for accepted M13A-I1; historical M12D-VAR1 was 390 passed and M12D D3.1 was 371 passed |
 | Accepted internal packaged baseline | `0.8.0-alpha.1` |
 | Deferred distribution validation | Clean Windows 10/11 validation remains incomplete. Invited testing has begun and produced a concrete Firefox GSMTC identity compatibility defect; it is not a blocker to internal development. |
 | Current concluded exploration | Milestone 9, closed as prototype/design evidence; M9B has no final runtime acceptance claim. |
 | M12C outcome | Straight handoff retained as no-model reference; quick reaction selected for later bounded work; session-aware observation deferred for revision/retest. |
 | Approved post-M9 direction | M12D is passed: quick reaction is an accepted default-off runtime pilot; all further work requires a separate bounded authorization. |
-| Current accepted foundation | M12A supplies pure factual context; accepted M12B and M12C are isolated consumers and remain unreachable from the accepted M11B live runtime. |
+| Current accepted foundation | M12A supplies pure factual context; accepted M12B and M12C are isolated consumers and remain unreachable from the accepted M11B live runtime. M13A-I1 is an accepted isolated fixture-only, non-network foundation unreachable from normal runtime and does not pass M13A. |
 | Current accepted implementation | M12D D3.2 - a default-off, opt-in prepared quick-reaction pilot with accepted topic isolation; normal launches preserve accepted M11B behavior. |
-| Next project step | Steve decides the next separately bounded roadmap task. The D3.1 recent-comment topic-carryover issue was resolved by accepted D3.2; VAR1's repeated-form limitation remains active and deferred. |
+| Next project step | Steve decides the next separately bounded roadmap task; no later M13A stage is authorized. The D3.1 recent-comment topic-carryover issue was resolved by accepted D3.2; VAR1's repeated-form limitation remains active and deferred. |
 | M12D-VAR1 outcome | Steve accepted the generate-only simulated mixed-song format-variety evaluation with limitations on August 27, 2026; repeated title-first and `Oh ...` forms remain an expected quality/product limitation, not an established runtime defect. |
 | Deferred milestone | Milestone 6 |
+
+## Accepted M13A-I1 foundation
+
+Steve accepted M13A-I1 on August 28, 2026 as an isolated, fixture-only, non-network music-knowledge and identity-ownership foundation. It provides typed knowledge/provenance/outcome models, deterministic fixture parsing, root-only identity resolution and reconciliation, and bounded fake cache/retry/report diagnostics. The 18-row matrix and complete fake-driven suite passed 402/402; three Release builds were clean and final Warden read-only review found no findings. This is historical accepted evidence, not a Scribe rerun.
+
+I1 is unreachable from normal runtime and adds no provider, network, persistence, cache-on-disk, dependency, model, scheduling, context, generation, speech, playback, UI, or runtime behavior. M12D remains the current passed runtime milestone and accepted runtime implementation; M13A as a whole is not passed. No later M13 stage is authorized, and any next step requires a separately bounded authorization. No desktop/manual test was required or performed.
 
 The local Git repository is authoritative. See [PROJECT_INDEX.md](PROJECT_INDEX.md) for the documentation authority and snapshot rules.
 
@@ -169,5 +175,6 @@ Full implemented behavior is in [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.m
 - Passed M12B Creative Direction and Content Generation contract and acceptance record: [MILESTONE_12B_CONTRACT.md](MILESTONE_12B_CONTRACT.md)
 - Passed M12C Host Format Laboratory, Batch 1 contract: [MILESTONE_12C_CONTRACT.md](MILESTONE_12C_CONTRACT.md)
 - Passed M12D Selected Quick-Reaction Contextual Pilot contract and acceptance record: [MILESTONE_12D_CONTRACT.md](MILESTONE_12D_CONTRACT.md)
+- Accepted M13A-I1 isolated Music Knowledge foundation: [MILESTONE_13A_CONTRACT.md](MILESTONE_13A_CONTRACT.md)
 - Durable accepted choices: [DECISIONS.md](DECISIONS.md)
 - Research provenance and non-authority boundary: [RESEARCH_INDEX.md](RESEARCH_INDEX.md)
