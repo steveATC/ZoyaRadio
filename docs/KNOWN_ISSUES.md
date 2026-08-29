@@ -4,6 +4,14 @@ This file separates unresolved defects from accepted platform limits and deferre
 
 ## Unresolved defects and observations
 
+### M13A-I2.1 provider diagnostic limitations
+
+Steve accepted I2/I2.1 only as isolated diagnostic evidence. The final owner-run artifact `20260829T011223006Z` completed safely but attempted six identities and stopped before two remaining fixtures after two consecutive final rate-limited identities. It recorded nine logical requests and fourteen attempts, six HTTP 200 and eight HTTP 503, with conservative `AmbiguousIdentity`, `Unknown`, and `RateLimited` outcomes; zero canonical identities and zero Wikidata progression. `incompleteRateLimited=yes`; no cancellation and no final-run schema failure. Contact data and raw response bodies were absent.
+
+These 503s, conservative outcomes, circuit breaker, and lack of Wikidata progression are accepted limitations of this evidence, not a reason to weaken matching or identity policy. I2/I2.1 is not provider activation, normal-runtime integration, persistence, or M13A completion. Its accepted source/tests/launcher and documentation are part of the repository snapshot containing this text; live artifact directories remain intentionally ignored. OAuth credentials and account registration were not used and remain unapproved/unnecessary for this accepted diagnostic.
+
+An open design hypothesis remains for possible future scope-aware identity outcomes (artist confirmed while recording is ambiguous, or recording confirmed while release is unknown/ambiguous). Facts would remain usable only at established scope, and narrower ambiguity would not erase broader identity. This is deferred follow-up, not accepted architecture or implementation authorization; the current conservative global resolver remains unchanged.
+
 ### Intermittent observer stall at 20:49
 
 - A manual run stopped producing useful observer behavior at approximately 20:49.

@@ -8,19 +8,19 @@ This is the front door to the canonical Zoya Radio documentation. The local Git 
 | --- | --- |
 | Snapshot date | 2026-08-28 |
 | Repository branch | `master` |
-| Latest accepted implementation commit | `fdc1b6528acc694b3c15db7e50902e80a1b8453d` (accepted M10B-M12D implementation commit) |
+| Prior accepted I1 baseline commit | `79480a1a7f164dd6076eab6526be9a60f8d0a0ef`; accepted I2/I2.1 source/tests/launcher and documentation are part of the repository snapshot containing this text; the future commit hash is intentionally not named |
 | Documentation reorganization baseline | `d5594e7ee16be1f11afc732186fa16ae8c5cc1c9` |
 | Current passed milestone | M12D - Selected Quick-Reaction Contextual Pilot; Steve accepted D3.2 and VAR1 with limitations on August 27, 2026 |
-| Latest accepted automated result | 402 passed, 0 failed for accepted M13A-I1; historical M12D-VAR1 was 390 passed and M12D D3.1 was 371 passed |
+| Latest accepted deterministic diagnostic evidence | 407 passed, 0 failed for isolated M13A-I2/I2.1 evidence; the accepted committed I1 foundation at current HEAD was 402 passed, 0 failed; historical M12D-VAR1 was 390 passed and M12D D3.1 was 371 passed |
 | Accepted internal packaged baseline | `0.8.0-alpha.1`; owner packaged-desktop acceptance recorded August 11, 2026 |
 | Deferred distribution evidence | Clean Windows 10/11 and invited private-alpha testing; not blockers to internal development |
 | Current concluded exploration | Milestone 9, closed as prototype/design evidence; M9B Gate 4 was not passed and M9B is not accepted runtime behavior. |
 | M12C outcome | Straight handoff retained as no-model reference; quick reaction selected for later bounded work; session-aware observation deferred for revision/retest |
 | Approved post-M9 direction | M12D is passed: quick reaction is an accepted default-off runtime pilot; all further work requires a separate bounded authorization. |
-| Current accepted foundation | M10A/M10B/M10C and M11A govern the accepted M12D quick-reaction pilot; M12A/M12B remain isolated foundation/laboratory capabilities. M13A-I1 is an accepted isolated fixture-only, non-network foundation unreachable from normal runtime and does not pass M13A. |
+| Current accepted foundation | M10A/M10B/M10C and M11A govern the accepted M12D quick-reaction pilot; M12A/M12B remain isolated foundation/laboratory capabilities. M13A-I1 is an accepted isolated fixture-only, non-network foundation unreachable from normal runtime; I2/I2.1 is accepted only as isolated diagnostic evidence and does not pass M13A. |
 | Next project step | Steve decides the next separately bounded roadmap task; no later M13A stage is authorized. The D3.1 recent-comment topic-carryover issue was resolved by accepted D3.2; VAR1's repeated-form limitation remains active and deferred. |
 | M12D-VAR1 outcome | Steve accepted the generate-only simulated mixed-song format-variety evaluation with limitations on August 27, 2026; repeated title-first and `Oh ...` forms remain an active quality/product limitation. |
-| Snapshot ID | zoya-radio-2026-08-28-m13a-i1-accepted-isolated-foundation |
+| Snapshot ID | zoya-radio-m13a-i2-i2.1-accepted-diagnostic-evidence; owner-run live artifact directories remain ignored |
 
 Update this table whenever an accepted implementation commit becomes the new source snapshot.
 
@@ -50,7 +50,7 @@ Update this table whenever an accepted implementation commit becomes the new sou
 - [MILESTONE_11B_CONTRACT.md](MILESTONE_11B_CONTRACT.md) - passed commentary/reusable-liner contract with automated and Steve desktop acceptance evidence.
 - [MILESTONE_12A_CONTRACT.md](MILESTONE_12A_CONTRACT.md) - passed pure Creative Context Assembler v1 contract with automated evidence and Steve's representative-packet acceptance.
 - [MILESTONE_12B_CONTRACT.md](MILESTONE_12B_CONTRACT.md) - passed bounded Creative Direction, format-specific Content Generation, and generate-only laboratory contract.
-- [MILESTONE_13A_CONTRACT.md](MILESTONE_13A_CONTRACT.md) - accepted M13A-I1 isolated fixture-only music-knowledge and identity-ownership foundation.
+- [MILESTONE_13A_CONTRACT.md](MILESTONE_13A_CONTRACT.md) - accepted M13A-I1 foundation plus bounded I2/I2.1 diagnostic evidence and limitations.
 - [RESEARCH_INDEX.md](RESEARCH_INDEX.md) - research inventory and the boundary between evidence and recommendations.
 
 ## ChatGPT Project-source availability
@@ -166,4 +166,4 @@ Repository-only does not mean non-authoritative. README and the milestone record
 - [Milestone 11B contract/acceptance](MILESTONE_11B_CONTRACT.md) - passed two-format proof; verified 337/337 and accepted by Steve on August 24, 2026
 - [Milestone 12C contract/acceptance](MILESTONE_12C_CONTRACT.md) - passed Host Format Laboratory, Batch 1; quick reaction selected for later bounded work
 - [Milestone 12D contract/acceptance](MILESTONE_12D_CONTRACT.md) - passed default-off quick-reaction runtime pilot; D3.1 verified 371/371, D3.2 comparison accepted, and VAR1 accepted with limitations on August 27, 2026
-- [Milestone 13A-I1 contract/acceptance](MILESTONE_13A_CONTRACT.md) - accepted isolated fixture-only foundation; 402/402 fake-driven verification on August 28, 2026; M13A remains incomplete and no later stage is authorized
+- [Milestone 13A-I1/I2/I2.1 contract/acceptance](MILESTONE_13A_CONTRACT.md) - I1 accepted isolated foundation; I2/I2.1 accepted only as isolated provider-diagnostic evidence (407/407 historical fake-driven evidence and live limitations); M13A remains incomplete and no later stage is authorized

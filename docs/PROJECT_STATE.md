@@ -5,10 +5,10 @@
 | Field | Current value |
 | --- | --- |
 | Branch | `master` |
-| Latest accepted implementation commit | `fdc1b6528acc694b3c15db7e50902e80a1b8453d` (accepted M10B-M12D implementation commit) |
+| Prior accepted I1 baseline commit | `79480a1a7f164dd6076eab6526be9a60f8d0a0ef`; accepted I2/I2.1 source/tests/launcher and documentation are part of the repository snapshot containing this text; the future commit hash is intentionally not named |
 | Current passed milestone | M12D - Selected Quick-Reaction Contextual Pilot; Steve accepted D3.2 and VAR1 with limitations on August 27, 2026. |
 | Manual acceptance date | 2026-08-27 |
-| Latest accepted automated result | 402 passed, 0 failed for accepted M13A-I1; historical M12D-VAR1 was 390 passed and M12D D3.1 was 371 passed |
+| Latest accepted deterministic diagnostic evidence | 407 passed, 0 failed for isolated M13A-I2/I2.1 evidence; the accepted committed I1 foundation at current HEAD was 402 passed, 0 failed; historical M12D-VAR1 was 390 passed and M12D D3.1 was 371 passed |
 | Accepted internal packaged baseline | `0.8.0-alpha.1` |
 | Deferred distribution validation | Clean Windows 10/11 validation remains incomplete. Invited testing has begun and produced a concrete Firefox GSMTC identity compatibility defect; it is not a blocker to internal development. |
 | Current concluded exploration | Milestone 9, closed as prototype/design evidence; M9B has no final runtime acceptance claim. |
@@ -22,9 +22,21 @@
 
 ## Accepted M13A-I1 foundation
 
-Steve accepted M13A-I1 on August 28, 2026 as an isolated, fixture-only, non-network music-knowledge and identity-ownership foundation. It provides typed knowledge/provenance/outcome models, deterministic fixture parsing, root-only identity resolution and reconciliation, and bounded fake cache/retry/report diagnostics. The 18-row matrix and complete fake-driven suite passed 402/402; three Release builds were clean and final Warden read-only review found no findings. This is historical accepted evidence, not a Scribe rerun.
+Steve accepted M13A-I1 on August 28, 2026 as an isolated, fixture-only, non-network music-knowledge and identity-ownership foundation. It provides typed knowledge/provenance/outcome models, deterministic fixture parsing, root-only identity resolution and reconciliation, and bounded fake cache/retry/report diagnostics. The 18-row matrix and complete fake-driven suite passed 402/402; three Release builds were clean and final Warden read-only review found no findings. The accepted M13A-I1 implementation/documentation snapshot is commit `79480a1a7f164dd6076eab6526be9a60f8d0a0ef`. This is historical accepted evidence, not a Scribe rerun.
 
 I1 is unreachable from normal runtime and adds no provider, network, persistence, cache-on-disk, dependency, model, scheduling, context, generation, speech, playback, UI, or runtime behavior. M12D remains the current passed runtime milestone and accepted runtime implementation; M13A as a whole is not passed. No later M13 stage is authorized, and any next step requires a separately bounded authorization. No desktop/manual test was required or performed.
+
+## Accepted M13A-I2/I2.1 diagnostic evidence
+
+Steve accepted I2/I2.1 only as isolated provider-diagnostic evidence with limitations. It does not activate a provider, connect normal runtime, add persistence, or pass M13A. The accepted I2/I2.1 source/tests/launcher and documentation are part of the repository snapshot containing this text; owner-run live artifact directories remain intentionally ignored. The prior accepted I1 baseline is commit `79480a1a7f164dd6076eab6526be9a60f8d0a0ef`.
+
+Historical deterministic evidence: three serial Release builds passed with shared compilation disabled; the complete fake-driven suite passed 407/407; the existing M13A launcher passed 407/407; the fixture-only I2 launcher made zero provider requests and wrote no artifacts; final Warden review had no findings. These are historical results, not a rerun.
+
+Final owner-run live artifact `20260829T011223006Z` completed safely: six identities attempted, nine logical requests, fourteen attempts, six HTTP 200 and eight HTTP 503. Outcomes were Wake Up/Rage Against The Machine `AmbiguousIdentity` (2/3), Ouro De Tolo/Raul Seixas `AmbiguousIdentity` (2/3), T.N.T./AC/DC `RateLimited` (1/2), Leraine/Secede & Kettel `Unknown` (1/1), Sweet Home Alabama/Lynyrd Skynyrd `RateLimited` (1/2), and Chop Suey!/System of a Down `RateLimited` (2/3). Two fixtures were not attempted after the circuit breaker stopped on two consecutive final rate-limited identities. `incompleteRateLimited=yes`; no cancellation; zero canonical identities; zero Wikidata progression; no final-run schema failure; contact data and raw response bodies absent. The 503s, conservative outcomes, circuit breaking, and no Wikidata progression are accepted evidence limitations. Do not weaken matching or identity policy.
+
+The earlier restricted-sandbox run `20260829T002932605Z` was inconclusive (8 logical/16 attempts, all status 0 `ProviderOutage`); escalated run `20260829T003339942Z` recorded 9 logical/16 attempts, 3 HTTP 200, 13 HTTP 503, 1 `AmbiguousIdentity`, 1 `SchemaFailure`, 6 `ProviderOutage`, and zero canonical/Wikidata progression. I2.1 added 503 -> `RateLimited`, 1.5-second pacing, `Retry-After` or at least five-second fallback cooldown, and circuit stop after two consecutive final rate-limited identities.
+
+Scope-aware identity resolution remains an open design hypothesis deferred by Steve, not an accepted architecture or authorization. The conservative global resolver remains unchanged; no schema change, weaker matching, extra provider requests, OAuth, dependency, model, runtime, or desktop work is authorized.
 
 The local Git repository is authoritative. See [PROJECT_INDEX.md](PROJECT_INDEX.md) for the documentation authority and snapshot rules.
 

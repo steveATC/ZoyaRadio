@@ -152,6 +152,10 @@ These decisions summarize accepted project rules and rationale already evidenced
 - Stable MusicBrainz MBID remains the canonical `EntityId`. A linked Wikidata QID is provenance only and may be considered only after positive MusicBrainz identity resolution.
 - Malformed/schema failure, ambiguity, temporary outage, confirmed negative fact, and confirmed fact remain categorical and distinct. Parser failure is never negative factual evidence.
 
+I2/I2.1 provider diagnostics were accepted by Steve only as isolated evidence with the limitations in [MILESTONE_13A_CONTRACT.md](MILESTONE_13A_CONTRACT.md). The accepted source/tests/launcher and documentation are part of the repository snapshot containing this text, while live artifact directories remain intentionally ignored. They do not approve provider activation, normal-runtime use, persistence, schema changes, weaker matching, additional requests, credentials/OAuth, or M13A completion. The current conservative global resolver is unchanged.
+
+Scoped identity resolution (for example, retaining a confirmed artist while recording or release evidence remains ambiguous) is an **OPEN DESIGN HYPOTHESIS / FOLLOW-UP QUESTION** deferred by Steve, not a durable decision. No schema or behavior change is authorized by that hypothesis.
+
 ## Accepted M12D D3.2 topic-isolation boundary
 
 - D3.2 is an accepted bounded repair to the default-off quick-reaction pilot, followed by an accepted exactly 32-request comparison on August 27, 2026. Three requests were mechanically rejected for being under 15 words; selected-model unload succeeded. This comparison does not prove universal topic isolation.

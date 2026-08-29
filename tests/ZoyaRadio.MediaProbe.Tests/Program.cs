@@ -406,6 +406,11 @@ var tests = new (string Name, Func<Task> Run)[]
     ("M13A bounded memory cache expires and refuses corruption", () => RunSynchronous(Milestone13AMusicKnowledgeTests.BoundedMemoryCacheExpiresAndRefusesCorruption)),
     ("M13A fixture report is deterministic without style promotion", () => RunSynchronous(Milestone13AMusicKnowledgeTests.FixtureReportIsDeterministicReadableAndHasNoStylePromotion)),
     ("M13A types have no HTTP client or normal runtime binding", () => RunSynchronous(Milestone13AMusicKnowledgeTests.M13ATypesHaveNoHttpClientOrNormalRuntimeBinding)),
+    ("M13A-I2 provider routes are exact bounded and Unicode safe", () => RunSynchronous(Milestone13AMusicKnowledgeTests.ProviderRoutesAreExactBoundedAndUnicodeSafe)),
+    ("M13A-I2 contact and fixture-only command refuse live work safely", Milestone13AMusicKnowledgeTests.M13AI2ContactAndFixtureOnlyCommandRefuseLiveWorkSafely),
+    ("M13A-I2 provider retry pacing and cancellation are bounded", Milestone13AMusicKnowledgeTests.M13AI2ProviderRetryPacingAndCancellationAreBounded),
+    ("M13A-I2 diagnostic sequence preserves identity and Wikidata gating", Milestone13AMusicKnowledgeTests.M13AI2DiagnosticSequencePreservesIdentityAndWikidataGating),
+    ("M13A-I2 matrix artifacts and CLI boundary stay deterministic", () => RunSynchronous(Milestone13AMusicKnowledgeTests.M13AI2MatrixArtifactsAndCliBoundaryStayDeterministic)),
 };
 
 int failures = 0;

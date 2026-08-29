@@ -1,4 +1,5 @@
 using System.Net.Http;
+using System.Net;
 using System.Reflection;
 using System.Text.Json;
 using ZoyaRadio.MediaProbe;
@@ -654,6 +655,392 @@ internal static class Milestone13AMusicKnowledgeTests
           "relationships": [ { "type": "wikidata", "source-id": "artist-zoya", "target-id": "Q4242" } ]
         }
         """;
+
+    internal static void ProviderRoutesAreExactBoundedAndUnicodeSafe()
+    {
+        True(M13AProviderRequestFactory.TryCreateArtist("Заберут меня в солдаты", "case-01", out M13AProviderRequest? artist));
+        Equal(M13AProviderRoute.MusicBrainzArtist, artist!.Route);
+        Equal("musicbrainz.org", artist.Uri.Host);
+        Equal("/ws/2/artist", artist.Uri.AbsolutePath);
+        True(artist.Uri.Query.Contains("fmt=json", StringComparison.Ordinal));
+        True(artist.Uri.Query.Contains("limit=5", StringComparison.Ordinal));
+        True(M13AProviderRequestFactory.TryCreateRecording("T.N.T.", "AC/DC", "case-01-recording", out M13AProviderRequest? recording));
+        Equal("/ws/2/recording", recording!.Uri.AbsolutePath);
+        True(M13AProviderRequestFactory.TryCreateWikidata("Q4242", "case-01-wikidata", out M13AProviderRequest? wikidata));
+        Equal("/wiki/Special:EntityData/Q4242.json", wikidata!.Uri.AbsolutePath);
+
+        var forged = new M13AProviderRequest(M13AProviderRoute.MusicBrainzArtist, new Uri("https://musicbrainz.org/ws/2/release?fmt=json"), "forged");
+        False(M13AProviderRequestFactory.IsAllowed(forged));
+        var wrongPort = new M13AProviderRequest(M13AProviderRoute.MusicBrainzArtist, new Uri("https://musicbrainz.org:444/ws/2/artist" + artist.Uri.Query), "wrong-port");
+        False(M13AProviderRequestFactory.IsAllowed(wrongPort));
+        False(M13AProviderRequestFactory.IsAllowed(new M13AProviderRequest(M13AProviderRoute.MusicBrainzArtist, new Uri("https://musicbrainz.org/ws/2/artist?query=x&queryExtra=x&fmt=json&limit=5&inc=url-rels"), "query-extra")));
+        False(M13AProviderRequestFactory.IsAllowed(new M13AProviderRequest(M13AProviderRoute.MusicBrainzArtist, new Uri("https://musicbrainz.org/ws/2/artist?query=x&query=y&fmt=json&limit=5&inc=url-rels"), "query-duplicate")));
+        False(M13AProviderRequestFactory.IsAllowed(new M13AProviderRequest(M13AProviderRoute.MusicBrainzArtist, new Uri("https://musicbrainz.org/ws/2/artist?query&fmt=json&limit=5&inc=url-rels"), "query-malformed")));
+        False(M13AProviderRequestFactory.TryCreateWikidata("Q0", "invalid", out _));
+        False(M13AProviderRequestFactory.TryCreateArtist(new string('x', 201), "oversized", out _));
+        False(M13AProviderRequestFactory.TryCreateArtist("artist\nheader", "control", out _));
+        Equal(MusicKnowledgeOutcome.UnsupportedRepresentation, M13AProviderRequestRunner.Map(artist, new M13AProviderResponse(302, null)));
+        Equal(MusicKnowledgeOutcome.SchemaFailure, M13AProviderRequestRunner.Map(artist, new M13AProviderResponse(200, null, BodyTooLarge: true)));
+        Equal(MusicKnowledgeOutcome.RateLimited, M13AProviderRequestRunner.Map(artist, new M13AProviderResponse(503, null)));
+        Equal(MusicKnowledgeOutcome.ProviderOutage, M13AProviderRequestRunner.Map(wikidata!, new M13AProviderResponse(503, null)));
+
+        using HttpClientHandler defaultHandler = M13AHttpProviderTransport.CreateDefaultHandler();
+        False(defaultHandler.AllowAutoRedirect);
+        False(defaultHandler.UseCookies);
+        var redirectHandler = new M13AHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.Found)
+        {
+            Headers = { Location = new Uri("https://example.test/redirect") },
+        });
+        using var redirectTransport = new M13AHttpProviderTransport("steve@example.test", redirectHandler);
+        M13AProviderResponse redirect = redirectTransport.SendAsync(artist, CancellationToken.None).GetAwaiter().GetResult();
+        Equal(302, redirect.StatusCode);
+        False(redirectHandler.SawCookie);
+    }
+
+    internal static async Task M13AI2ContactAndFixtureOnlyCommandRefuseLiveWorkSafely()
+    {
+        False(M13AProviderContact.IsMeaningful(null));
+        False(M13AProviderContact.IsMeaningful("not-a-contact"));
+        False(M13AProviderContact.IsMeaningful("person(@example.test"));
+        True(M13AProviderContact.IsMeaningful("steve@example.test"));
+        True(M13AProviderContact.IsMeaningful("https://example.test/contact"));
+        int exitCode = await M13AProviderDiagnosticCommand.RunAsync(live: false);
+        Equal(0, exitCode);
+    }
+
+    internal static async Task M13AI2ProviderRetryPacingAndCancellationAreBounded()
+    {
+        var clock = new M13AFakeClock();
+        var transport = new M13ARecordingTransport(
+            new M13AProviderResponse(429, null, RetryAfter: TimeSpan.FromMinutes(5)),
+            new M13AProviderResponse(200, "{}"),
+            new M13AProviderResponse(200, "{}"));
+        var runner = new M13AProviderRequestRunner(transport, clock);
+        True(M13AProviderRequestFactory.TryCreateArtist("Artist", "pace-artist", out M13AProviderRequest? artist));
+        M13AProviderRequestResult retried = await runner.ExecuteAsync(artist!, CancellationToken.None);
+        Equal(MusicKnowledgeOutcome.ConfirmedFact, retried.Outcome);
+        Equal(2, retried.Attempts);
+        Equal(TimeSpan.FromSeconds(60), clock.Delays[0]);
+
+        True(M13AProviderRequestFactory.TryCreateRecording("Song", "Artist", "pace-recording", out M13AProviderRequest? recording));
+        await runner.ExecuteAsync(recording!, CancellationToken.None);
+        Equal(3, transport.Calls);
+        Equal(TimeSpan.FromSeconds(1.5), clock.Delays[^1]);
+        Equal(TimeSpan.FromSeconds(1.5), M13AProviderRequestRunner.MusicBrainzMinimumSpacing);
+
+        using var cancelled = new CancellationTokenSource();
+        cancelled.Cancel();
+        M13AProviderRequestResult stopped = await runner.ExecuteAsync(recording!, cancelled.Token);
+        True(stopped.Cancelled);
+        Equal(3, transport.Calls);
+        True(M13AProviderRequestRunner.ShouldRetry(new M13AProviderResponse(0, null, TimedOut: true), MusicKnowledgeOutcome.Timeout, 1));
+        True(M13AProviderRequestRunner.ShouldRetry(new M13AProviderResponse(429, null), MusicKnowledgeOutcome.RateLimited, 1));
+        True(M13AProviderRequestRunner.ShouldRetry(new M13AProviderResponse(503, null), MusicKnowledgeOutcome.ProviderOutage, 1));
+        False(M13AProviderRequestRunner.ShouldRetry(new M13AProviderResponse(501, null), MusicKnowledgeOutcome.ProviderOutage, 1));
+        False(M13AProviderRequestRunner.ShouldRetry(new M13AProviderResponse(505, null), MusicKnowledgeOutcome.ProviderOutage, 1));
+        True(M13AProviderRequestRunner.IsTemporaryServerStatus(500));
+        True(M13AProviderRequestRunner.IsTemporaryServerStatus(502));
+        True(M13AProviderRequestRunner.IsTemporaryServerStatus(503));
+        True(M13AProviderRequestRunner.IsTemporaryServerStatus(504));
+        False(M13AProviderRequestRunner.IsTemporaryServerStatus(501));
+        False(M13AProviderRequestRunner.IsTemporaryServerStatus(505));
+
+        var refusedTransport = new M13ARecordingTransport(new M13AProviderResponse(501, null), new M13AProviderResponse(200, "{}"));
+        M13AProviderRequestResult refused = await new M13AProviderRequestRunner(refusedTransport, new M13AFakeClock()).ExecuteAsync(artist!, CancellationToken.None);
+        Equal(1, refused.Attempts);
+        Equal(1, refusedTransport.Calls);
+
+        using var networkTransport = new M13AHttpProviderTransport("steve@example.test", new M13AHttpHandler(_ => throw new HttpRequestException("local fake network failure")));
+        M13AProviderRequestResult network = await new M13AProviderRequestRunner(networkTransport, new M13AFakeClock()).ExecuteAsync(artist!, CancellationToken.None);
+        Equal(MusicKnowledgeOutcome.ProviderOutage, network.Outcome);
+        Equal(2, network.Attempts);
+        Equal(2, network.AttemptLedger!.Count);
+
+        using var cancellationSource = new CancellationTokenSource();
+        int cancellationHandlerCalls = 0;
+        using var cancellationTransport = new M13AHttpProviderTransport("steve@example.test", new M13AHttpHandler(_ =>
+        {
+            cancellationHandlerCalls++;
+            if (cancellationHandlerCalls == 1) return new HttpResponseMessage((HttpStatusCode)429);
+            cancellationSource.Cancel();
+            throw new HttpRequestException("local fake failure concurrent with cancellation");
+        }));
+        M13AProviderRequestResult cancellationWins = await new M13AProviderRequestRunner(cancellationTransport, new M13AFakeClock()).ExecuteAsync(artist!, cancellationSource.Token);
+        True(cancellationWins.Cancelled);
+        Equal(MusicKnowledgeOutcome.Unknown, cancellationWins.Outcome);
+        Equal(2, cancellationHandlerCalls);
+
+        var fallbackClock = new M13AFakeClock();
+        var fallbackTransport = new M13ARecordingTransport(
+            new M13AProviderResponse(503, null), new M13AProviderResponse(503, null), new M13AProviderResponse(200, "{}"));
+        var fallbackRunner = new M13AProviderRequestRunner(fallbackTransport, fallbackClock);
+        M13AProviderRequestResult finalRateLimited = await fallbackRunner.ExecuteAsync(artist!, CancellationToken.None);
+        Equal(MusicKnowledgeOutcome.RateLimited, finalRateLimited.Outcome);
+        Equal(2, finalRateLimited.Attempts);
+        Equal(TimeSpan.FromSeconds(5), fallbackClock.Delays[0]);
+        await fallbackRunner.ExecuteAsync(recording!, CancellationToken.None);
+        Equal(TimeSpan.FromSeconds(5), fallbackClock.Delays[1]);
+        Equal(2, fallbackClock.Delays.Count);
+
+        var retryAfterClock = new M13AFakeClock();
+        var retryAfterTransport = new M13ARecordingTransport(new M13AProviderResponse(503, null, RetryAfter: TimeSpan.FromSeconds(8)), new M13AProviderResponse(200, "{}"));
+        M13AProviderRequestResult retryAfter = await new M13AProviderRequestRunner(retryAfterTransport, retryAfterClock).ExecuteAsync(artist!, CancellationToken.None);
+        Equal(MusicKnowledgeOutcome.ConfirmedFact, retryAfter.Outcome);
+        Equal(TimeSpan.FromSeconds(8), retryAfterClock.Delays.Single());
+
+        var earlyWakeClock = new M13AEarlyWakeClock(
+            TimeSpan.FromSeconds(1),
+            TimeSpan.FromSeconds(-0.25),
+            TimeSpan.FromSeconds(4.25),
+            TimeSpan.FromSeconds(1),
+            TimeSpan.FromSeconds(0.5));
+        var earlyWakeTransport = new M13ARecordingTransport(
+            new M13AProviderResponse(503, null),
+            new M13AProviderResponse(200, "{}"),
+            new M13AProviderResponse(200, "{}"));
+        earlyWakeTransport.OnSend = () => earlyWakeClock.RequestStarts.Add(earlyWakeClock.UtcNow);
+        var earlyWakeRunner = new M13AProviderRequestRunner(earlyWakeTransport, earlyWakeClock);
+        await earlyWakeRunner.ExecuteAsync(artist!, CancellationToken.None);
+        await earlyWakeRunner.ExecuteAsync(recording!, CancellationToken.None);
+        Equal(3, earlyWakeClock.RequestStarts.Count);
+        Equal(TimeSpan.FromSeconds(5), earlyWakeClock.RequestStarts[1] - earlyWakeClock.RequestStarts[0]);
+        Equal(TimeSpan.FromSeconds(1.5), earlyWakeClock.RequestStarts[2] - earlyWakeClock.RequestStarts[1]);
+        Equal(5, earlyWakeClock.Delays.Count);
+        foreach (int temporaryStatus in new[] { 500, 502, 504 })
+        {
+            Equal(MusicKnowledgeOutcome.ProviderOutage, M13AProviderRequestRunner.Map(artist!, new M13AProviderResponse(temporaryStatus, null)));
+        }
+    }
+
+    internal static async Task M13AI2DiagnosticSequencePreservesIdentityAndWikidataGating()
+    {
+        var acceptedTransport = new M13ARecordingTransport(
+            new M13AProviderResponse(200, ArtistBody("Wake Up", "Rage Against The Machine", "mb-rage", "Q4242")),
+            new M13AProviderResponse(200, RecordingBody("Wake Up", "mb-rage", "Rage Against The Machine")),
+            new M13AProviderResponse(200, """{ "entities": { "Q4242": { "descriptions": { "en": { "value": "fixture description" } } } } }"""),
+            new M13AProviderResponse(404, null), new M13AProviderResponse(404, null), new M13AProviderResponse(404, null),
+            new M13AProviderResponse(404, null), new M13AProviderResponse(404, null), new M13AProviderResponse(404, null), new M13AProviderResponse(404, null));
+        var accepted = await new M13AProviderDiagnostic(new M13AProviderRequestRunner(acceptedTransport, new M13AFakeClock())).ExecuteAsync(CancellationToken.None);
+        M13ADiagnosticItemResult first = accepted.Items.Single(item => item.Index == 1);
+        Equal(MusicKnowledgeOutcome.ConfirmedFact, first.IdentityOutcome);
+        Equal(MusicKnowledgeOutcome.ConfirmedFact, first.WikidataOutcome);
+        Equal("mb-rage", first.ArtistEntityId);
+        Equal("Q4242", first.WikidataId);
+        Equal(1, first.WikidataLogicalRequests);
+        Equal(10, accepted.LogicalRequests);
+        Equal(accepted.LogicalRequests, accepted.Attempts);
+        Equal(M13AProviderRoute.MusicBrainzArtist, acceptedTransport.Requests[0].Route);
+        Equal(M13AProviderRoute.MusicBrainzRecording, acceptedTransport.Requests[1].Route);
+        Equal(M13AProviderRoute.WikidataEntity, acceptedTransport.Requests[2].Route);
+
+        var nestedTransport = new M13ARecordingTransport(
+            new M13AProviderResponse(200, ArtistBody("Wake Up", "Rage Against The Machine", "mb-rage", "Q4242")),
+            new M13AProviderResponse(200, """{ "recordings": [ { "id": "recording-nested", "title": "Wake Up", "artist-credit": [ { "artist": { "id": "guest", "name": "Guest" } } ], "releases": [] } ] }"""),
+            new M13AProviderResponse(404, null), new M13AProviderResponse(404, null), new M13AProviderResponse(404, null),
+            new M13AProviderResponse(404, null), new M13AProviderResponse(404, null), new M13AProviderResponse(404, null), new M13AProviderResponse(404, null));
+        M13AProviderDiagnosticResult nested = await new M13AProviderDiagnostic(new M13AProviderRequestRunner(nestedTransport, new M13AFakeClock())).ExecuteAsync(CancellationToken.None);
+        Equal(MusicKnowledgeOutcome.UnsupportedRepresentation, nested.Items[0].IdentityOutcome);
+        Equal(0, nested.Items[0].WikidataLogicalRequests);
+        False(nestedTransport.Requests.Take(2).Any(request => request.Route == M13AProviderRoute.WikidataEntity));
+
+        var malformedTransport = new M13ARecordingTransport(new M13AProviderResponse(200, "{ not json"));
+        M13AProviderDiagnosticResult malformed = await new M13AProviderDiagnostic(new M13AProviderRequestRunner(malformedTransport, new M13AFakeClock())).ExecuteAsync(CancellationToken.None);
+        Equal(MusicKnowledgeOutcome.MalformedResponse, malformed.Items[0].IdentityOutcome);
+
+        var schemaTransport = new M13ARecordingTransport(new M13AProviderResponse(200, """{ "artists": [ { "id": "mb-missing-name" } ] }"""));
+        M13AProviderDiagnosticResult schema = await new M13AProviderDiagnostic(new M13AProviderRequestRunner(schemaTransport, new M13AFakeClock())).ExecuteAsync(CancellationToken.None);
+        Equal(MusicKnowledgeOutcome.SchemaFailure, schema.Items[0].IdentityOutcome);
+
+        var nullRequiredTransport = new M13ARecordingTransport(new M13AProviderResponse(200, """{ "artists": [ { "id": null, "name": "raw-secret-value" } ] }"""));
+        M13AProviderDiagnosticResult nullRequired = await new M13AProviderDiagnostic(new M13AProviderRequestRunner(nullRequiredTransport, new M13AFakeClock())).ExecuteAsync(CancellationToken.None);
+        Equal(MusicKnowledgeOutcome.SchemaFailure, nullRequired.Items[0].IdentityOutcome);
+        Equal("$.artists[0].id:Null", nullRequired.Items[0].StructuralDiagnostic);
+        False(nullRequired.Items[0].StructuralDiagnostic!.Contains("raw-secret-value", StringComparison.Ordinal));
+
+        var nullableAliasTransport = new M13ARecordingTransport(new M13AProviderResponse(200, """{ "artists": [ { "id": "mb-null-alias", "name": "Different Artist", "aliases": [ { "name": "Rage Against The Machine", "type": null } ] } ] }"""));
+        M13AProviderDiagnosticResult nullableAlias = await new M13AProviderDiagnostic(new M13AProviderRequestRunner(nullableAliasTransport, new M13AFakeClock())).ExecuteAsync(CancellationToken.None);
+        Equal(MusicKnowledgeOutcome.Unknown, nullableAlias.Items[0].IdentityOutcome);
+        Equal(1, nullableAlias.Items[0].MusicBrainzLogicalRequests);
+
+        var unknownFieldTransport = new M13ARecordingTransport(new M13AProviderResponse(200, """{ "artists": [ { "id": "mb-unknown", "name": "Different Artist", "unknown-identity-candidate": "Rage Against The Machine" } ] }"""));
+        M13AProviderDiagnosticResult unknownField = await new M13AProviderDiagnostic(new M13AProviderRequestRunner(unknownFieldTransport, new M13AFakeClock())).ExecuteAsync(CancellationToken.None);
+        Equal(MusicKnowledgeOutcome.Unknown, unknownField.Items[0].IdentityOutcome);
+        Equal(1, unknownField.Items[0].MusicBrainzLogicalRequests);
+
+        var circuitTransport = new M13ARecordingTransport(
+            new M13AProviderResponse(503, null), new M13AProviderResponse(503, null),
+            new M13AProviderResponse(503, null), new M13AProviderResponse(503, null),
+            new M13AProviderResponse(200, ArtistBody("not requested", "Raul Seixas", "mb-raul", "Q7")));
+        M13AProviderDiagnosticResult circuit = await new M13AProviderDiagnostic(new M13AProviderRequestRunner(circuitTransport, new M13AFakeClock())).ExecuteAsync(CancellationToken.None);
+        True(circuit.IncompleteRateLimited);
+        Equal("stopped-after-two-consecutive-final-rate-limited-identities", circuit.StopState);
+        Equal(2, circuit.Items.Count);
+        Equal(2, circuit.LogicalRequests);
+        Equal(4, circuit.Attempts);
+        True(circuit.Items.All(item => item.IdentityOutcome == MusicKnowledgeOutcome.RateLimited));
+        Equal(4, circuitTransport.Calls);
+    }
+
+    internal static void M13AI2MatrixArtifactsAndCliBoundaryStayDeterministic()
+    {
+        string[] expected =
+        [
+            "Wake Up|Rage Against The Machine", "Ouro De Tolo|Raul Seixas", "T.N.T.|AC/DC", "Leraine|Secede & Kettel",
+            "Sweet Home Alabama|Lynyrd Skynyrd", "Chop Suey!|System of a Down", "Заберут меня в солдаты|Otava Yo",
+            "Zoya Radio M13A Impossible Fixture|Zoya Radio Nonexistent Artist",
+        ];
+        Equal(8, M13AProviderDiagnosticMatrix.Identities.Count);
+        Equal(string.Join("\n", expected), string.Join("\n", M13AProviderDiagnosticMatrix.Identities.Select(item => item.Title + "|" + item.Artist)));
+        Equal(2, M13AProviderDiagnosticMatrix.MaximumMusicBrainzLogicalRequestsPerIdentity);
+        Equal(1, M13AProviderDiagnosticMatrix.MaximumWikidataLogicalRequestsPerIdentity);
+        Equal(24, M13AProviderDiagnosticMatrix.MaximumLogicalRequests);
+        Equal(32, M13AProviderRequestRunner.MaximumTotalAttempts);
+
+        var attempt = new M13AProviderAttempt(
+            "MusicBrainz", "MusicBrainzArtist", "https://musicbrainz.org/ws/2/artist", "m13a-01-artist", 200,
+            MusicKnowledgeOutcome.ConfirmedFact, new DateTimeOffset(2026, 8, 28, 12, 0, 0, TimeSpan.Zero), 1, false, 12,
+            "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", "MusicBrainz HTTP 503 is treated as rate-limited; user-agent, source-IP, global throttling, and capacity cannot be distinguished.");
+        var result = new M13AProviderDiagnosticResult(
+            [new M13ADiagnosticItemResult(1, "Wake Up", "Rage Against The Machine", MusicKnowledgeOutcome.ConfirmedFact, MusicKnowledgeOutcome.ConfirmedFact, "mb-rage", "Q4242", 2, 1, 3, "$.artists[0].id:Null")],
+            3,
+            3,
+            false,
+            [attempt],
+            true,
+            "stopped-after-two-consecutive-final-rate-limited-identities");
+        string evidence = M13AProviderDiagnosticArtifacts.CreateEvidence(result);
+        string ledger = M13AProviderDiagnosticArtifacts.CreateLedger(result);
+        string report = M13AProviderDiagnosticArtifacts.CreateReport(result);
+        Equal(evidence, M13AProviderDiagnosticArtifacts.CreateEvidence(result));
+        Equal(report, M13AProviderDiagnosticArtifacts.CreateReport(result));
+        Contains("\"artifactType\": \"evidence\"", evidence);
+        Contains("\"artifactType\": \"request-ledger\"", ledger);
+        Contains("canonicalIdentities", evidence);
+        Contains("canonicalEntityId", evidence);
+        Contains("directEntityUrl", evidence);
+        Contains("retrievalTimeUtc", evidence);
+        Contains("applicability", evidence);
+        Contains("HttpStatus", ledger);
+        Contains("BodyByteCount", ledger);
+        Contains("BodySha256", ledger);
+        Contains("SafeUrl", ledger);
+        Contains("ClassificationDetail", ledger);
+        Contains("structuralDiagnostics", evidence);
+        Contains("$.artists[0].id:Null", evidence);
+        Contains("incompleteRateLimited", ledger);
+        Contains("stopped-after-two-consecutive-final-rate-limited-identities", report);
+        Contains("M13A-I2 Provider Diagnostic Report", report);
+        False((evidence + ledger + report).Contains("secret-contact", StringComparison.Ordinal));
+        False((evidence + ledger + report).Contains("raw-secret-response", StringComparison.Ordinal));
+        False((evidence + ledger + report).Contains("raw-secret-value", StringComparison.Ordinal));
+        False((evidence + ledger + report).Contains("raw response", StringComparison.OrdinalIgnoreCase));
+        False(typeof(Program).GetFields(BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+            .Any(field => field.FieldType == typeof(M13AProviderDiagnostic) || field.FieldType == typeof(M13AHttpProviderTransport)));
+        Equal("--m13a-i2-provider-diagnostic", M13AProviderDiagnosticCommand.DiagnosticArgument);
+        Equal("--live", M13AProviderDiagnosticCommand.LiveArgument);
+
+        True(M13AProviderRequestFactory.TryCreateArtist("Body test", "body-test", out M13AProviderRequest? bodyRequest));
+        byte[] oversized = new byte[M13AHttpProviderTransport.MaximumResponseBodyBytes + 1];
+        Array.Fill(oversized, (byte)'x');
+        using var bodyTransport = new M13AHttpProviderTransport("steve@example.test", new M13AHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK) { Content = new M13AUnknownLengthContent(oversized) }));
+        M13AProviderResponse oversizedResponse = bodyTransport.SendAsync(bodyRequest!, CancellationToken.None).GetAwaiter().GetResult();
+        True(oversizedResponse.BodyTooLarge);
+        Equal(M13AHttpProviderTransport.MaximumResponseBodyBytes + 1, oversizedResponse.BodyByteCount);
+    }
+
+    private static string ArtistBody(string ignoredTitle, string artist, string artistId, string qid) =>
+        "{ \"artists\": [ { \"id\": \"" + artistId + "\", \"name\": \"" + artist + "\", \"wikidata\": \"" + qid + "\" } ], \"recordings\": [], \"relationships\": [ { \"type\": \"wikidata\", \"source-id\": \"" + artistId + "\", \"target-id\": \"" + qid + "\" } ] }";
+
+    private static string RecordingBody(string title, string artistId, string artist) =>
+        "{ \"recordings\": [ { \"id\": \"recording-wake-up\", \"title\": \"" + title + "\", \"artist-credit\": [ { \"artist-id\": \"" + artistId + "\", \"name\": \"" + artist + "\" } ], \"releases\": [] } ] }";
+
+    private sealed class M13ARecordingTransport : IM13AProviderTransport
+    {
+        private readonly Queue<M13AProviderResponse> _responses;
+
+        internal M13ARecordingTransport(params M13AProviderResponse[] responses) => _responses = new(responses);
+
+        internal int Calls { get; private set; }
+
+        internal List<M13AProviderRequest> Requests { get; } = [];
+
+        internal Action? OnSend { get; set; }
+
+        public Task<M13AProviderResponse> SendAsync(M13AProviderRequest request, CancellationToken cancellationToken)
+        {
+            Calls++;
+            Requests.Add(request);
+            OnSend?.Invoke();
+            return Task.FromResult(_responses.Count > 0 ? _responses.Dequeue() : new M13AProviderResponse(503, null));
+        }
+    }
+
+    private sealed class M13AHttpHandler : HttpMessageHandler
+    {
+        private readonly Func<HttpRequestMessage, HttpResponseMessage> _response;
+
+        internal M13AHttpHandler(Func<HttpRequestMessage, HttpResponseMessage> response) => _response = response;
+
+        internal bool SawCookie { get; private set; }
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            SawCookie = request.Headers.Contains("Cookie");
+            return Task.FromResult(_response(request));
+        }
+    }
+
+    private sealed class M13AUnknownLengthContent : HttpContent
+    {
+        private readonly byte[] _bytes;
+
+        internal M13AUnknownLengthContent(byte[] bytes) => _bytes = bytes;
+
+        protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context) => stream.WriteAsync(_bytes).AsTask();
+
+        protected override bool TryComputeLength(out long length)
+        {
+            length = 0;
+            return false;
+        }
+    }
+
+    private sealed class M13AFakeClock : IM13AProviderClock
+    {
+        private DateTimeOffset _now = new(2026, 8, 28, 12, 0, 0, TimeSpan.Zero);
+
+        internal List<TimeSpan> Delays { get; } = [];
+
+        public DateTimeOffset UtcNow => _now;
+
+        public Task DelayAsync(TimeSpan delay, CancellationToken cancellationToken)
+        {
+            Delays.Add(delay);
+            _now = _now.Add(delay);
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class M13AEarlyWakeClock : IM13AProviderClock
+    {
+        private readonly Queue<TimeSpan> _advances;
+        private DateTimeOffset _now = new(2026, 8, 28, 12, 0, 0, TimeSpan.Zero);
+
+        internal M13AEarlyWakeClock(params TimeSpan[] advances) => _advances = new(advances);
+
+        internal List<TimeSpan> Delays { get; } = [];
+
+        internal List<DateTimeOffset> RequestStarts { get; } = [];
+
+        public DateTimeOffset UtcNow => _now;
+
+        public Task DelayAsync(TimeSpan delay, CancellationToken cancellationToken)
+        {
+            Delays.Add(delay);
+            _now = _now.Add(_advances.Count > 0 ? _advances.Dequeue() : TimeSpan.Zero);
+            return Task.CompletedTask;
+        }
+    }
 
     private static void True(bool value)
     {

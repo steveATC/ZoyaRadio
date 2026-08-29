@@ -8,6 +8,12 @@ This document describes the accepted M12D default-off quick-reaction runtime pil
 - Top-level/root artists own identity candidacy; nested/direct credits are references bound only to a declared root. Credit-only identity acceptance is prohibited. Exact canonical object binding is required; MBID remains `EntityId`, while QID is provenance only. Malformed/schema, ambiguous, temporary, and negative factual outcomes remain distinct, and parsers are total/no-throw.
 - The accepted 18-row data-driven matrix covers the fixture contract. There is no network client/provider activation, persistence, cache-on-disk, normal-runtime/controller/UI/scheduling/context/prompt/speech/playback binding, or dependency addition from I1. Accepted M12D/M11 behavior is unchanged.
 
+## Accepted M13A-I2/I2.1 diagnostic boundary
+
+- I2/I2.1 is accepted only as isolated provider-diagnostic evidence. It is not provider activation, normal-runtime integration, persistence, or M13A completion. The accepted I2/I2.1 source/tests/launcher and documentation are part of the repository snapshot containing this text; owner-run live artifact directories remain intentionally ignored. The prior I1 fixture baseline is the accepted foundation represented by commit `79480a1a7f164dd6076eab6526be9a60f8d0a0ef`.
+- Historical deterministic evidence was three serial Release builds with shared compilation disabled, a complete fake-driven suite at 407/407, an existing M13A launcher at 407/407, a fixture-only I2 launcher with zero provider requests and no artifacts, and a final Warden review with no findings. These results are recorded evidence, not a Scribe rerun.
+- The owner-run live artifact `20260829T011223006Z` attempted six identities (nine logical requests, fourteen attempts): six HTTP 200 and eight HTTP 503. It yielded `AmbiguousIdentity`, `RateLimited`, and `Unknown` outcomes; two remaining fixtures were stopped by the circuit breaker. There were zero canonical identities and zero Wikidata progression. This diagnostic does not change the conservative global resolver or any normal runtime behavior.
+
 ## Accepted M10A deterministic foundation
 
 - `DeterministicOpportunityKernel` is a pure immutable reducer over explicit state, typed inputs, typed decisions/reasons, supplied timestamps, and supplied transition targets.

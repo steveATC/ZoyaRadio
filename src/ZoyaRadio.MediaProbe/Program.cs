@@ -38,6 +38,8 @@ internal static class Program
         bool m12dQuickReactionLab = false;
         bool m12dD32Comparison = false;
         bool m12dVar1SimulatedPlaylist = false;
+        bool m13aI2ProviderDiagnostic = false;
+        bool m13aI2Live = false;
         foreach (string argument in args)
         {
             if (string.Equals(argument, "--once", StringComparison.OrdinalIgnoreCase))
@@ -223,6 +225,18 @@ internal static class Program
                 continue;
             }
 
+            if (string.Equals(argument, M13AProviderDiagnosticCommand.DiagnosticArgument, StringComparison.OrdinalIgnoreCase))
+            {
+                m13aI2ProviderDiagnostic = true;
+                continue;
+            }
+
+            if (string.Equals(argument, M13AProviderDiagnosticCommand.LiveArgument, StringComparison.OrdinalIgnoreCase))
+            {
+                m13aI2Live = true;
+                continue;
+            }
+
             Console.Error.WriteLine($"Unknown option: {argument}");
 
             WriteUsage();
@@ -248,11 +262,19 @@ internal static class Program
             + (m12cHostFormatLab ? 1 : 0)
             + (m12dD32Comparison ? 1 : 0)
             + (m12dVar1SimulatedPlaylist ? 1 : 0)
-            + (m12dQuickReactionLab ? 1 : 0);
+            + (m12dQuickReactionLab ? 1 : 0)
+            + (m13aI2ProviderDiagnostic ? 1 : 0);
         if (selectedModes > 1)
         {
             Console.Error.WriteLine(
                 "Snapshot, playback-control, announcement, AI-comment, radio-behavior, neural-TTS measurement, audio-ducking, commentary-benchmark, source-backed-commentary-benchmark, owner-curated-commentary-benchmark, deterministic-context-benchmark, M9C.5 comparison, M9C.6 whole-comment, M9B generate-only, M9B Gate 3 silent, and M9B Gate 3 smoke modes cannot be combined.");
+            WriteUsage();
+            return 2;
+        }
+
+        if (m13aI2Live && !m13aI2ProviderDiagnostic)
+        {
+            Console.Error.WriteLine("--live requires --m13a-i2-provider-diagnostic.");
             WriteUsage();
             return 2;
         }
@@ -365,6 +387,11 @@ internal static class Program
         if (m12dVar1SimulatedPlaylist)
         {
             return await M12DVarietyPlaylistCommand.RunAsync();
+        }
+
+        if (m13aI2ProviderDiagnostic)
+        {
+            return await M13AProviderDiagnosticCommand.RunAsync(m13aI2Live);
         }
 
         if (m12cHostFormatLab)
@@ -847,6 +874,7 @@ internal static class Program
         Console.Error.WriteLine("   or: run-m12d-quick-reaction-lab.cmd");
         Console.Error.WriteLine("   or: run-m12d-d3-2-comparison.cmd");
         Console.Error.WriteLine("   or: run-m12d-var1-simulated-playlist.cmd");
+        Console.Error.WriteLine("   or: run-m13a-i2-provider-diagnostic.cmd [--live]");
         Console.Error.WriteLine("   or: run-m9b-generate-only-evaluation.cmd");
         Console.Error.WriteLine("   or: run-m9b-gate3-silent.cmd");
         Console.Error.WriteLine("   or: run-m9b-gate3-smoke.cmd");
