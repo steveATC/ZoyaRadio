@@ -1,8 +1,8 @@
 # Milestone 13A — Music Knowledge and Identity Foundation
 
-## Accepted record
+## Accepted records
 
-On August 28, 2026 Steve accepted M13A-I1 as an isolated, fixture-only foundation for source-agnostic music knowledge and identity ownership. This record documents the accepted bounded stage; it does not pass M13A as a whole, activate a provider, or authorize a later stage.
+On August 28, 2026 Steve accepted M13A-I1 as an isolated, fixture-only foundation for source-agnostic music knowledge and identity ownership. On September 1, 2026 he accepted M13A-R2-I1 as an additive, provider-neutral entity/claim foundation. These records document bounded accepted stages; they do not pass M13A as a whole, activate a provider, or authorize live enrichment.
 
 ## Stage R evidence and decision basis
 
@@ -14,6 +14,8 @@ Stage R established the following design/evidence policy:
 - Discogs and Spotify were not chosen for the initial path.
 
 This is a source-selection and evidence boundary, not live provider activation or an implementation authorization beyond I1.
+
+This section remains the historical basis for the accepted original I1/I2.1 path. The September 1 R2-I1 decision below replaces MusicBrainz-first identity as the assumed universal gateway for future enrichment design without changing the accepted resolver or diagnostic evidence.
 
 ## I1 bounded implementation
 
@@ -47,8 +49,20 @@ Relevant history is preserved: normal-sandbox run `20260829T002932605Z` was inco
 
 The 503 responses, conservative `AmbiguousIdentity`/`Unknown` outcomes, circuit breaking, and absent Wikidata progression are accepted limitations of this diagnostic evidence. Matching and identity policy must not be weakened merely to obtain positive resolutions. OAuth credentials or account registration were not used; no credential belongs in the repository. Public metadata OAuth remains unapproved and unnecessary for this accepted diagnostic.
 
-Scoped identity resolution remains an **OPEN DESIGN HYPOTHESIS / FOLLOW-UP QUESTION**, not an accepted architecture or implementation authorization: an artist might eventually be `Confirmed` while a recording is `Ambiguous`, or a recording `Confirmed` while release evidence is `Unknown`/`Ambiguous`; facts would be usable only at their established scope, narrower ambiguity would not erase securely established broader identity, and a canonical artist might remain reusable. The current conservative global resolver is unchanged. No schema or behavior change is authorized.
+The current conservative global resolver and its accepted I1/I2.1 evidence remain unchanged. The later accepted R2-I1 foundation below establishes an additive provider-neutral model for future work; it does not replace that resolver in normal runtime.
+
+## R2-I1 provider-neutral entity/claim foundation
+
+Steve accepted M13A-R2-I1 on September 1, 2026. It adds a fixture-only durable-knowledge skeleton that distinguishes provisional observed grouping, positively established durable subject identity, and external provider identity references. Exact observed labels can support local grouping and lookup reuse, but names alone cannot establish fact-bearing identity when same-name ambiguity is possible. Application-owned `KnowledgeEntityId` values identify durable Artist and Track entities; provider identifiers remain scoped references and may identify, narrow, or relate without redefining the local entity.
+
+Durable knowledge is entity-centric. One Artist entity may be referenced by many Track entities, including Tracks with multiple explicit Artist credits. Artist claims are stored once on the Artist and reused through relationships rather than copied into Track records. Raw observed credit text is preserved and collaboration strings are not guessed or destructively split. Each claim owns its provenance, applicable scope, categorical evidence state, freshness, conflict, withdrawal, and replacement information. Conflicting and multi-valued genre/style claims may coexist without invalidating the entity.
+
+R2-I1 models Artist and Track only. Recording- and Release-specific claim promotion is refused until those scopes are explicitly modeled. Its bounded lookup-cache and temporary context-projection seams are fixture-only: cache outcomes do not promote claims, and a projection may follow Track-to-Artist relationships without mutating or denormalizing durable state. Raw provider payloads cannot reach the projection.
+
+Accepted verification evidence, recorded historically and not rerun by Scribe: Release source and test builds completed with zero warnings/errors; the complete suite passed **452/452**; existing M13A I1/I2.1 tests remained green; the fixture diagnostic issued zero provider requests and wrote zero artifacts; and Warden accepted the bounded implementation after repairs with no remaining findings. No desktop test applied because the new foundation is unreachable from production composition.
+
+R2-I1 changes no existing MusicBrainz adapter, accepted resolver, cache/retry/throttle/circuit-breaker behavior, I1/I2.1 diagnostic route, M12 Creative Context, Qwen configuration, playback, scheduling, TTS, or normal runtime. It adds no provider activation, persistence, database or cache migration, live Creative Context integration, search, lyrics, M13B behavior, or external metadata transmission.
 
 ## Explicit non-goals and next boundary
 
-This record does not authorize provider activation beyond the isolated I2/I2.1 diagnostic evidence, normal-runtime integration, persistence, cache-on-disk, runtime or scheduling/context/generation/speech/playback integration, schema changes, weaker matching, more provider requests, new dependencies or models, M13B, or any further M13A scope. The original record alone did not authorize a commit; Steve's separate August 28 authorization permits exactly the one local commit described above. No push, release, distribution, or provider/service/account/API-key action is authorized. Any next M13A stage requires a separately bounded authorization from Steve.
+This record does not authorize provider activation beyond the isolated I2/I2.1 diagnostic evidence, normal-runtime integration, persistence, cache-on-disk, runtime or scheduling/context/generation/speech/playback integration, weaker matching, more provider requests, new dependencies or models, M13B, search, or lyrics. Steve separately authorized a selective local acceptance commit for R2-I1 and its documentation; no push is authorized. M13A-R2-E1 is authorized for **design only** as the next bounded task. Its contract must return to Steve for approval before any live provider call or experiment execution.

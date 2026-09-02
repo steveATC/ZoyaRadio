@@ -145,7 +145,7 @@ These decisions summarize accepted project rules and rationale already evidenced
 - General configuration is extracted last from dimensions proven useful by the mature opinionated Zoya station; no speculative station builder is approved now.
 - None of these roadmap decisions changes implemented behavior. The accepted M8 safety baseline remains controlling until a later bounded milestone is implemented, verified, and explicitly accepted.
 
-## Accepted M13A-I1 identity and provenance boundary
+## Accepted M13A identity and provenance boundaries
 
 - On August 28, 2026 Steve accepted I1 as a fixture-only, non-network foundation; no provider activation is approved.
 - Root artist collections exclusively own identity candidacy. Nested/direct credits are references bound to a declared root, and credit-only identity acceptance is prohibited.
@@ -154,7 +154,15 @@ These decisions summarize accepted project rules and rationale already evidenced
 
 I2/I2.1 provider diagnostics were accepted by Steve only as isolated evidence with the limitations in [MILESTONE_13A_CONTRACT.md](MILESTONE_13A_CONTRACT.md). The accepted source/tests/launcher and documentation are part of the repository snapshot containing this text, while live artifact directories remain intentionally ignored. They do not approve provider activation, normal-runtime use, persistence, schema changes, weaker matching, additional requests, credentials/OAuth, or M13A completion. The current conservative global resolver is unchanged.
 
-Scoped identity resolution (for example, retaining a confirmed artist while recording or release evidence remains ambiguous) is an **OPEN DESIGN HYPOTHESIS / FOLLOW-UP QUESTION** deferred by Steve, not a durable decision. No schema or behavior change is authorized by that hypothesis.
+On September 1, 2026 Steve accepted M13A-R2-I1 as an additive provider-neutral durable-knowledge boundary for future M13 work:
+
+- Exact observed artist/title labels support provisional grouping and lookup reuse but do not establish fact-bearing identity by name alone.
+- Positively established Artist and Track subjects use application-owned `KnowledgeEntityId` values. External provider identifiers are scoped references and cannot redefine local identity.
+- Durable facts are entity-centric: store a claim once on the entity it describes. Many Tracks may reference one Artist, and Tracks may have multiple explicit Artist credits without guessed splitting of raw credit text.
+- Evidence and trust attach per claim, including provenance, applicable scope, categorical state, conflicts, freshness, withdrawal, and replacement. Narrow evidence cannot become a broader claim.
+- Recording/Release facts are refused until those entity scopes are explicitly modeled. Temporary context is a bounded relationship-following projection, not the durable store.
+
+This decision replaces the earlier **future-design hypothesis** status for fact-scope-specific/entity-centric modeling. It does not retrospectively change accepted I1/I2.1 evidence or the conservative global resolver, activate a provider, or authorize persistence or runtime integration. R2-E1 is authorized for design only; live requests remain subject to Steve's approval of its bounded contract.
 
 ## Accepted M12D D3.2 topic-isolation boundary
 

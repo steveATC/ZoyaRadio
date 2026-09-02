@@ -8,13 +8,13 @@
 | Prior accepted I1 baseline commit | `79480a1a7f164dd6076eab6526be9a60f8d0a0ef`; accepted I2/I2.1 source/tests/launcher and documentation are part of the repository snapshot containing this text; the future commit hash is intentionally not named |
 | Current passed milestone | M12D - Selected Quick-Reaction Contextual Pilot; Steve accepted D3.2 and VAR1 with limitations on August 27, 2026. |
 | Manual acceptance date | 2026-08-27 |
-| Latest accepted deterministic diagnostic evidence | 407 passed, 0 failed for isolated M13A-I2/I2.1 evidence; the accepted committed I1 foundation at current HEAD was 402 passed, 0 failed; historical M12D-VAR1 was 390 passed and M12D D3.1 was 371 passed |
+| Latest accepted deterministic diagnostic evidence | 452 passed, 0 failed for the accepted fixture-only M13A-R2-I1 foundation; historical M13A-I2/I2.1 evidence was 407/407 and the prior I1 foundation was 402/402 |
 | Accepted internal packaged baseline | `0.8.0-alpha.1` |
 | Deferred distribution validation | Clean Windows 10/11 validation remains incomplete. Invited testing has begun and produced a concrete Firefox GSMTC identity compatibility defect; it is not a blocker to internal development. |
 | Current concluded exploration | Milestone 9, closed as prototype/design evidence; M9B has no final runtime acceptance claim. |
 | M12C outcome | Straight handoff retained as no-model reference; quick reaction selected for later bounded work; session-aware observation deferred for revision/retest. |
 | Approved post-M9 direction | M12D is passed: quick reaction is an accepted default-off runtime pilot; all further work requires a separate bounded authorization. |
-| Current accepted foundation | M12A supplies pure factual context; accepted M12B and M12C are isolated consumers and remain unreachable from the accepted M11B live runtime. M13A-I1 is an accepted isolated fixture-only, non-network foundation unreachable from normal runtime and does not pass M13A. |
+| Current accepted foundation | M12A supplies pure factual context; accepted M12B and M12C are isolated consumers. M13A-R2-I1 adds an accepted provider-neutral, entity-centric Artist/Track claim foundation; it and prior M13A I1/I2.1 evidence remain isolated from normal runtime and do not pass M13A. |
 | Current accepted implementation | M12D D3.2 - a default-off, opt-in prepared quick-reaction pilot with accepted topic isolation; normal launches preserve accepted M11B behavior. |
 | Next project step | Steve decides the next separately bounded roadmap task; no later M13A stage is authorized. The D3.1 recent-comment topic-carryover issue was resolved by accepted D3.2; VAR1's repeated-form limitation remains active and deferred. |
 | M12D-VAR1 outcome | Steve accepted the generate-only simulated mixed-song format-variety evaluation with limitations on August 27, 2026; repeated title-first and `Oh ...` forms remain an expected quality/product limitation, not an established runtime defect. |
@@ -36,7 +36,15 @@ Final owner-run live artifact `20260829T011223006Z` completed safely: six identi
 
 The earlier restricted-sandbox run `20260829T002932605Z` was inconclusive (8 logical/16 attempts, all status 0 `ProviderOutage`); escalated run `20260829T003339942Z` recorded 9 logical/16 attempts, 3 HTTP 200, 13 HTTP 503, 1 `AmbiguousIdentity`, 1 `SchemaFailure`, 6 `ProviderOutage`, and zero canonical/Wikidata progression. I2.1 added 503 -> `RateLimited`, 1.5-second pacing, `Retry-After` or at least five-second fallback cooldown, and circuit stop after two consecutive final rate-limited identities.
 
-Scope-aware identity resolution remains an open design hypothesis deferred by Steve, not an accepted architecture or authorization. The conservative global resolver remains unchanged; no schema change, weaker matching, extra provider requests, OAuth, dependency, model, runtime, or desktop work is authorized.
+The conservative global resolver remains unchanged. The later R2-I1 foundation accepts fact-scope-specific, provider-neutral identity and claim modeling additively; it does not weaken or replace I1/I2.1 behavior, authorize extra provider requests, or change normal runtime.
+
+## Accepted M13A-R2-I1 entity/claim foundation
+
+Steve accepted M13A-R2-I1 on September 1, 2026. It separates provisional observed grouping from positively established Artist/Track subjects and external provider references. One Artist may be reused by many Tracks; facts are stored once on their actual entity with per-claim provenance, scope, state, conflict, freshness, withdrawal, and replacement.
+
+Historical acceptance evidence: Release source/test builds completed with zero warnings/errors, the complete suite passed **452/452**, accepted I1/I2.1 tests remained green, the fixture diagnostic made zero provider requests and wrote zero artifacts, and Warden accepted the repaired result with no remaining findings. Recording/Release claim promotion is refused, temporary projection does not copy durable facts, and production composition cannot reach the foundation.
+
+M13A remains incomplete. R2-E1 is authorized for design only and must return to Steve before any live provider call. No provider/search activation, persistence, runtime or Creative Context integration, lyrics, M13B, or model change is authorized.
 
 The local Git repository is authoritative. See [PROJECT_INDEX.md](PROJECT_INDEX.md) for the documentation authority and snapshot rules.
 

@@ -10,7 +10,7 @@ Steve accepted I2/I2.1 only as isolated diagnostic evidence. The final owner-run
 
 These 503s, conservative outcomes, circuit breaker, and lack of Wikidata progression are accepted limitations of this evidence, not a reason to weaken matching or identity policy. I2/I2.1 is not provider activation, normal-runtime integration, persistence, or M13A completion. Its accepted source/tests/launcher and documentation are part of the repository snapshot containing this text; live artifact directories remain intentionally ignored. OAuth credentials and account registration were not used and remain unapproved/unnecessary for this accepted diagnostic.
 
-An open design hypothesis remains for possible future scope-aware identity outcomes (artist confirmed while recording is ambiguous, or recording confirmed while release is unknown/ambiguous). Facts would remain usable only at established scope, and narrower ambiguity would not erase broader identity. This is deferred follow-up, not accepted architecture or implementation authorization; the current conservative global resolver remains unchanged.
+The earlier scope-aware identity hypothesis is now addressed at the representation layer by accepted M13A-R2-I1: observed grouping is separate from established durable subject identity, claims remain usable only at supported scope, and narrower ambiguity need not erase independently established Artist knowledge. This does not repair the live provider limitations above or replace the current conservative global resolver. R2-E1 is authorized for design only; no live provider request is approved.
 
 ### Intermittent observer stall at 20:49
 
