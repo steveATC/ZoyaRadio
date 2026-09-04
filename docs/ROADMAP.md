@@ -2,6 +2,10 @@
 
 This document records accepted milestone status and approved direction. It does not turn research recommendations, brainstorming, or a milestone number into implementation scope.
 
+## Workflow decision
+
+Steve accepted the documentation-only AI workflow hardening: explicit `COMPLETE`/`BLOCKED`/`INCOMPLETE` implementation states, Warden readiness short-circuiting, bounded repair semantics, minimum-sufficient implementation, proportional experiments, interruption handling, and plain-language approval explanations. This is process guidance only; it advances no milestone and authorizes no implementation.
+
 ## Milestone status
 
 | Milestone | Status | Accepted result |
@@ -35,6 +39,8 @@ Milestone 8 is closed for continued internal development after M8A and M8B owner
 The prior accepted I1 baseline is `79480a1a7f164dd6076eab6526be9a60f8d0a0ef`. The accepted I2/I2.1 source/tests/launcher and documentation are part of the repository snapshot containing this text; owner-run live artifact directories remain intentionally ignored, and the future commit hash is not named. The accepted M10B-M12D implementations remain historically identified by commit `fdc1b6528acc694b3c15db7e50902e80a1b8453d`; the earlier M10A implementation remains historically identified by commit 93ece64bf5cb21e67378d9ae024c6f45568fe86e. No push is authorized.
 
 On August 28, 2026 Steve accepted [M13A-I1](MILESTONE_13A_CONTRACT.md) as an isolated first foundation and subsequently accepted I2/I2.1 only as isolated provider-diagnostic evidence with reported limitations. On September 1 he accepted R2-I1 as an additive provider-neutral Artist/Track entity-and-claim foundation with 452/452 fixture-driven verification. It distinguishes observed grouping, durable local subjects, and external identity references; it does not replace the accepted resolver or enter normal runtime. M13A is not complete. M13A-R2-E1 is authorized for design only and must return to Steve before live execution. No provider/search activation, persistence, Creative Context connection, lyrics, M13B, model change, push, release, or distribution is authorized.
+
+The current M13A-R2-E1 attempt is paused. The abandoned runner and incomplete replacement are unaccepted historical negative/process evidence, made zero provider calls in the current attempt, and must not resume automatically. Accepted R2-I1 remains valid; no M13A advancement follows from this pause.
 
 ## Milestone 7.5B repair provenance
 

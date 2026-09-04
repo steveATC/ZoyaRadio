@@ -18,7 +18,7 @@ This is the front door to the canonical Zoya Radio documentation. The local Git 
 | M12C outcome | Straight handoff retained as no-model reference; quick reaction selected for later bounded work; session-aware observation deferred for revision/retest |
 | Approved post-M9 direction | M12D is passed: quick reaction is an accepted default-off runtime pilot; all further work requires a separate bounded authorization. |
 | Current accepted foundation | M10A/M10B/M10C and M11A govern the accepted M12D quick-reaction pilot; M12A/M12B remain isolated capabilities. M13A-R2-I1 is an accepted provider-neutral entity/claim foundation unreachable from normal runtime; prior I1/I2.1 evidence remains accepted and M13A remains incomplete. |
-| Next project step | M13A-R2-E1 is authorized for design only. Its small real-data experiment contract must return to Steve before any live provider call; no execution is authorized. |
+| Next project step | M13A-R2-E1 is paused after an unaccepted incomplete attempt. Its small real-data experiment contract must return to Steve before any live provider call; no execution or automatic resume is authorized. |
 | M12D-VAR1 outcome | Steve accepted the generate-only simulated mixed-song format-variety evaluation with limitations on August 27, 2026; repeated title-first and `Oh ...` forms remain an active quality/product limitation. |
 | Snapshot ID | zoya-radio-m13a-r2-i1-owner-accepted-foundation; owner-run I2.1 artifact directories remain ignored |
 
@@ -92,7 +92,7 @@ Repository-only does not mean non-authoritative. README and the milestone record
 | Subject | Governing document |
 | --- | --- |
 | Commands, launchers, logs, and local build instructions | [README.md](../README.md) |
-| AI-assisted task roles, routing, handoffs, and owner-test responsibilities | [AI_WORKFLOW.md](workflow/AI_WORKFLOW.md) |
+| AI-assisted task roles, routing, handoffs, owner-test responsibilities, worker states, readiness, and repair rules | [AI_WORKFLOW.md](workflow/AI_WORKFLOW.md) |
 | Current passed milestone, latest verification, and immediate blockers | [PROJECT_STATE.md](PROJECT_STATE.md) |
 | Implemented components, runtime flow, and current safety behavior | [CURRENT_ARCHITECTURE.md](CURRENT_ARCHITECTURE.md) |
 | Completed milestones and approved next work | [ROADMAP.md](ROADMAP.md) |
@@ -166,4 +166,4 @@ Repository-only does not mean non-authoritative. README and the milestone record
 - [Milestone 11B contract/acceptance](MILESTONE_11B_CONTRACT.md) - passed two-format proof; verified 337/337 and accepted by Steve on August 24, 2026
 - [Milestone 12C contract/acceptance](MILESTONE_12C_CONTRACT.md) - passed Host Format Laboratory, Batch 1; quick reaction selected for later bounded work
 - [Milestone 12D contract/acceptance](MILESTONE_12D_CONTRACT.md) - passed default-off quick-reaction runtime pilot; D3.1 verified 371/371, D3.2 comparison accepted, and VAR1 accepted with limitations on August 27, 2026
-- [Milestone 13A-I1/I2/I2.1/R2-I1 contract/acceptance](MILESTONE_13A_CONTRACT.md) - R2-I1 accepted as an additive entity/claim foundation with 452/452 fixture-driven evidence; prior I1 and I2/I2.1 evidence remains accepted; M13A remains incomplete and R2-E1 is design-only
+- [Milestone 13A-I1/I2/I2.1/R2-I1 contract/acceptance](MILESTONE_13A_CONTRACT.md) - R2-I1 accepted as an additive entity/claim foundation with 452/452 fixture-driven evidence; prior I1 and I2/I2.1 evidence remains accepted; paused R2-E1 remains incomplete and unaccepted

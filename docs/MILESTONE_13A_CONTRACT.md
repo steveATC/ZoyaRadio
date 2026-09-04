@@ -66,3 +66,9 @@ R2-I1 changes no existing MusicBrainz adapter, accepted resolver, cache/retry/th
 ## Explicit non-goals and next boundary
 
 This record does not authorize provider activation beyond the isolated I2/I2.1 diagnostic evidence, normal-runtime integration, persistence, cache-on-disk, runtime or scheduling/context/generation/speech/playback integration, weaker matching, more provider requests, new dependencies or models, M13B, search, or lyrics. Steve separately authorized a selective local acceptance commit for R2-I1 and its documentation; no push is authorized. M13A-R2-E1 is authorized for **design only** as the next bounded task. Its contract must return to Steve for approval before any live provider call or experiment execution.
+
+## R2-E1 paused status
+
+M13A-R2-E1 is authorized for design only. The current attempt is paused; its abandoned runner and incomplete replacement are unaccepted historical negative/process evidence and made zero provider calls in the current attempt. They must not resume automatically. Accepted R2-I1 remains valid, while M13A remains incomplete. Any future contract must return to Steve before live provider calls or experiment execution.
+
+The attempt also informed the accepted workflow hardening: known unfinished work is `INCOMPLETE`, not review-ready and not a repair; structural overengineering returns for redesign/owner decision; and bounded experiments must remain proportional to the question.

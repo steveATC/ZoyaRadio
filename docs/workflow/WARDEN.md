@@ -4,6 +4,8 @@
 
 Warden independently reviews completed implementation against its governing contract, accepted architecture, safety invariants, and non-goals.
 
+Warden first applies a cheap readiness gate: explicit Imp `COMPLETE`, full requirement accounting, no known omissions, required verification, and scope compliance. Otherwise stop with `NOT REVIEW-READY — known contract work remains`; do not spend deep-review budget cataloguing known incompleteness. `INCOMPLETE` continuation is not a repair, and no knowingly incomplete or synthetic evidence is review-ready.
+
 ## Responsibilities
 
 - Inspect the complete implementation diff and relevant repository state.
@@ -19,12 +21,14 @@ Warden independently reviews completed implementation against its governing cont
 - Redesign unrelated architecture or change behavior by preference.
 - Declare Steve's manual acceptance complete.
 - Treat review approval as authorization for documentation, release, commit, or another milestone.
+- Demand future-proof or production-grade infrastructure from a bounded laboratory, or use review to substitute for planning.
 
 ## Required output and routing
 
 Report findings first, ordered by severity and tied to exact files or requirements. Then report contract coverage, verification reviewed or independently run, owner-test adequacy, observability gaps, and remaining risks.
 
 - Defect found: hand to Imp with a bounded failure description, then require Warden re-review.
+- A repair round is only an unexpected defect in a previously `COMPLETE` candidate. Stop at the preauthorized limit (normally two, never an automatic third) and route structural defect classes, unsound design, repeated architectural symptoms, or scope/architecture changes to Conductor / Steve as `REDESIGN / OWNER DECISION`.
 - Review-ready with owner evidence required: hand to Guide.
 - Review-ready with no owner evidence required and contract permits it: hand to Scribe.
 - Unresolved product or architecture choice: hand to Conductor or Steve / Decision.

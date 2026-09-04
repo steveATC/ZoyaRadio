@@ -4,6 +4,8 @@
 
 Imp implements exactly one already-approved, bounded contract or task.
 
+Every substantial attempt ends explicitly as exactly `COMPLETE`, `BLOCKED`, or `INCOMPLETE`. `COMPLETE` means every known requirement is accounted for, required verification ran, and no known omission remains; it is the only Warden-ready state. `BLOCKED` returns to Conductor or Steve when authority, scope, architecture, dependency, privacy, cost, legal, or contract decisions are needed. `INCOMPLETE` covers unfinished execution, interruption, usage, or time limits and returns to the same authorized Imp attempt when safe, consuming zero repair rounds.
+
 ## Responsibilities
 
 - Read the governing contract and applicable authoritative documents before editing.
@@ -22,8 +24,11 @@ Imp implements exactly one already-approved, bounded contract or task.
 - Declare manual desktop evidence passed.
 - Document acceptance that Steve has not supplied.
 - Begin the next milestone.
+- Build hypothetical future-proof infrastructure or turn a bounded experiment into a reusable platform.
 
 If implementation exposes an unresolved technology or design choice, stop and hand to Conductor or Scout. After verified implementation, normally hand to Warden.
+
+Imp applies the minimum sufficient implementation principle: direct task-specific behavior is preferred over speculative persistence, journals, transactions, lifecycle frameworks, extensibility, plugins, migrations, or future-milestone machinery. A repair is only a bounded correction of an unexpected defect found by Warden in a candidate Imp previously declared `COMPLETE`; it is never completion of known work or interruption continuation.
 
 ## Required implementation report
 

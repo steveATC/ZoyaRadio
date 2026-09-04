@@ -48,6 +48,12 @@ M13A remains incomplete. R2-E1 is authorized for design only and must return to 
 
 The local Git repository is authoritative. See [PROJECT_INDEX.md](PROJECT_INDEX.md) for the documentation authority and snapshot rules.
 
+## Workflow-hardening status
+
+Steve accepted the AI Development Workflow hardening as a documentation/process decision. Substantial implementation attempts now end as exactly `COMPLETE`, `BLOCKED`, or `INCOMPLETE`; only explicit `COMPLETE` candidates are review-ready. Warden performs a cheap readiness gate before deep review, and bounded repair rounds are for unexpected defects in a previously complete candidate only, with no automatic third round. Interruption continuation consumes zero repair rounds.
+
+The minimum sufficient implementation and proportional-experiment rules are controlling. Repeated repairs do not authorize redesign; structural defects, ambiguity, scope expansion, and disproportionate infrastructure return as `REDESIGN / OWNER DECISION`. This changes process guidance only and does not alter runtime behavior or milestone status.
+
 ## Current operational state
 
 - The original Windows media-session watcher remains read only.

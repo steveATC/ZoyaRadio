@@ -84,3 +84,10 @@ Consult `docs/CURRENT_ARCHITECTURE.md` and `docs/DECISIONS.md` for the exact cur
 - Only Conductor may spawn subagents; recursive spawning is prohibited. Exactly one write-capable worker may operate at a time, while parallelism is limited to genuinely independent read-only work. Delegations use bounded self-contained task packets, and unavailable models, failures, conflicts, permission needs, or scope changes return to Conductor or Steve.
 - Keep automated verification and Steve's real-desktop/manual acceptance as separate evidence. Never infer or fabricate owner acceptance.
 - Tiny edits and trivial questions do not require the full declaration and handoff ceremony.
+
+## Workflow hardening guardrails
+
+- `docs/workflow/AI_WORKFLOW.md` is the controlling full source for worker states, readiness, repairs, owner boundaries, proportional experiments, model routing, and approval-ready explanations.
+- Imp must end substantial implementation as exactly `COMPLETE`, `BLOCKED`, or `INCOMPLETE`; only `COMPLETE` is Warden-ready. Unfinished continuation consumes zero repair rounds, and no automatic third repair is allowed.
+- Use the minimum sufficient implementation and proportional experiment infrastructure. Repeated repairs do not authorize redesign, and documentation cannot authorize future implementation or milestone advancement.
+- Steve remains the decision and acceptance authority for behavior, UX, consequential architecture, privacy, providers, cost, licensing, factual guarantees, roadmap, scope, and commits.

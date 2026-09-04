@@ -4,6 +4,8 @@ These decisions summarize accepted project rules and rationale already evidenced
 
 ## Authority and delivery discipline
 
+- **Workflow-hardening decision (September 4, 2026):** substantial Imp attempts end as exactly `COMPLETE`, `BLOCKED`, or `INCOMPLETE`; Warden readiness is gated before deep review; repairs are bounded corrections of unexpected defects in previously complete candidates; and unfinished continuation consumes zero repair rounds. Minimum-sufficient implementation, proportional experiments, explicit interruption handling, owner boundaries, and plain-language approval explanations are controlling process rules. This decision changes no runtime behavior or milestone authorization.
+
 - **The local Git repository is authoritative.** Exported ChatGPT Project-source copies are snapshots and may become stale.
 - **One milestone at a time.** Passing automated checks makes work ready for manual acceptance; Steve's required real-desktop evidence is what passes a milestone.
 - **Preserve proven paths.** Read-only observation, explicit control diagnostics, normal automatic behavior, and failure diagnostics remain separate so a safer mode cannot silently gain broader behavior.

@@ -4,6 +4,12 @@ This file separates unresolved defects from accepted platform limits and deferre
 
 ## Unresolved defects and observations
 
+### Paused M13A-R2-E1 and workflow readiness evidence
+
+- The current M13A-R2-E1 attempt is paused. Its abandoned runner and incomplete replacement are unaccepted historical negative/process evidence, made zero provider calls in the current attempt, and must not resume automatically.
+- Accepted R2-I1 remains valid, but M13A remains incomplete. Any next experiment or live provider call requires a returned contract and Steve's approval.
+- The workflow hardening records this as process evidence: known unfinished work is `INCOMPLETE`, not Warden-ready and not eligible for repair budget. Structural defects exposed by the attempt require redesign/owner decision rather than accumulated repairs.
+
 ### M13A-I2.1 provider diagnostic limitations
 
 Steve accepted I2/I2.1 only as isolated diagnostic evidence. The final owner-run artifact `20260829T011223006Z` completed safely but attempted six identities and stopped before two remaining fixtures after two consecutive final rate-limited identities. It recorded nine logical requests and fourteen attempts, six HTTP 200 and eight HTTP 503, with conservative `AmbiguousIdentity`, `Unknown`, and `RateLimited` outcomes; zero canonical identities and zero Wikidata progression. `incompleteRateLimited=yes`; no cancellation and no final-run schema failure. Contact data and raw response bodies were absent.
