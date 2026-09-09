@@ -57,22 +57,12 @@ internal sealed partial class RadioBehaviorTest
     {
         try
         {
-            ReusableLinerPreparationResult result =
-                await _linerPipeline.PrepareAsync(cancellation.Token);
-            bool accepted = false;
-            if (result.Status == ReusableLinerPreparationStatus.Ready && result.Speech is not null)
-            {
-                lock (_linerLock)
-                {
-                    accepted = !cancellation.IsCancellationRequested
-                        && _linerInventory.AcceptPreparedSpeech(result.Speech);
-                }
-            }
-            else
-            {
-                result.Speech?.Dispose();
-            }
-
+            (ReusableLinerPreparationResult result, bool accepted) =
+                await PrepareAndAcceptLinerSpeechAsync(
+                    _linerPipeline,
+                    cancellation.Token,
+                    _linerInventory,
+                    _linerLock);
 
             _log.Write(
                 $"REUSABLE LINER PREPARATION: {(accepted ? "READY" : result.Status.ToString().ToUpperInvariant())} - {result.Reason}.");
@@ -104,6 +94,53 @@ internal sealed partial class RadioBehaviorTest
             }
 
             cancellation.Dispose();
+        }
+    }
+
+    internal static async Task<(ReusableLinerPreparationResult Result, bool Accepted)>
+        PrepareAndAcceptLinerSpeechAsync(
+            ReusableLinerPipeline pipeline,
+            CancellationToken cancellationToken,
+            ReusableLinerInventory inventory,
+            object inventoryLock)
+    {
+        ReusableLinerPreparationResult result =
+            await pipeline.PrepareAsync(cancellationToken);
+        bool accepted;
+        lock (inventoryLock)
+        {
+            accepted = TryAcceptPreparedLinerSpeech(
+                result,
+                cancellationToken,
+                inventory);
+        }
+
+        return (result, accepted);
+    }
+
+    internal static bool TryAcceptPreparedLinerSpeech(
+        ReusableLinerPreparationResult result,
+        CancellationToken cancellationToken,
+        ReusableLinerInventory inventory)
+    {
+        IPreparedAnnouncementSpeech? speech = result.Speech;
+        bool accepted = false;
+        try
+        {
+            if (result.Status != ReusableLinerPreparationStatus.Ready || speech is null)
+            {
+                return false;
+            }
+
+            accepted = inventory.TryAcceptPreparedSpeech(speech, cancellationToken);
+            return accepted;
+        }
+        finally
+        {
+            if (!accepted)
+            {
+                speech?.Dispose();
+            }
         }
     }
 

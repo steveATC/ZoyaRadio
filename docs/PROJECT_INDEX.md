@@ -48,6 +48,7 @@ Update this table whenever an accepted implementation commit becomes the new sou
 - [MILESTONE_10C_CONTRACT.md](MILESTONE_10C_CONTRACT.md) - passed strict M8 runtime-migration contract with Steve's August 23, 2026 acceptance record.
 - [MILESTONE_11A_CONTRACT.md](MILESTONE_11A_CONTRACT.md) - passed pure Editorial Arbiter contract with automated and Steve desktop acceptance evidence.
 - [MILESTONE_11B_CONTRACT.md](MILESTONE_11B_CONTRACT.md) - passed commentary/reusable-liner contract with automated and Steve desktop acceptance evidence.
+- [PREPARED_LINER_OWNERSHIP_DISPOSAL_REPAIR_CONTRACT.md](PREPARED_LINER_OWNERSHIP_DISPOSAL_REPAIR_CONTRACT.md) - completed revised-candidate repair 1/1; Warden passed the bounded prepared-liner cleanup verification (481/481), with no manual desktop acceptance required.
 - [MILESTONE_12A_CONTRACT.md](MILESTONE_12A_CONTRACT.md) - passed pure Creative Context Assembler v1 contract with automated evidence and Steve's representative-packet acceptance.
 - [MILESTONE_12B_CONTRACT.md](MILESTONE_12B_CONTRACT.md) - passed bounded Creative Direction, format-specific Content Generation, and generate-only laboratory contract.
 - [MILESTONE_13A_CONTRACT.md](MILESTONE_13A_CONTRACT.md) - accepted M13A-I1 foundation plus bounded I2/I2.1 diagnostic evidence and limitations.

@@ -94,26 +94,42 @@ internal sealed class ReusableLinerInventory : IDisposable
     public bool AcceptPreparedSpeech(IPreparedAnnouncementSpeech speech)
     {
         ArgumentNullException.ThrowIfNull(speech);
+        bool accepted = TryAcceptPreparedSpeech(speech, CancellationToken.None);
+        if (!accepted)
+        {
+            speech.Dispose();
+        }
+
+        return accepted;
+    }
+
+    internal bool TryAcceptPreparedSpeech(
+        IPreparedAnnouncementSpeech speech,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(speech);
         ObjectDisposedException.ThrowIf(_disposed, this);
 
         if (_materialId is null || _payloadHandle is null || _sessionId is null
             || speech.MeasuredDuration > _policy.MaximumDuration)
         {
-            speech.Dispose();
             return false;
         }
 
-        PreparedMaterialLifecycleResult result = Apply(new PreparedMaterialAttachPayload(
-            _materialId.Value,
-            _payloadHandle.Value));
+        PreparedMaterialLifecycleResult result = _lifecycle.Apply(
+            _state,
+            new PreparedMaterialAttachPayload(_materialId.Value, _payloadHandle.Value));
         bool accepted = result.Decisions.Any(decision =>
             decision.Reason == PreparedMaterialDecisionReason.PayloadOwnershipAccepted);
         if (!accepted)
         {
-            speech.Dispose();
             return false;
         }
 
+        // This final read linearizes cancellation against the non-fallible publication below.
+        if (cancellationToken.IsCancellationRequested) return false;
+
+        _state = result.State;
         _speech = speech;
         return true;
     }

@@ -183,6 +183,15 @@ var tests = new (string Name, Func<Task> Run)[]
     ("M11B prepared liner payload supports serial replay", () => RunSynchronous(Milestone11BReusableLinerTests.SerialReplayUsesOnePreparedPayload)),
     ("M11B session invalidation disposes liner exactly once", () => RunSynchronous(Milestone11BReusableLinerTests.SessionInvalidationDisposesExactlyOnce)),
     ("M11B over-duration liner is rejected and disposed", () => RunSynchronous(Milestone11BReusableLinerTests.OverDurationSpeechIsRejectedAndDisposed)),
+    ("M11B cancellation before coordinator acceptance disposes coordinator-owned speech", CancellationBeforeCoordinatorAcceptanceDisposesExactlyOnce),
+    ("M11B cancellation during ready liner acceptance disposes coordinator-owned speech", CancellationDuringReadyLinerAcceptanceDisposesExactlyOnce),
+    ("M11B rejected ready liner preparation disposes speech exactly once", () => RunSynchronous(RejectedReadyLinerPreparationDisposesExactlyOnce)),
+    ("M11B rejection preserves existing prepared liner payload", () => RunSynchronous(RejectedReadyLinerPreservesExistingPayload)),
+    ("M11B duration validation exception leaves inventory unchanged", () => RunSynchronous(DurationValidationExceptionLeavesInventoryUnchanged)),
+    ("M11B compatibility rejection disposal runs once when disposal throws", () => RunSynchronous(CompatibilityRejectionDisposesOnceWhenDisposeThrows)),
+    ("M11B compatibility validation exception does not dispose", () => RunSynchronous(CompatibilityValidationExceptionDoesNotDispose)),
+    ("M11B accepted ready liner preparation transfers disposal ownership", AcceptedReadyLinerPreparationTransfersDisposalOwnership),
+    ("M11B non-ready liner preparation retains coordinator cleanup", () => RunSynchronous(NonReadyLinerPreparationRetainsCoordinatorCleanup)),
     ("M11B preparation uses only approved fixed copy", Milestone11BReusableLinerTests.FixedPreparationUsesOnlyApprovedCopy),
     ("M11B delivery uses shared duck host and prepared speech", Milestone11BReusableLinerTests.DeliveryUsesSharedDuckHostAndPreparedSpeech),
     ("M11B delivery safety requires exact current Playing target", () => RunSynchronous(Milestone11BReusableLinerTests.DeliverySafetyRequiresExactCurrentPlayingTarget)),
@@ -2794,6 +2803,350 @@ static Task TransitionPreparedAudioIsDisposed()
     return Task.CompletedTask;
 }
 
+static async Task CancellationBeforeCoordinatorAcceptanceDisposesExactlyOnce()
+{
+    using var cancellation = new CancellationTokenSource();
+    var speech = new FakePreparedSpeech(
+        new SpeechPlaybackResult(SpeechPlaybackStatus.Completed),
+        TimeSpan.FromSeconds(1))
+    {
+        OnMeasuredDurationRead = readCount =>
+        {
+            if (readCount == 1)
+            {
+                cancellation.Cancel();
+            }
+        },
+    };
+    var host = new FakeTransitionRadioHost(ValidTransitionSnapshot(
+        TestTransitionPreparation(DateTimeOffset.Parse("2026-09-09T12:00:00Z"))))
+    {
+        Speech = speech,
+    };
+    var pipeline = new ReusableLinerPipeline(host, new FakeLog());
+    using var inventory = new ReusableLinerInventory();
+    inventory.Arm(
+        new PreparedMaterialSessionId("cancelled-before-acceptance"),
+        DateTimeOffset.Parse("2026-09-09T12:00:00Z"),
+        0);
+
+    (ReusableLinerPreparationResult result, bool accepted) =
+        await RadioBehaviorTest.PrepareAndAcceptLinerSpeechAsync(
+            pipeline,
+            cancellation.Token,
+            inventory,
+            new object());
+
+    AssertEqual(ReusableLinerPreparationStatus.Ready, result.Status);
+    AssertFalse(accepted);
+    AssertFalse(inventory.HasPreparedSpeech);
+    AssertEqual(2, speech.MeasuredDurationReads);
+    AssertEqual(1, speech.DisposeCalls);
+}
+
+static async Task CancellationDuringReadyLinerAcceptanceDisposesExactlyOnce()
+{
+    using var cancellation = new CancellationTokenSource();
+    var speech = new FakePreparedSpeech(
+        new SpeechPlaybackResult(SpeechPlaybackStatus.Completed),
+        TimeSpan.FromSeconds(1))
+    {
+        OnMeasuredDurationRead = readCount =>
+        {
+            if (readCount == 2)
+            {
+                cancellation.Cancel();
+            }
+        },
+    };
+    var host = new FakeTransitionRadioHost(ValidTransitionSnapshot(
+        TestTransitionPreparation(DateTimeOffset.Parse("2026-09-08T12:00:00Z"))))
+    {
+        Speech = speech,
+    };
+    var pipeline = new ReusableLinerPipeline(host, new FakeLog());
+    using var inventory = new ReusableLinerInventory();
+    inventory.Arm(
+        new PreparedMaterialSessionId("cancelled-ready-liner"),
+        DateTimeOffset.Parse("2026-09-08T12:00:00Z"),
+        10);
+    inventory.RecordHostSpeechCompleted(14);
+    using var equivalentInventory = new ReusableLinerInventory();
+    equivalentInventory.Arm(
+        new PreparedMaterialSessionId("cancelled-ready-liner"),
+        DateTimeOffset.Parse("2026-09-08T12:00:00Z"),
+        10);
+    equivalentInventory.RecordHostSpeechCompleted(14);
+    PreparedMaterialSessionId? sessionBefore = inventory.SessionId;
+    PreparedMaterialId? materialBefore = inventory.MaterialId;
+    PreparedMaterialLifecycleStatus? statusBefore = inventory.Status;
+    ReusableLinerTransition cooldownBlocked = new(
+        15,
+        new MediaSnapshot("Track", "Artist", "Album"),
+        DateTimeOffset.Parse("2026-09-08T12:20:00Z"),
+        sessionBefore!.Value);
+    ReusableLinerTransition exactBoundary = new(
+        16,
+        new MediaSnapshot("Track", "Artist", "Album"),
+        DateTimeOffset.Parse("2026-09-08T12:20:00Z"),
+        sessionBefore.Value);
+    EditorialAirtimeCandidate cooldownBefore = LinerCandidate(inventory, cooldownBlocked);
+    EditorialAirtimeCandidate exactBefore = LinerCandidate(inventory, exactBoundary);
+
+    (ReusableLinerPreparationResult result, bool accepted) =
+        await RadioBehaviorTest.PrepareAndAcceptLinerSpeechAsync(
+            pipeline,
+            cancellation.Token,
+            inventory,
+            new object());
+
+    AssertEqual(ReusableLinerPreparationStatus.Ready, result.Status);
+    AssertFalse(accepted);
+    AssertFalse(inventory.HasPreparedSpeech);
+    AssertEqual(sessionBefore, inventory.SessionId);
+    AssertEqual(materialBefore, inventory.MaterialId);
+    AssertEqual(statusBefore, inventory.Status);
+    AssertEqual(cooldownBefore, LinerCandidate(inventory, cooldownBlocked));
+    AssertEqual(exactBefore, LinerCandidate(inventory, exactBoundary));
+    AssertEqual(LinerCandidate(equivalentInventory, cooldownBlocked), LinerCandidate(inventory, cooldownBlocked));
+    AssertEqual(LinerCandidate(equivalentInventory, exactBoundary), LinerCandidate(inventory, exactBoundary));
+    AssertEqual(1, host.PrepareCalls);
+    AssertEqual(2, speech.MeasuredDurationReads);
+    AssertEqual(1, speech.DisposeCalls);
+
+    var replacement = new FakePreparedSpeech(
+        new SpeechPlaybackResult(SpeechPlaybackStatus.Completed),
+        TimeSpan.FromSeconds(1));
+    AssertTrue(RadioBehaviorTest.TryAcceptPreparedLinerSpeech(
+        new ReusableLinerPreparationResult(
+            ReusableLinerPreparationStatus.Ready,
+            "fresh speech after cancelled handoff",
+            replacement),
+        CancellationToken.None,
+        inventory));
+    AssertTrue(inventory.HasPreparedSpeech);
+    AssertEqual(0, replacement.DisposeCalls);
+
+    ReusableLinerReservation first = inventory.TryReserve(exactBoundary)
+        ?? throw new InvalidOperationException("Expected first reservation.");
+    AssertTrue(inventory.Release(first, exactBoundary.ObservedAt));
+    ReusableLinerReservation second = inventory.TryReserve(new ReusableLinerTransition(
+        17,
+        exactBoundary.CurrentTrack,
+        exactBoundary.ObservedAt.AddMinutes(1),
+        sessionBefore.Value)) ?? throw new InvalidOperationException("Expected second reservation.");
+    AssertTrue(inventory.Complete(second, exactBoundary.ObservedAt.AddMinutes(1)));
+    inventory.Invalidate();
+    AssertEqual(1, replacement.DisposeCalls);
+}
+
+static void RejectedReadyLinerPreparationDisposesExactlyOnce()
+{
+    var speech = new FakePreparedSpeech(
+        new SpeechPlaybackResult(SpeechPlaybackStatus.Completed),
+        TimeSpan.FromSeconds(1));
+    using var inventory = new ReusableLinerInventory();
+
+    bool accepted = RadioBehaviorTest.TryAcceptPreparedLinerSpeech(
+        new ReusableLinerPreparationResult(
+            ReusableLinerPreparationStatus.Ready,
+            "fake preparation completed without armed inventory",
+            speech),
+        CancellationToken.None,
+        inventory);
+
+    AssertFalse(accepted);
+    AssertFalse(inventory.HasPreparedSpeech);
+    AssertEqual(1, speech.DisposeCalls);
+}
+
+static void RejectedReadyLinerPreservesExistingPayload()
+{
+    var existing = new FakePreparedSpeech(
+        new SpeechPlaybackResult(SpeechPlaybackStatus.Completed),
+        TimeSpan.FromSeconds(1));
+    var rejected = new FakePreparedSpeech(
+        new SpeechPlaybackResult(SpeechPlaybackStatus.Completed),
+        TimeSpan.FromSeconds(1));
+    using var inventory = new ReusableLinerInventory();
+    inventory.Arm(
+        new PreparedMaterialSessionId("existing-ready-liner"),
+        DateTimeOffset.Parse("2026-09-09T12:00:00Z"),
+        0);
+    AssertTrue(inventory.AcceptPreparedSpeech(existing));
+
+    AssertFalse(RadioBehaviorTest.TryAcceptPreparedLinerSpeech(
+        new ReusableLinerPreparationResult(
+            ReusableLinerPreparationStatus.Ready,
+            "duplicate ready speech",
+            rejected),
+        CancellationToken.None,
+        inventory));
+    AssertTrue(inventory.HasPreparedSpeech);
+    AssertEqual(0, existing.DisposeCalls);
+    AssertEqual(1, rejected.DisposeCalls);
+}
+
+static void DurationValidationExceptionLeavesInventoryUnchanged()
+{
+    var speech = new FakePreparedSpeech(
+        new SpeechPlaybackResult(SpeechPlaybackStatus.Completed),
+        TimeSpan.FromSeconds(1))
+    {
+        OnMeasuredDurationRead = _ => throw new InvalidOperationException("duration read failed"),
+    };
+    using var inventory = new ReusableLinerInventory();
+    inventory.Arm(
+        new PreparedMaterialSessionId("duration-exception-liner"),
+        DateTimeOffset.Parse("2026-09-09T12:00:00Z"),
+        0);
+    PreparedMaterialLifecycleStatus? statusBefore = inventory.Status;
+
+    bool threw = false;
+    try
+    {
+        RadioBehaviorTest.TryAcceptPreparedLinerSpeech(
+            new ReusableLinerPreparationResult(
+                ReusableLinerPreparationStatus.Ready,
+                "duration validation throws",
+                speech),
+            CancellationToken.None,
+            inventory);
+    }
+    catch (InvalidOperationException)
+    {
+        threw = true;
+    }
+
+    AssertTrue(threw);
+    AssertEqual(statusBefore, inventory.Status);
+    AssertFalse(inventory.HasPreparedSpeech);
+    AssertEqual(1, speech.DisposeCalls);
+}
+
+static void CompatibilityRejectionDisposesOnceWhenDisposeThrows()
+{
+    var speech = new FakePreparedSpeech(
+        new SpeechPlaybackResult(SpeechPlaybackStatus.Completed),
+        TimeSpan.FromSeconds(1))
+    {
+        DisposeException = new InvalidOperationException("dispose failed"),
+    };
+    using var inventory = new ReusableLinerInventory();
+
+    bool threw = false;
+    try
+    {
+        inventory.AcceptPreparedSpeech(speech);
+    }
+    catch (InvalidOperationException exception) when (exception.Message == "dispose failed")
+    {
+        threw = true;
+    }
+
+    AssertTrue(threw);
+    AssertEqual(1, speech.DisposeCalls);
+}
+
+static void CompatibilityValidationExceptionDoesNotDispose()
+{
+    var speech = new FakePreparedSpeech(
+        new SpeechPlaybackResult(SpeechPlaybackStatus.Completed),
+        TimeSpan.FromSeconds(1))
+    {
+        OnMeasuredDurationRead = _ => throw new InvalidOperationException("duration read failed"),
+    };
+    using var inventory = new ReusableLinerInventory();
+    inventory.Arm(
+        new PreparedMaterialSessionId("compatibility-duration-exception"),
+        DateTimeOffset.Parse("2026-09-09T12:00:00Z"),
+        0);
+
+    bool threw = false;
+    try
+    {
+        inventory.AcceptPreparedSpeech(speech);
+    }
+    catch (InvalidOperationException exception) when (exception.Message == "duration read failed")
+    {
+        threw = true;
+    }
+
+    AssertTrue(threw);
+    AssertEqual(0, speech.DisposeCalls);
+}
+
+static async Task AcceptedReadyLinerPreparationTransfersDisposalOwnership()
+{
+    var speech = new FakePreparedSpeech(
+        new SpeechPlaybackResult(SpeechPlaybackStatus.Completed),
+        TimeSpan.FromSeconds(1));
+    var host = new FakeTransitionRadioHost(ValidTransitionSnapshot(
+        TestTransitionPreparation(DateTimeOffset.Parse("2026-09-08T12:00:00Z"))))
+    {
+        Speech = speech,
+    };
+    var pipeline = new ReusableLinerPipeline(host, new FakeLog());
+    using var cancellation = new CancellationTokenSource();
+    using var inventory = new ReusableLinerInventory();
+    inventory.Arm(
+        new PreparedMaterialSessionId("accepted-ready-liner"),
+        DateTimeOffset.Parse("2026-09-08T12:00:00Z"),
+        0);
+
+    (ReusableLinerPreparationResult result, bool accepted) =
+        await RadioBehaviorTest.PrepareAndAcceptLinerSpeechAsync(
+            pipeline,
+            cancellation.Token,
+            inventory,
+            new object());
+
+    AssertEqual(ReusableLinerPreparationStatus.Ready, result.Status);
+    AssertTrue(accepted);
+    AssertTrue(inventory.HasPreparedSpeech);
+    AssertEqual(0, speech.DisposeCalls);
+
+    cancellation.Cancel();
+    AssertTrue(inventory.HasPreparedSpeech);
+    AssertEqual(0, speech.DisposeCalls);
+
+    inventory.Invalidate();
+    inventory.Invalidate();
+
+    AssertFalse(inventory.HasPreparedSpeech);
+    AssertEqual(1, speech.DisposeCalls);
+}
+
+static EditorialAirtimeCandidate LinerCandidate(
+    ReusableLinerInventory inventory,
+    ReusableLinerTransition transition) =>
+    inventory.CreateCandidate(
+        transition,
+        silentMode: false,
+        protectedPreparationBoundaryClear: true,
+        missedCommentBoundaryClear: true,
+        treatmentAvailable: true);
+
+static void NonReadyLinerPreparationRetainsCoordinatorCleanup()
+{
+    var speech = new FakePreparedSpeech(
+        new SpeechPlaybackResult(SpeechPlaybackStatus.Completed),
+        TimeSpan.FromSeconds(1));
+    using var inventory = new ReusableLinerInventory();
+
+    bool accepted = RadioBehaviorTest.TryAcceptPreparedLinerSpeech(
+        new ReusableLinerPreparationResult(
+            ReusableLinerPreparationStatus.Abandoned,
+            "fake preparation abandoned",
+            speech),
+        CancellationToken.None,
+        inventory);
+
+    AssertFalse(accepted);
+    AssertFalse(inventory.HasPreparedSpeech);
+    AssertEqual(1, speech.DisposeCalls);
+}
+
 static async Task TransitionPreparedDurationAtOrBelowLimitIsDeliverable()
 {
     DateTimeOffset now = DateTimeOffset.Parse("2026-08-15T17:00:00Z");
@@ -3259,22 +3612,37 @@ internal sealed class FakePreparedSpeech : IPreparedAnnouncementSpeech
 {
     private readonly SpeechPlaybackResult? _result;
     private readonly bool _throwCancellation;
+    private readonly TimeSpan _measuredDuration;
 
     public FakePreparedSpeech(
         SpeechPlaybackResult result,
         TimeSpan? measuredDuration = null)
     {
         _result = result;
-        MeasuredDuration = measuredDuration ?? TimeSpan.FromSeconds(10);
+        _measuredDuration = measuredDuration ?? TimeSpan.FromSeconds(10);
     }
 
     public FakePreparedSpeech(bool throwCancellation)
     {
         _throwCancellation = throwCancellation;
-        MeasuredDuration = TimeSpan.FromSeconds(10);
+        _measuredDuration = TimeSpan.FromSeconds(10);
     }
 
-    public TimeSpan MeasuredDuration { get; }
+    public Action<int>? OnMeasuredDurationRead { get; init; }
+
+    public Exception? DisposeException { get; init; }
+
+    public int MeasuredDurationReads { get; private set; }
+
+    public TimeSpan MeasuredDuration
+    {
+        get
+        {
+            MeasuredDurationReads++;
+            OnMeasuredDurationRead?.Invoke(MeasuredDurationReads);
+            return _measuredDuration;
+        }
+    }
 
     public int SpeakCalls { get; private set; }
 
@@ -3298,6 +3666,10 @@ internal sealed class FakePreparedSpeech : IPreparedAnnouncementSpeech
     public void Dispose()
     {
         DisposeCalls++;
+        if (DisposeException is not null)
+        {
+            throw DisposeException;
+        }
     }
 }
 
