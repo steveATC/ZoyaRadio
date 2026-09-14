@@ -192,6 +192,19 @@ var tests = new (string Name, Func<Task> Run)[]
     ("M11B compatibility validation exception does not dispose", () => RunSynchronous(CompatibilityValidationExceptionDoesNotDispose)),
     ("M11B accepted ready liner preparation transfers disposal ownership", AcceptedReadyLinerPreparationTransfersDisposalOwnership),
     ("M11B non-ready liner preparation retains coordinator cleanup", () => RunSynchronous(NonReadyLinerPreparationRetainsCoordinatorCleanup)),
+    ("CTS cancellation lease defers worker disposal at the real lock boundary", CancellationLeaseDefersWorkerDisposalAtRealLockBoundary),
+    ("CTS ready publication transfers exact lifetime to delivery", () => RunSynchronous(ReadyPublicationTransfersExactLifetimeToDelivery)),
+    ("CTS delivery cancellation keeps delivery as sole terminal owner", () => RunSynchronous(DeliveryCancellationKeepsDeliveryAsSoleTerminalOwner)),
+    ("CTS ready cancellation detaches and cleans payload", () => RunSynchronous(ReadyCancellationDetachesAndCleansPayload)),
+    ("CTS throwing cancellation cleanup attempts every terminal action", () => RunSynchronous(ThrowingCancellationCleanupAttemptsEveryTerminalAction)),
+    ("CTS stale completion and cancellation preserve replacement", StaleCompletionAndCancellationPreserveReplacement),
+    ("CTS shutdown cleanup uses production idle disposal", () => RunSynchronous(ShutdownCleanupUsesProductionIdleDisposal)),
+    ("CTS idle cleanup survives throwing provider discard", () => RunSynchronous(IdleCleanupSurvivesThrowingProviderDiscard)),
+    ("CTS idle cleanup survives throwing speech disposal", () => RunSynchronous(IdleCleanupSurvivesThrowingSpeechDisposal)),
+    ("CTS idle cleanup preserves its first failure while attempting all actions", () => RunSynchronous(IdleCleanupPreservesFirstFailure)),
+    ("CTS production invalidation cannot select Preparing before Ready publication", ProductionInvalidationCannotSplitStateAndReadyPublication),
+    ("CTS liner lease overlaps finalizer safely", LinerLeaseOverlapsFinalizerSafely),
+    ("CTS completed operation cancellation is a stale no-op", () => RunSynchronous(CompletedOperationCancellationIsStaleNoOp)),
     ("M11B preparation uses only approved fixed copy", Milestone11BReusableLinerTests.FixedPreparationUsesOnlyApprovedCopy),
     ("M11B delivery uses shared duck host and prepared speech", Milestone11BReusableLinerTests.DeliveryUsesSharedDuckHostAndPreparedSpeech),
     ("M11B delivery safety requires exact current Playing target", () => RunSynchronous(Milestone11BReusableLinerTests.DeliverySafetyRequiresExactCurrentPlayingTarget)),
@@ -3147,6 +3160,487 @@ static void NonReadyLinerPreparationRetainsCoordinatorCleanup()
     AssertEqual(1, speech.DisposeCalls);
 }
 
+static async Task CancellationLeaseDefersWorkerDisposalAtRealLockBoundary()
+{
+    using LocalLog log = LocalLog.Create("cts-lifetime-test", Path.GetTempPath());
+    var runtime = CreateCancellationTestRuntime(log);
+    var source = new CountingCancellationTokenSource();
+    var lifetime = new RadioBehaviorTest.OperationLifetime(source);
+    runtime.InstallPipelineOperationForTesting(
+        lifetime,
+        RadioBehaviorTest.PipelineOperationPhase.Preparing,
+        task: new TaskCompletionSource().Task);
+
+    var beforeLock = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+    var lockAcquired = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+    var leaseAcquired = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+    var beforeCancellation = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+    var releaseCancellation = new ManualResetEventSlim();
+    runtime.ConfigureCancellationTesting(new RadioBehaviorTest.CancellationCoordinatorTestGates
+    {
+        ContenderBeforeLock = () => beforeLock.TrySetResult(),
+        LockAcquired = () => lockAcquired.TrySetResult(),
+        LeaseAcquired = () => leaseAcquired.TrySetResult(),
+        BeforeCancellation = () =>
+        {
+            beforeCancellation.TrySetResult();
+            releaseCancellation.Wait();
+        },
+    });
+
+    Task cancelling = Task.CompletedTask;
+    runtime.RunWithPipelineLockForTesting(() =>
+    {
+        cancelling = Task.Run(() => runtime.CancelPendingPipeline("forced contention"));
+        beforeLock.Task.GetAwaiter().GetResult();
+        AssertFalse(lockAcquired.Task.IsCompleted);
+    });
+    await lockAcquired.Task;
+    await leaseAcquired.Task;
+    await beforeCancellation.Task;
+
+    runtime.FinalizePreparationLifetime(lifetime);
+    AssertEqual(0, source.DisposeCalls);
+    AssertFalse(lifetime.IsDisposed);
+    using CancellationTokenRegistration registration = lifetime.Token.Register(() => { });
+
+    releaseCancellation.Set();
+    await cancelling;
+    AssertTrue(lifetime.Token.IsCancellationRequested);
+    AssertTrue(lifetime.IsDisposed);
+    AssertEqual(1, source.DisposeCalls);
+}
+
+static void ReadyPublicationTransfersExactLifetimeToDelivery()
+{
+    using LocalLog log = LocalLog.Create("cts-transfer-test", Path.GetTempPath());
+    var runtime = CreateCancellationTestRuntime(log);
+    var source = new CountingCancellationTokenSource();
+    var lifetime = new RadioBehaviorTest.OperationLifetime(source);
+    PreparedTransitionOpportunity prepared = FakePreparedTransition(
+        TestTransitionPreparation(DateTimeOffset.Parse("2026-09-10T12:00:00Z")),
+        DateTimeOffset.Parse("2026-09-10T12:00:01Z"));
+    runtime.InstallPipelineOperationForTesting(lifetime, RadioBehaviorTest.PipelineOperationPhase.Preparing);
+
+    bool published = runtime.TryPublishPreparedOpportunity(lifetime, lifetime.Token, prepared);
+    CancellationToken deliveredToken = default;
+    RadioBehaviorTest.OperationLifetime? deliveredLifetime = null;
+    bool transferred = runtime.TryTransferPreparedOpportunity(
+        prepared.Opportunity.Id,
+        (payload, owner, _) =>
+        {
+            AssertSame(prepared, payload);
+            deliveredLifetime = owner;
+            deliveredToken = owner.Token;
+        });
+
+    AssertTrue(published);
+    AssertTrue(transferred);
+    AssertSame(lifetime, deliveredLifetime!);
+    AssertEqual(lifetime.Token, deliveredToken);
+    runtime.FinalizePreparationLifetime(lifetime);
+    AssertEqual(0, source.DisposeCalls);
+    AssertEqual(0, ((FakePreparedSpeech)prepared.Speech).DisposeCalls);
+
+    runtime.CompleteDeliveryOwnership(prepared, lifetime);
+    AssertEqual(1, source.DisposeCalls);
+    AssertEqual(1, ((FakePreparedSpeech)prepared.Speech).DisposeCalls);
+}
+
+static void ReadyCancellationDetachesAndCleansPayload()
+{
+    using LocalLog log = LocalLog.Create("cts-ready-cancel-test", Path.GetTempPath());
+    var runtime = CreateCancellationTestRuntime(log);
+    var source = new CountingCancellationTokenSource();
+    var lifetime = new RadioBehaviorTest.OperationLifetime(source);
+    PreparedTransitionOpportunity prepared = FakePreparedTransition(
+        TestTransitionPreparation(DateTimeOffset.Parse("2026-09-10T12:00:00Z")),
+        DateTimeOffset.Parse("2026-09-10T12:00:01Z"));
+    int discardCalls = 0;
+    int stateTransitions = 0;
+    runtime.ConfigureCancellationTesting(
+        new RadioBehaviorTest.CancellationCoordinatorTestGates
+        {
+            StateTransitioned = () => stateTransitions++,
+        },
+        discardPrepared: (_, _) => discardCalls++);
+    runtime.InstallPipelineOperationForTesting(lifetime, RadioBehaviorTest.PipelineOperationPhase.Ready, prepared, Task.CompletedTask);
+
+    runtime.CancelPendingPipeline("cancel between Ready and delivery transfer");
+
+    var state = runtime.PipelineOperationForTesting();
+    AssertEqual<RadioBehaviorTest.OperationLifetime?>(null, state.Lifetime);
+    AssertEqual(RadioBehaviorTest.PipelineOperationPhase.None, state.Phase);
+    AssertEqual<PreparedTransitionOpportunity?>(null, state.Prepared);
+    AssertEqual(1, discardCalls);
+    AssertEqual(1, stateTransitions);
+    AssertEqual(1, ((FakePreparedSpeech)prepared.Speech).DisposeCalls);
+    AssertEqual(1, source.DisposeCalls);
+    bool transferred = runtime.TryTransferPreparedOpportunity(prepared.Opportunity.Id, (_, _, _) => throw new Exception("delivery must not start"));
+    AssertFalse(transferred);
+}
+
+static void DeliveryCancellationKeepsDeliveryAsSoleTerminalOwner()
+{
+    using LocalLog log = LocalLog.Create("cts-delivery-cancel-test", Path.GetTempPath());
+    var runtime = CreateCancellationTestRuntime(log);
+    var source = new CountingCancellationTokenSource();
+    var lifetime = new RadioBehaviorTest.OperationLifetime(source);
+    PreparedTransitionOpportunity prepared = FakePreparedTransition(
+        TestTransitionPreparation(DateTimeOffset.Parse("2026-09-10T12:00:00Z")),
+        DateTimeOffset.Parse("2026-09-10T12:00:01Z"));
+    int callbackCalls = 0;
+    using CancellationTokenRegistration registration = lifetime.Token.Register(() => callbackCalls++);
+    runtime.InstallPipelineOperationForTesting(
+        lifetime,
+        RadioBehaviorTest.PipelineOperationPhase.Delivering,
+        task: new TaskCompletionSource().Task);
+
+    runtime.CancelPendingPipeline("cancel active delivery");
+
+    var active = runtime.PipelineOperationForTesting();
+    AssertSame(lifetime, active.Lifetime!);
+    AssertEqual(RadioBehaviorTest.PipelineOperationPhase.Delivering, active.Phase);
+    AssertEqual(1, callbackCalls);
+    AssertEqual(0, source.DisposeCalls);
+    AssertEqual(0, ((FakePreparedSpeech)prepared.Speech).DisposeCalls);
+
+    runtime.CompleteDeliveryOwnership(prepared, lifetime);
+    AssertEqual(1, source.DisposeCalls);
+    AssertEqual(1, ((FakePreparedSpeech)prepared.Speech).DisposeCalls);
+    AssertEqual(RadioBehaviorTest.PipelineOperationPhase.None, runtime.PipelineOperationForTesting().Phase);
+}
+
+static void ThrowingCancellationCleanupAttemptsEveryTerminalAction()
+{
+    using LocalLog log = LocalLog.Create("cts-throw-test", Path.GetTempPath());
+    var runtime = CreateCancellationTestRuntime(log);
+    var source = new CountingCancellationTokenSource();
+    var lifetime = new RadioBehaviorTest.OperationLifetime(source);
+    var speech = new FakePreparedSpeech(
+        new SpeechPlaybackResult(SpeechPlaybackStatus.Completed))
+    {
+        DisposeException = new InvalidOperationException("speech cleanup failed"),
+    };
+    PreparedTransitionOpportunity prepared = FakePreparedTransition(
+        TestTransitionPreparation(DateTimeOffset.Parse("2026-09-10T12:00:00Z")),
+        DateTimeOffset.Parse("2026-09-10T12:00:01Z"),
+        speech);
+    int logCalls = 0;
+    int discardCalls = 0;
+    runtime.ConfigureCancellationTesting(
+        writeLog: _ => { logCalls++; throw new InvalidOperationException("log failed"); },
+        discardPrepared: (_, _) => { discardCalls++; throw new InvalidOperationException("discard failed"); });
+    int callbackCalls = 0;
+    using CancellationTokenRegistration registration = lifetime.Token.Register(() =>
+    {
+        callbackCalls++;
+        throw new InvalidOperationException("callback failed");
+    });
+    runtime.InstallPipelineOperationForTesting(lifetime, RadioBehaviorTest.PipelineOperationPhase.Ready, prepared, Task.CompletedTask);
+
+    InvalidOperationException failure = AssertThrows<InvalidOperationException>(
+        () => runtime.CancelPendingPipeline("force all cleanup failures"));
+
+    AssertEqual("log failed", failure.Message);
+    AssertEqual(1, logCalls);
+    AssertEqual(1, callbackCalls);
+    AssertEqual(1, discardCalls);
+    AssertEqual(1, speech.DisposeCalls);
+    AssertEqual(1, source.DisposeCalls);
+    AssertTrue(lifetime.IsDisposed);
+}
+
+static async Task StaleCompletionAndCancellationPreserveReplacement()
+{
+    using LocalLog log = LocalLog.Create("cts-replacement-test", Path.GetTempPath());
+    var runtime = CreateCancellationTestRuntime(log);
+    var oldSource = new CountingCancellationTokenSource();
+    var oldLifetime = new RadioBehaviorTest.OperationLifetime(oldSource);
+    runtime.InstallPipelineOperationForTesting(oldLifetime, RadioBehaviorTest.PipelineOperationPhase.Preparing);
+    var cancellationPaused = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+    var releaseCancellation = new ManualResetEventSlim();
+    runtime.ConfigureCancellationTesting(new RadioBehaviorTest.CancellationCoordinatorTestGates
+    {
+        BeforeCancellation = () =>
+        {
+            cancellationPaused.TrySetResult();
+            releaseCancellation.Wait();
+        },
+    });
+    Task staleCancellation = Task.Run(() => runtime.CancelPendingPipeline("stale operation"));
+    await cancellationPaused.Task;
+
+    var replacementSource = new CountingCancellationTokenSource();
+    var replacementLifetime = new RadioBehaviorTest.OperationLifetime(replacementSource);
+    PreparedTransitionOpportunity replacementPrepared = FakePreparedTransition(
+        TestTransitionPreparation(DateTimeOffset.Parse("2026-09-10T12:01:00Z")),
+        DateTimeOffset.Parse("2026-09-10T12:01:01Z"));
+    Task replacementTask = new TaskCompletionSource().Task;
+    runtime.InstallPipelineOperationForTesting(
+        replacementLifetime,
+        RadioBehaviorTest.PipelineOperationPhase.Ready,
+        replacementPrepared,
+        replacementTask);
+    runtime.FinalizePreparationLifetime(oldLifetime);
+    releaseCancellation.Set();
+    await staleCancellation;
+
+    var state = runtime.PipelineOperationForTesting();
+    AssertSame(replacementLifetime, state.Lifetime!);
+    AssertEqual(RadioBehaviorTest.PipelineOperationPhase.Ready, state.Phase);
+    AssertSame(replacementPrepared, state.Prepared!);
+    AssertSame(replacementTask, state.Task!);
+    AssertFalse(replacementLifetime.Token.IsCancellationRequested);
+    AssertEqual(0, replacementSource.DisposeCalls);
+    AssertEqual(1, oldSource.DisposeCalls);
+    runtime.DisposePreparedOpportunity();
+}
+
+static void ShutdownCleanupUsesProductionIdleDisposal()
+{
+    using LocalLog log = LocalLog.Create("cts-shutdown-test", Path.GetTempPath());
+    var runtime = CreateCancellationTestRuntime(log);
+    var source = new CountingCancellationTokenSource();
+    var lifetime = new RadioBehaviorTest.OperationLifetime(source);
+    PreparedTransitionOpportunity prepared = FakePreparedTransition(
+        TestTransitionPreparation(DateTimeOffset.Parse("2026-09-10T12:00:00Z")),
+        DateTimeOffset.Parse("2026-09-10T12:00:01Z"));
+    int discardCalls = 0;
+    runtime.ConfigureCancellationTesting(discardPrepared: (_, _) => discardCalls++);
+    runtime.InstallPipelineOperationForTesting(lifetime, RadioBehaviorTest.PipelineOperationPhase.Ready, prepared, Task.CompletedTask);
+
+    runtime.DisposePreparedOpportunity();
+
+    AssertEqual(1, discardCalls);
+    AssertEqual(1, ((FakePreparedSpeech)prepared.Speech).DisposeCalls);
+    AssertEqual(1, source.DisposeCalls);
+    AssertEqual(RadioBehaviorTest.PipelineOperationPhase.None, runtime.PipelineOperationForTesting().Phase);
+}
+
+static void IdleCleanupSurvivesThrowingProviderDiscard()
+{
+    using LocalLog log = LocalLog.Create("cts-idle-discard-throw-test", Path.GetTempPath());
+    var runtime = CreateCancellationTestRuntime(log);
+    var source = new CountingCancellationTokenSource();
+    var lifetime = new RadioBehaviorTest.OperationLifetime(source);
+    PreparedTransitionOpportunity prepared = FakePreparedTransition(
+        TestTransitionPreparation(DateTimeOffset.Parse("2026-09-10T12:00:00Z")),
+        DateTimeOffset.Parse("2026-09-10T12:00:01Z"));
+    runtime.ConfigureCancellationTesting(
+        discardPrepared: (_, _) => throw new InvalidOperationException("discard failed"));
+    runtime.InstallPipelineOperationForTesting(
+        lifetime,
+        RadioBehaviorTest.PipelineOperationPhase.Ready,
+        prepared,
+        Task.CompletedTask);
+
+    InvalidOperationException failure = AssertThrows<InvalidOperationException>(runtime.DisposePreparedOpportunity);
+
+    AssertEqual("discard failed", failure.Message);
+    AssertEqual(1, ((FakePreparedSpeech)prepared.Speech).DisposeCalls);
+    AssertEqual(1, source.DisposeCalls);
+    AssertTrue(lifetime.IsDisposed);
+    var state = runtime.PipelineOperationForTesting();
+    AssertEqual<RadioBehaviorTest.OperationLifetime?>(null, state.Lifetime);
+    AssertEqual<PreparedTransitionOpportunity?>(null, state.Prepared);
+    AssertEqual<Task?>(null, state.Task);
+    AssertEqual(RadioBehaviorTest.PipelineOperationPhase.None, state.Phase);
+}
+
+static void IdleCleanupSurvivesThrowingSpeechDisposal()
+{
+    using LocalLog log = LocalLog.Create("cts-idle-speech-throw-test", Path.GetTempPath());
+    var runtime = CreateCancellationTestRuntime(log);
+    var source = new CountingCancellationTokenSource();
+    var lifetime = new RadioBehaviorTest.OperationLifetime(source);
+    var speech = new FakePreparedSpeech(new SpeechPlaybackResult(SpeechPlaybackStatus.Completed))
+    {
+        DisposeException = new InvalidOperationException("speech cleanup failed"),
+    };
+    PreparedTransitionOpportunity prepared = FakePreparedTransition(
+        TestTransitionPreparation(DateTimeOffset.Parse("2026-09-10T12:00:00Z")),
+        DateTimeOffset.Parse("2026-09-10T12:00:01Z"),
+        speech);
+    int discardCalls = 0;
+    runtime.ConfigureCancellationTesting(discardPrepared: (_, _) => discardCalls++);
+    runtime.InstallPipelineOperationForTesting(
+        lifetime,
+        RadioBehaviorTest.PipelineOperationPhase.Ready,
+        prepared,
+        Task.CompletedTask);
+
+    InvalidOperationException failure = AssertThrows<InvalidOperationException>(runtime.DisposePreparedOpportunity);
+
+    AssertEqual("speech cleanup failed", failure.Message);
+    AssertEqual(1, discardCalls);
+    AssertEqual(1, speech.DisposeCalls);
+    AssertEqual(1, source.DisposeCalls);
+    AssertTrue(lifetime.IsDisposed);
+}
+
+static void IdleCleanupPreservesFirstFailure()
+{
+    using LocalLog log = LocalLog.Create("cts-idle-combined-throw-test", Path.GetTempPath());
+    var runtime = CreateCancellationTestRuntime(log);
+    var source = new CountingCancellationTokenSource();
+    var lifetime = new RadioBehaviorTest.OperationLifetime(source);
+    var speech = new FakePreparedSpeech(new SpeechPlaybackResult(SpeechPlaybackStatus.Completed))
+    {
+        DisposeException = new InvalidOperationException("speech cleanup failed"),
+    };
+    PreparedTransitionOpportunity prepared = FakePreparedTransition(
+        TestTransitionPreparation(DateTimeOffset.Parse("2026-09-10T12:00:00Z")),
+        DateTimeOffset.Parse("2026-09-10T12:00:01Z"),
+        speech);
+    int discardCalls = 0;
+    runtime.ConfigureCancellationTesting(discardPrepared: (_, _) =>
+    {
+        discardCalls++;
+        throw new InvalidOperationException("discard failed first");
+    });
+    runtime.InstallPipelineOperationForTesting(
+        lifetime,
+        RadioBehaviorTest.PipelineOperationPhase.Ready,
+        prepared,
+        Task.CompletedTask);
+
+    InvalidOperationException failure = AssertThrows<InvalidOperationException>(runtime.DisposePreparedOpportunity);
+
+    AssertEqual("discard failed first", failure.Message);
+    AssertEqual(1, discardCalls);
+    AssertEqual(1, speech.DisposeCalls);
+    AssertEqual(1, source.DisposeCalls);
+    AssertTrue(lifetime.IsDisposed);
+}
+
+static async Task ProductionInvalidationCannotSplitStateAndReadyPublication()
+{
+    using LocalLog log = LocalLog.Create("cts-state-publication-order-test", Path.GetTempPath());
+    var runtime = CreateCancellationTestRuntime(log);
+    DateTimeOffset now = DateTimeOffset.Parse("2026-09-10T12:00:00Z");
+    RadioPreparationOpportunity opportunity = runtime.ArmAndCreatePreparationForTesting(
+        Track("Initial", "Artist 0"),
+        Track("Subject", "Artist A"),
+        now);
+    var source = new CountingCancellationTokenSource();
+    var lifetime = new RadioBehaviorTest.OperationLifetime(source);
+    PreparedTransitionOpportunity prepared = FakePreparedTransition(opportunity, now.AddSeconds(2));
+    runtime.InstallPipelineOperationForTesting(
+        lifetime,
+        RadioBehaviorTest.PipelineOperationPhase.Preparing,
+        task: new TaskCompletionSource().Task);
+
+    var publicationHasStateLock = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+    var releasePublication = new ManualResetEventSlim();
+    var invalidationBeforeStateLock = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+    var invalidationHasStateLock = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+    int pipelineContenders = 0;
+    runtime.ConfigureCancellationTesting(new RadioBehaviorTest.CancellationCoordinatorTestGates
+    {
+        ContenderBeforeLock = () =>
+        {
+            if (Interlocked.Increment(ref pipelineContenders) == 1)
+            {
+                publicationHasStateLock.TrySetResult();
+                releasePublication.Wait();
+            }
+        },
+        StateContenderBeforeLock = () => invalidationBeforeStateLock.TrySetResult(),
+        StateLockAcquired = () => invalidationHasStateLock.TrySetResult(),
+    });
+
+    Task<bool> publishing = Task.Run(() => runtime.TryMarkAndPublishPreparedOpportunity(
+        opportunity.Id,
+        lifetime,
+        lifetime.Token,
+        prepared));
+    await publicationHasStateLock.Task;
+    Task invalidating = Task.Run(() => runtime.InvalidatePendingForSessionSafety("forced production ordering"));
+    await invalidationBeforeStateLock.Task;
+    AssertFalse(invalidationHasStateLock.Task.IsCompleted);
+
+    releasePublication.Set();
+    AssertTrue(await publishing);
+    await invalidating;
+
+    AssertTrue(invalidationHasStateLock.Task.IsCompleted);
+    AssertEqual(1, ((FakePreparedSpeech)prepared.Speech).DisposeCalls);
+    AssertEqual(1, source.DisposeCalls);
+    AssertTrue(lifetime.IsDisposed);
+    var state = runtime.PipelineOperationForTesting();
+    AssertEqual<RadioBehaviorTest.OperationLifetime?>(null, state.Lifetime);
+    AssertEqual<PreparedTransitionOpportunity?>(null, state.Prepared);
+    AssertEqual(RadioBehaviorTest.PipelineOperationPhase.None, state.Phase);
+}
+
+static async Task LinerLeaseOverlapsFinalizerSafely()
+{
+    using LocalLog log = LocalLog.Create("cts-liner-test", Path.GetTempPath());
+    var runtime = CreateCancellationTestRuntime(log);
+    var source = new CountingCancellationTokenSource();
+    var lifetime = new RadioBehaviorTest.OperationLifetime(source);
+    runtime.InstallLinerPreparationForTesting(lifetime, new TaskCompletionSource().Task);
+    var beforeCancellation = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+    var releaseCancellation = new ManualResetEventSlim();
+    runtime.ConfigureCancellationTesting(new RadioBehaviorTest.CancellationCoordinatorTestGates
+    {
+        BeforeCancellation = () =>
+        {
+            beforeCancellation.TrySetResult();
+            releaseCancellation.Wait();
+        },
+    });
+
+    Task cancelling = Task.Run(() => runtime.CancelLinerPreparation("forced liner overlap"));
+    await beforeCancellation.Task;
+    runtime.FinalizeLinerPreparationLifetime(lifetime);
+    AssertEqual(0, source.DisposeCalls);
+    releaseCancellation.Set();
+    await cancelling;
+
+    AssertTrue(lifetime.Token.IsCancellationRequested);
+    AssertEqual(1, source.DisposeCalls);
+    AssertEqual<RadioBehaviorTest.OperationLifetime?>(null, runtime.LinerPreparationForTesting().Lifetime);
+}
+
+static void CompletedOperationCancellationIsStaleNoOp()
+{
+    using LocalLog log = LocalLog.Create("cts-complete-test", Path.GetTempPath());
+    var runtime = CreateCancellationTestRuntime(log);
+    var source = new CountingCancellationTokenSource();
+    var lifetime = new RadioBehaviorTest.OperationLifetime(source);
+    int cancellationCallbacks = 0;
+    using CancellationTokenRegistration registration = lifetime.Token.Register(() => cancellationCallbacks++);
+    runtime.InstallPipelineOperationForTesting(lifetime, RadioBehaviorTest.PipelineOperationPhase.Preparing);
+    runtime.FinalizePreparationLifetime(lifetime);
+
+    runtime.CancelPendingPipeline("completed operation");
+
+    AssertEqual(0, cancellationCallbacks);
+    AssertEqual(1, source.DisposeCalls);
+    AssertEqual(RadioBehaviorTest.PipelineOperationPhase.None, runtime.PipelineOperationForTesting().Phase);
+
+    var linerSource = new CountingCancellationTokenSource();
+    var linerLifetime = new RadioBehaviorTest.OperationLifetime(linerSource);
+    int linerCancellationCallbacks = 0;
+    using CancellationTokenRegistration linerRegistration = linerLifetime.Token.Register(
+        () => linerCancellationCallbacks++);
+    runtime.InstallLinerPreparationForTesting(linerLifetime, Task.CompletedTask);
+    runtime.FinalizeLinerPreparationLifetime(linerLifetime);
+    runtime.CancelLinerPreparation("completed liner operation");
+
+    AssertEqual(0, linerCancellationCallbacks);
+    AssertEqual(1, linerSource.DisposeCalls);
+    AssertEqual<RadioBehaviorTest.OperationLifetime?>(null, runtime.LinerPreparationForTesting().Lifetime);
+}
+
+static RadioBehaviorTest CreateCancellationTestRuntime(LocalLog log) => new(
+    log,
+    new FakeRadioClock(DateTimeOffset.Parse("2026-09-10T12:00:00Z")),
+    new FakeTransitionTargetSource(2));
+
+
 static async Task TransitionPreparedDurationAtOrBelowLimitIsDeliverable()
 {
     DateTimeOffset now = DateTimeOffset.Parse("2026-08-15T17:00:00Z");
@@ -3298,12 +3792,13 @@ static RadioOpportunitySnapshot ValidTransitionSnapshot(
 
 static PreparedTransitionOpportunity FakePreparedTransition(
     RadioPreparationOpportunity opportunity,
-    DateTimeOffset readyAt)
+    DateTimeOffset readyAt,
+    IPreparedAnnouncementSpeech? speech = null)
 {
     return new PreparedTransitionOpportunity(
         opportunity,
         FakeTransitionCommentProvider.DefaultSelection,
-        new FakePreparedSpeech(new SpeechPlaybackResult(SpeechPlaybackStatus.Completed)),
+        speech ?? new FakePreparedSpeech(new SpeechPlaybackResult(SpeechPlaybackStatus.Completed)),
         readyAt);
 }
 
@@ -3465,6 +3960,21 @@ static void AssertFalse(bool value)
     {
         throw new InvalidOperationException("Expected false.");
     }
+}
+
+static TException AssertThrows<TException>(Action action)
+    where TException : Exception
+{
+    try
+    {
+        action();
+    }
+    catch (TException exception)
+    {
+        return exception;
+    }
+
+    throw new InvalidOperationException($"Expected {typeof(TException).Name}, but no exception was thrown.");
 }
 
 internal sealed record FakeSession(string? SourceId);
@@ -4068,6 +4578,21 @@ internal sealed class FakeLog : IAnnouncementLog
     public bool Contains(string text)
     {
         return _messages.Any(message => message.Contains(text, StringComparison.Ordinal));
+    }
+}
+
+internal sealed class CountingCancellationTokenSource : CancellationTokenSource
+{
+    public int DisposeCalls { get; private set; }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            DisposeCalls++;
+        }
+
+        base.Dispose(disposing);
     }
 }
 

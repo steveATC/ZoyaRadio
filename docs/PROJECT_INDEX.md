@@ -49,6 +49,7 @@ Update this table whenever an accepted implementation commit becomes the new sou
 - [MILESTONE_11A_CONTRACT.md](MILESTONE_11A_CONTRACT.md) - passed pure Editorial Arbiter contract with automated and Steve desktop acceptance evidence.
 - [MILESTONE_11B_CONTRACT.md](MILESTONE_11B_CONTRACT.md) - passed commentary/reusable-liner contract with automated and Steve desktop acceptance evidence.
 - [PREPARED_LINER_OWNERSHIP_DISPOSAL_REPAIR_CONTRACT.md](PREPARED_LINER_OWNERSHIP_DISPOSAL_REPAIR_CONTRACT.md) - completed revised-candidate repair 1/1; Warden passed the bounded prepared-liner cleanup verification (481/481), with no manual desktop acceptance required.
+- [CANCELLATION_SOURCE_LIFETIME_REPAIR_CONTRACT.md](CANCELLATION_SOURCE_LIFETIME_REPAIR_CONTRACT.md) - September 14 revised CTS repair 1/1 passed independent Warden review after clean Release builds and 494/494; closes only verified internal cancellation/disposal correctness, with no desktop, milestone, or other-issue claim.
 - [MILESTONE_12A_CONTRACT.md](MILESTONE_12A_CONTRACT.md) - passed pure Creative Context Assembler v1 contract with automated evidence and Steve's representative-packet acceptance.
 - [MILESTONE_12B_CONTRACT.md](MILESTONE_12B_CONTRACT.md) - passed bounded Creative Direction, format-specific Content Generation, and generate-only laboratory contract.
 - [MILESTONE_13A_CONTRACT.md](MILESTONE_13A_CONTRACT.md) - accepted M13A-I1 foundation plus bounded I2/I2.1 diagnostic evidence and limitations.

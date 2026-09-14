@@ -22,10 +22,11 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
     private readonly SemaphoreSlim _mediaEventGate = new(1, 1);
     private GlobalSystemMediaTransportControlsSession? _selectedSession;
     private CancellationToken _shutdownToken;
-    private CancellationTokenSource? _pendingCancellation;
+    private OperationLifetime? _pendingLifetime;
+    private PipelineOperationPhase _pipelinePhase;
     private Task? _pipelineTask;
     private PreparedTransitionOpportunity? _preparedOpportunity;
-    private CancellationTokenSource? _linerPreparationCancellation;
+    private OperationLifetime? _linerPreparationLifetime;
     private Task? _linerPreparationTask;
     private DateTimeOffset _nextLinerPreparationAttemptAt = DateTimeOffset.MinValue;
     private bool _simulateNextTransitionFailure;
@@ -36,6 +37,91 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
     private bool _runtimeStarted;
     private RadioRuntimeStatusUpdate? _lastStatus;
     private RadioActivitySnapshot _activity = new(RadioActivityState.Stopped);
+    private Action<string>? _cancellationLogForTesting;
+    private Action<PreparedTransitionOpportunity, string>? _discardPreparedForTesting;
+    private CancellationCoordinatorTestGates? _cancellationGatesForTesting;
+
+    internal enum PipelineOperationPhase { None, Preparing, Ready, Delivering }
+
+    internal sealed class OperationLifetime
+    {
+        private readonly object _gate = new();
+        private readonly CancellationTokenSource _source;
+        private int _leases;
+        private bool _terminal;
+        private bool _disposed;
+
+        public OperationLifetime(CancellationToken shutdownToken)
+        {
+            _source = CancellationTokenSource.CreateLinkedTokenSource(shutdownToken);
+            Token = _source.Token;
+        }
+
+        internal OperationLifetime(CancellationTokenSource source)
+        {
+            _source = source;
+            Token = source.Token;
+        }
+
+        public CancellationToken Token { get; }
+        public bool IsCancellationRequested => Token.IsCancellationRequested;
+        internal bool IsDisposed
+        {
+            get
+            {
+                lock (_gate) return _disposed;
+            }
+        }
+
+        public CancellationLease? TryAcquireCancellationLease()
+        {
+            lock (_gate)
+            {
+                if (_terminal || _disposed) return null;
+                _leases++;
+                return new CancellationLease(this);
+            }
+        }
+
+        public void RequestTerminalDisposal() => CompleteLease(null);
+
+        private void CompleteLease(CancellationLease? lease)
+        {
+            CancellationTokenSource? dispose = null;
+            lock (_gate)
+            {
+                if (lease is not null) _leases--;
+                else _terminal = true;
+                if (_terminal && _leases == 0 && !_disposed) { _disposed = true; dispose = _source; }
+            }
+            dispose?.Dispose();
+        }
+
+        private void Cancel() => _source.Cancel();
+
+        public sealed class CancellationLease : IDisposable
+        {
+            private OperationLifetime? _owner;
+            internal CancellationLease(OperationLifetime owner) => _owner = owner;
+            public void Cancel() => _owner?.Cancel();
+            public void Dispose()
+            {
+                OperationLifetime? owner = Interlocked.Exchange(ref _owner, null);
+                owner?.CompleteLease(this);
+            }
+        }
+    }
+
+    internal sealed class CancellationCoordinatorTestGates
+    {
+        internal Action? StateContenderBeforeLock { get; init; }
+        internal Action? StateLockAcquired { get; init; }
+        internal Action? ContenderBeforeLock { get; init; }
+        internal Action? LockAcquired { get; init; }
+        internal Action? LeaseAcquired { get; init; }
+        internal Action? StateTransitioned { get; init; }
+        internal Action? BeforeCancellation { get; init; }
+    }
 
     public RadioBehaviorTest(
         GlobalSystemMediaTransportControlsSessionManager manager,
@@ -101,6 +187,19 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
             ReportActivity);
         _linerInventory = new ReusableLinerInventory();
         _linerPipeline = new ReusableLinerPipeline(opportunityHost, log);
+    }
+
+    internal RadioBehaviorTest(LocalLog log, IRadioClock clock, ITransitionTargetSource targetSource)
+    {
+        _manager = null!;
+        _log = log;
+        _radioConfiguration = RadioBehaviorConfiguration.Default;
+        _clock = clock;
+        _state = new M10CRuntimeMigrationState(_radioConfiguration, targetSource);
+        _sessionAccess = null!;
+        _pipeline = null!;
+        _linerInventory = new ReusableLinerInventory();
+        _linerPipeline = null!;
     }
 
     private async void OnMediaPropertiesChanged(
@@ -506,13 +605,15 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
         return "eligible";
     }
 
-    private void InvalidatePendingForSessionSafety(string reason)
+    internal void InvalidatePendingForSessionSafety(string reason)
     {
         CancelLinerPreparation("Firefox session safety changed");
         bool invalidated;
 
+        _cancellationGatesForTesting?.StateContenderBeforeLock?.Invoke();
         lock (_stateLock)
         {
+            _cancellationGatesForTesting?.StateLockAcquired?.Invoke();
             invalidated = _state.CancelPendingOpportunityAndReschedule();
         }
 
@@ -556,7 +657,7 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
             return;
         }
 
-        var linkedCancellation = CancellationTokenSource.CreateLinkedTokenSource(_shutdownToken);
+        var lifetime = new OperationLifetime(_shutdownToken);
         bool skipped;
 
         lock (_pipelineLock)
@@ -566,9 +667,10 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
 
             if (!skipped)
             {
-                _pendingCancellation = linkedCancellation;
+                _pendingLifetime = lifetime;
+                _pipelinePhase = PipelineOperationPhase.Preparing;
                 _pipelineTask = Task.Run(
-                    () => RunPreparationAndStoreAsync(opportunity, linkedCancellation));
+                    () => RunPreparationAndStoreAsync(opportunity, lifetime, lifetime.Token));
             }
         }
 
@@ -577,7 +679,7 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
             return;
         }
 
-        linkedCancellation.Dispose();
+        lifetime.RequestTerminalDisposal();
         lock (_stateLock)
         {
             _state.ResolveOpportunity(opportunity.Id, false, null, _clock.Now);
@@ -591,7 +693,8 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
 
     private async Task RunPreparationAndStoreAsync(
         RadioPreparationOpportunity opportunity,
-        CancellationTokenSource opportunityCancellation)
+        OperationLifetime lifetime,
+        CancellationToken cancellationToken)
     {
         bool retainedForDelivery = false;
 
@@ -600,25 +703,15 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
             TransitionPreparationResult result = await _pipeline.PrepareAsync(
                 opportunity,
                 _aiEnabled,
-                opportunityCancellation.Token);
+                cancellationToken);
 
             if (result.Status == TransitionPreparationStatus.Ready && result.Prepared is not null)
             {
-                lock (_stateLock)
-                {
-                    if (_state.MarkPreparationReady(opportunity.Id, result.Prepared))
-                    {
-                        lock (_pipelineLock)
-                        {
-                            if (ReferenceEquals(_pendingCancellation, opportunityCancellation)
-                                && !opportunityCancellation.IsCancellationRequested)
-                            {
-                                _preparedOpportunity = result.Prepared;
-                                retainedForDelivery = true;
-                            }
-                        }
-                    }
-                }
+                retainedForDelivery = TryMarkAndPublishPreparedOpportunity(
+                    opportunity.Id,
+                    lifetime,
+                    cancellationToken,
+                    result.Prepared);
 
                 if (!retainedForDelivery)
                 {
@@ -664,37 +757,7 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
         }
         finally
         {
-            if (!retainedForDelivery)
-            {
-                lock (_pipelineLock)
-                {
-                    if (ReferenceEquals(_pendingCancellation, opportunityCancellation))
-                    {
-                        _pendingCancellation = null;
-                    }
-                }
-
-                opportunityCancellation.Dispose();
-            }
-            else if (opportunityCancellation.IsCancellationRequested)
-            {
-                bool disposeCancellation = false;
-
-                lock (_pipelineLock)
-                {
-                    if (ReferenceEquals(_pendingCancellation, opportunityCancellation)
-                        && _preparedOpportunity is null)
-                    {
-                        _pendingCancellation = null;
-                        disposeCancellation = true;
-                    }
-                }
-
-                if (disposeCancellation)
-                {
-                    opportunityCancellation.Dispose();
-                }
-            }
+            FinalizePreparationLifetime(lifetime);
         }
     }
 
@@ -754,36 +817,21 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
             return;
         }
 
-        PreparedTransitionOpportunity? prepared;
-        CancellationTokenSource? cancellation;
-        bool simulateFailure;
-
-        lock (_pipelineLock)
+        if (TryTransferPreparedOpportunity(
+                transition.OpportunityId,
+                (prepared, lifetime, simulateFailure) =>
+                {
+                    _pipelineTask = Task.Run(
+                        () => RunDeliveryAndFinalizeAsync(
+                            prepared,
+                            transition,
+                            lifetime,
+                            lifetime.Token,
+                            simulateFailure,
+                            reservation));
+                }))
         {
-            prepared = _preparedOpportunity;
-            cancellation = _pendingCancellation;
-
-            if (prepared is null
-                || prepared.Opportunity.Id != transition.OpportunityId
-                || cancellation is null
-                || cancellation.IsCancellationRequested)
-            {
-                prepared = null;
-            }
-            else
-            {
-                _preparedOpportunity = null;
-                simulateFailure = _simulateNextTransitionFailure;
-                _simulateNextTransitionFailure = false;
-                _pipelineTask = Task.Run(
-                    () => RunDeliveryAndFinalizeAsync(
-                        prepared,
-                        transition,
-                        cancellation,
-                        simulateFailure,
-                        reservation));
-                return;
-            }
+            return;
         }
 
         _log.Write(
@@ -800,7 +848,8 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
     private async Task RunDeliveryAndFinalizeAsync(
         PreparedTransitionOpportunity prepared,
         RadioTransitionDelivery transition,
-        CancellationTokenSource opportunityCancellation,
+        OperationLifetime lifetime,
+        CancellationToken cancellationToken,
         bool simulateFailure,
         M10CDeliveryReservation reservation)
     {
@@ -810,7 +859,7 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
                 prepared,
                 transition,
                 simulateFailure,
-                opportunityCancellation.Token);
+                cancellationToken);
 
             string? acceptedAiComment = result.Status == TransitionDeliveryStatus.Completed
                 && (prepared.Selection.Source == CommentTextSource.Ai
@@ -874,63 +923,114 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
         }
         finally
         {
-            prepared.Dispose();
-
-            lock (_pipelineLock)
-            {
-                if (ReferenceEquals(_pendingCancellation, opportunityCancellation))
-                {
-                    _pendingCancellation = null;
-                }
-            }
-
-            opportunityCancellation.Dispose();
+            CompleteDeliveryOwnership(prepared, lifetime);
         }
     }
 
     private bool _aiEnabled;
 
-    private void CancelPendingPipeline(string reason)
+    internal void CancelPendingPipeline(string reason)
     {
-        CancellationTokenSource? cancellation;
         PreparedTransitionOpportunity? prepared;
-        bool disposeCancellation = false;
-
+        OperationLifetime? terminalLifetime = null;
+        OperationLifetime.CancellationLease? lease = null;
+        _cancellationGatesForTesting?.ContenderBeforeLock?.Invoke();
         lock (_pipelineLock)
         {
-            cancellation = _pendingCancellation;
+            _cancellationGatesForTesting?.LockAcquired?.Invoke();
+            OperationLifetime? lifetime = _pendingLifetime;
             prepared = _preparedOpportunity;
-            _preparedOpportunity = null;
-
-            if (cancellation is not null
-                && prepared is not null
-                && (_pipelineTask is null || _pipelineTask.IsCompleted))
+            lease = lifetime?.TryAcquireCancellationLease();
+            if (lease is not null)
             {
-                _pendingCancellation = null;
-                disposeCancellation = true;
+                _cancellationGatesForTesting?.LeaseAcquired?.Invoke();
+            }
+            if (lifetime is not null && lease is not null && _pipelinePhase == PipelineOperationPhase.Ready)
+            {
+                _pendingLifetime = null;
+                _preparedOpportunity = null;
+                _pipelinePhase = PipelineOperationPhase.None;
+                terminalLifetime = lifetime;
+                _cancellationGatesForTesting?.StateTransitioned?.Invoke();
+            }
+            else
+            {
+                prepared = null;
             }
         }
-
-        if (prepared is not null)
+        Exception? failure = null;
+        if (lease is not null)
         {
-            _m9bCommentProvider?.Discard(prepared.Opportunity, reason);
+            try { WriteCancellationLog($"Cancelling pending automatic preparation/delivery because {reason}."); }
+            catch (Exception exception) { failure ??= exception; }
+            try
+            {
+                _cancellationGatesForTesting?.BeforeCancellation?.Invoke();
+                lease.Cancel();
+            }
+            catch (Exception exception) { failure ??= exception; }
+        }
+        try
+        {
+            if (prepared is not null)
+            {
+                try { DiscardPrepared(prepared, reason); } catch (Exception exception) { failure ??= exception; }
+                try { prepared.Dispose(); } catch (Exception exception) { failure ??= exception; }
+            }
+        }
+        finally
+        {
+            try { terminalLifetime?.RequestTerminalDisposal(); } catch (Exception exception) { failure ??= exception; }
+            try { lease?.Dispose(); } catch (Exception exception) { failure ??= exception; }
+        }
+        if (failure is not null) throw failure;
+    }
+
+    internal void FinalizePreparationLifetime(OperationLifetime lifetime)
+    {
+        bool terminal = false;
+        lock (_pipelineLock)
+        {
+            if (ReferenceEquals(_pendingLifetime, lifetime) && _pipelinePhase == PipelineOperationPhase.Preparing)
+            {
+                _pendingLifetime = null;
+                _pipelineTask = null;
+                _pipelinePhase = PipelineOperationPhase.None;
+                terminal = true;
+            }
+            else if (!ReferenceEquals(_pendingLifetime, lifetime))
+            {
+                terminal = true;
+            }
+        }
+        if (terminal) lifetime.RequestTerminalDisposal();
+    }
+
+    internal void FinalizeDeliveryLifetime(OperationLifetime lifetime)
+    {
+        lock (_pipelineLock)
+        {
+            if (ReferenceEquals(_pendingLifetime, lifetime) && _pipelinePhase == PipelineOperationPhase.Delivering)
+            {
+                _pendingLifetime = null;
+                _pipelineTask = null;
+                _pipelinePhase = PipelineOperationPhase.None;
+            }
+        }
+        lifetime.RequestTerminalDisposal();
+    }
+
+    internal void CompleteDeliveryOwnership(
+        PreparedTransitionOpportunity prepared,
+        OperationLifetime lifetime)
+    {
+        try
+        {
             prepared.Dispose();
         }
-
-        if (cancellation is null)
+        finally
         {
-            return;
-        }
-
-        if (!cancellation.IsCancellationRequested)
-        {
-            _log.Write($"Cancelling pending automatic preparation/delivery because {reason}.");
-            cancellation.Cancel();
-        }
-
-        if (disposeCancellation)
-        {
-            cancellation.Dispose();
+            FinalizeDeliveryLifetime(lifetime);
         }
     }
 
@@ -949,26 +1049,185 @@ internal sealed partial class RadioBehaviorTest : IRadioRuntimeSession
         }
     }
 
-    private void DisposePreparedOpportunity()
+    internal void DisposePreparedOpportunity()
     {
         PreparedTransitionOpportunity? prepared;
-        CancellationTokenSource? cancellation;
+        OperationLifetime? lifetime;
 
         lock (_pipelineLock)
         {
             prepared = _preparedOpportunity;
             _preparedOpportunity = null;
-            cancellation = _pendingCancellation;
-            _pendingCancellation = null;
+            lifetime = _pendingLifetime;
+            _pendingLifetime = null;
+            _pipelineTask = null;
+            _pipelinePhase = PipelineOperationPhase.None;
         }
 
+        Exception? failure = null;
         if (prepared is not null)
         {
-            _m9bCommentProvider?.Discard(prepared.Opportunity, "the radio stopped before delivery");
-            prepared.Dispose();
+            try
+            {
+                DiscardPrepared(prepared, "the radio stopped before delivery");
+            }
+            catch (Exception exception)
+            {
+                failure ??= exception;
+            }
+
+            try
+            {
+                prepared.Dispose();
+            }
+            catch (Exception exception)
+            {
+                failure ??= exception;
+            }
         }
 
-        cancellation?.Dispose();
+        try
+        {
+            lifetime?.RequestTerminalDisposal();
+        }
+        catch (Exception exception)
+        {
+            failure ??= exception;
+        }
+
+        if (failure is not null)
+        {
+            throw failure;
+        }
+    }
+
+    internal bool TryMarkAndPublishPreparedOpportunity(
+        long opportunityId,
+        OperationLifetime lifetime,
+        CancellationToken cancellationToken,
+        PreparedTransitionOpportunity prepared)
+    {
+        lock (_stateLock)
+        {
+            return _state.MarkPreparationReady(opportunityId, prepared)
+                && TryPublishPreparedOpportunity(lifetime, cancellationToken, prepared);
+        }
+    }
+
+    internal bool TryPublishPreparedOpportunity(
+        OperationLifetime lifetime,
+        CancellationToken cancellationToken,
+        PreparedTransitionOpportunity prepared)
+    {
+        _cancellationGatesForTesting?.ContenderBeforeLock?.Invoke();
+        lock (_pipelineLock)
+        {
+            _cancellationGatesForTesting?.LockAcquired?.Invoke();
+            if (!ReferenceEquals(_pendingLifetime, lifetime)
+                || _pipelinePhase != PipelineOperationPhase.Preparing
+                || cancellationToken.IsCancellationRequested)
+            {
+                return false;
+            }
+
+            _preparedOpportunity = prepared;
+            _pipelinePhase = PipelineOperationPhase.Ready;
+            _cancellationGatesForTesting?.StateTransitioned?.Invoke();
+            return true;
+        }
+    }
+
+    internal bool TryTransferPreparedOpportunity(
+        long opportunityId,
+        Action<PreparedTransitionOpportunity, OperationLifetime, bool> beginDelivery)
+    {
+        _cancellationGatesForTesting?.ContenderBeforeLock?.Invoke();
+        lock (_pipelineLock)
+        {
+            _cancellationGatesForTesting?.LockAcquired?.Invoke();
+            PreparedTransitionOpportunity? prepared = _preparedOpportunity;
+            OperationLifetime? lifetime = _pendingLifetime;
+            if (prepared is null
+                || prepared.Opportunity.Id != opportunityId
+                || lifetime is null
+                || _pipelinePhase != PipelineOperationPhase.Ready
+                || lifetime.IsCancellationRequested)
+            {
+                return false;
+            }
+
+            _preparedOpportunity = null;
+            _pipelinePhase = PipelineOperationPhase.Delivering;
+            bool simulateFailure = _simulateNextTransitionFailure;
+            _simulateNextTransitionFailure = false;
+            _cancellationGatesForTesting?.StateTransitioned?.Invoke();
+            beginDelivery(prepared, lifetime, simulateFailure);
+            return true;
+        }
+    }
+
+    private void WriteCancellationLog(string message)
+    {
+        if (_cancellationLogForTesting is not null) _cancellationLogForTesting(message);
+        else _log.Write(message);
+    }
+
+    private void DiscardPrepared(PreparedTransitionOpportunity prepared, string reason)
+    {
+        if (_discardPreparedForTesting is not null) _discardPreparedForTesting(prepared, reason);
+        else _m9bCommentProvider?.Discard(prepared.Opportunity, reason);
+    }
+
+    internal void ConfigureCancellationTesting(
+        CancellationCoordinatorTestGates? gates = null,
+        Action<string>? writeLog = null,
+        Action<PreparedTransitionOpportunity, string>? discardPrepared = null)
+    {
+        _cancellationGatesForTesting = gates;
+        _cancellationLogForTesting = writeLog;
+        _discardPreparedForTesting = discardPrepared;
+    }
+
+    internal void InstallPipelineOperationForTesting(
+        OperationLifetime lifetime,
+        PipelineOperationPhase phase,
+        PreparedTransitionOpportunity? prepared = null,
+        Task? task = null)
+    {
+        lock (_pipelineLock)
+        {
+            _pendingLifetime = lifetime;
+            _pipelinePhase = phase;
+            _preparedOpportunity = prepared;
+            _pipelineTask = task;
+        }
+    }
+
+    internal RadioPreparationOpportunity ArmAndCreatePreparationForTesting(
+        MediaSnapshot initialTrack,
+        MediaSnapshot subjectTrack,
+        DateTimeOffset observedAt)
+    {
+        lock (_stateLock)
+        {
+            _state.Arm(initialTrack, observedAt);
+            return _state.ObserveTrack(subjectTrack, observedAt.AddSeconds(1)).PreparationOpportunity
+                ?? throw new InvalidOperationException("The test state did not create a preparation opportunity.");
+        }
+    }
+
+    internal (OperationLifetime? Lifetime, PipelineOperationPhase Phase, PreparedTransitionOpportunity? Prepared, Task? Task)
+        PipelineOperationForTesting()
+    {
+        lock (_pipelineLock)
+        {
+            return (_pendingLifetime, _pipelinePhase, _preparedOpportunity, _pipelineTask);
+        }
+    }
+
+    internal void RunWithPipelineLockForTesting(Action action)
+    {
+        lock (_pipelineLock) action();
     }
 
     private bool TrySubscribe()

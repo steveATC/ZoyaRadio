@@ -36,31 +36,31 @@ internal sealed partial class RadioBehaviorTest
             return;
         }
 
-        var cancellation = CancellationTokenSource.CreateLinkedTokenSource(_shutdownToken);
+        var lifetime = new OperationLifetime(_shutdownToken);
         lock (_linerLock)
         {
             if (_linerInventory.HasPreparedSpeech
                 || (_linerPreparationTask is not null && !_linerPreparationTask.IsCompleted))
             {
-                cancellation.Dispose();
+                lifetime.RequestTerminalDisposal();
                 return;
             }
 
-            _linerPreparationCancellation = cancellation;
-            _linerPreparationTask = Task.Run(() => RunLinerPreparationAsync(cancellation));
+            _linerPreparationLifetime = lifetime;
+            _linerPreparationTask = Task.Run(() => RunLinerPreparationAsync(lifetime, lifetime.Token));
         }
 
         _log.Write("REUSABLE LINER PREPARATION STARTED: fixed local copy only; music is untouched.");
     }
 
-    private async Task RunLinerPreparationAsync(CancellationTokenSource cancellation)
+    private async Task RunLinerPreparationAsync(OperationLifetime lifetime, CancellationToken cancellationToken)
     {
         try
         {
             (ReusableLinerPreparationResult result, bool accepted) =
                 await PrepareAndAcceptLinerSpeechAsync(
                     _linerPipeline,
-                    cancellation.Token,
+                    cancellationToken,
                     _linerInventory,
                     _linerLock);
 
@@ -84,18 +84,10 @@ internal sealed partial class RadioBehaviorTest
         }
         finally
         {
-            lock (_linerLock)
-            {
-                if (ReferenceEquals(_linerPreparationCancellation, cancellation))
-                {
-                    _linerPreparationCancellation = null;
-                    _linerPreparationTask = null;
-                }
-            }
-
-            cancellation.Dispose();
+            FinalizeLinerPreparationLifetime(lifetime);
         }
     }
+
 
     internal static async Task<(ReusableLinerPreparationResult Result, bool Accepted)>
         PrepareAndAcceptLinerSpeechAsync(
@@ -144,19 +136,61 @@ internal sealed partial class RadioBehaviorTest
         }
     }
 
-    private void CancelLinerPreparation(string reason)
+    internal void CancelLinerPreparation(string reason)
     {
-        CancellationTokenSource? cancellation;
+        OperationLifetime.CancellationLease? lease;
+        _cancellationGatesForTesting?.ContenderBeforeLock?.Invoke();
         lock (_linerLock)
         {
-            cancellation = _linerPreparationCancellation;
+            _cancellationGatesForTesting?.LockAcquired?.Invoke();
+            lease = _linerPreparationLifetime?.TryAcquireCancellationLease();
+            if (lease is not null) _cancellationGatesForTesting?.LeaseAcquired?.Invoke();
         }
-
-        if (cancellation is not null && !cancellation.IsCancellationRequested)
+        if (lease is null) return;
+        Exception? failure = null;
+        try
         {
-            _log.Write($"CANCELLING LOW-PRIORITY LINER PREPARATION: {reason}.");
-            cancellation.Cancel();
+            try { WriteCancellationLog($"CANCELLING LOW-PRIORITY LINER PREPARATION: {reason}."); }
+            catch (Exception exception) { failure ??= exception; }
+            try
+            {
+                _cancellationGatesForTesting?.BeforeCancellation?.Invoke();
+                lease.Cancel();
+            }
+            catch (Exception exception) { failure ??= exception; }
         }
+        finally
+        {
+            try { lease.Dispose(); } catch (Exception exception) { failure ??= exception; }
+        }
+        if (failure is not null) throw failure;
+    }
+
+    internal void FinalizeLinerPreparationLifetime(OperationLifetime lifetime)
+    {
+        lock (_linerLock)
+        {
+            if (ReferenceEquals(_linerPreparationLifetime, lifetime))
+            {
+                _linerPreparationLifetime = null;
+                _linerPreparationTask = null;
+            }
+        }
+        lifetime.RequestTerminalDisposal();
+    }
+
+    internal void InstallLinerPreparationForTesting(OperationLifetime lifetime, Task? task = null)
+    {
+        lock (_linerLock)
+        {
+            _linerPreparationLifetime = lifetime;
+            _linerPreparationTask = task;
+        }
+    }
+
+    internal (OperationLifetime? Lifetime, Task? Task) LinerPreparationForTesting()
+    {
+        lock (_linerLock) return (_linerPreparationLifetime, _linerPreparationTask);
     }
 
     private async Task WaitForLinerPreparationAsync()
@@ -244,7 +278,7 @@ internal sealed partial class RadioBehaviorTest
             return;
         }
 
-        var cancellation = CancellationTokenSource.CreateLinkedTokenSource(_shutdownToken);
+        var lifetime = new OperationLifetime(_shutdownToken);
         lock (_pipelineLock)
         {
             if ((_pipelineTask is not null && !_pipelineTask.IsCompleted)
@@ -255,13 +289,14 @@ internal sealed partial class RadioBehaviorTest
                     _linerInventory.Release(reservation, _clock.Now);
                 }
 
-                cancellation.Dispose();
+                lifetime.RequestTerminalDisposal();
                 _log.Write("REUSABLE LINER RELEASED: another protected pipeline won the boundary.");
                 return;
             }
 
-            _pendingCancellation = cancellation;
-            _pipelineTask = Task.Run(() => RunLinerDeliveryAndFinalizeAsync(reservation, cancellation));
+            _pendingLifetime = lifetime;
+            _pipelinePhase = PipelineOperationPhase.Delivering;
+            _pipelineTask = Task.Run(() => RunLinerDeliveryAndFinalizeAsync(reservation, lifetime, lifetime.Token));
         }
 
         _log.Write(
@@ -271,12 +306,13 @@ internal sealed partial class RadioBehaviorTest
 
     private async Task RunLinerDeliveryAndFinalizeAsync(
         ReusableLinerReservation reservation,
-        CancellationTokenSource cancellation)
+        OperationLifetime lifetime,
+        CancellationToken cancellationToken)
     {
         try
         {
             TransitionDeliveryResult result =
-                await _linerPipeline.DeliverAsync(reservation, cancellation.Token);
+                await _linerPipeline.DeliverAsync(reservation, cancellationToken);
             bool returned;
             lock (_linerLock)
             {
@@ -306,13 +342,14 @@ internal sealed partial class RadioBehaviorTest
         {
             lock (_pipelineLock)
             {
-                if (ReferenceEquals(_pendingCancellation, cancellation))
+                if (ReferenceEquals(_pendingLifetime, lifetime))
                 {
-                    _pendingCancellation = null;
+                    _pendingLifetime = null;
+                    _pipelinePhase = PipelineOperationPhase.None;
+                    _pipelineTask = null;
                 }
             }
-
-            cancellation.Dispose();
+            lifetime.RequestTerminalDisposal();
         }
     }
 
